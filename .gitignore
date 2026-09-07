@@ -1,0 +1,58 @@
+# ──────────────────────────────────────────────
+# Nivaran AI — Root .gitignore
+# ──────────────────────────────────────────────
+
+# ── Python / Backend ──────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# pytest
+.pytest_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# mypy / ruff
+.mypy_cache/
+.ruff_cache/
+
+# ── Node / Frontend ───────────────────────────
+node_modules/
+.next/
+out/
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+# ── Environment & Secrets ─────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Runtime Artifacts ─────────────────────────
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# ── IDE / OS ──────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Logs ──────────────────────────────────────
+*.log

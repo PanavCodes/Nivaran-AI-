@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+/* ── Nivaran AI — Deep Dark Cyber-Intelligence theme (BUILD.md §1) ── */
+@theme {
+  --color-emergency: #ff3b30;
+  --color-high: #ffcc00;
+  --color-medium: #ff9500;
+  --color-resolved: #34c759;
+  --color-surface: #0d1117;
+  --color-card: #161b22;
+  --color-accent: #58a6ff;
+  --color-line: #21262d;
+  --color-muted: #8b949e;
+}
+
+:root {
+  --clr-emergency: #ff3b30;
+  --clr-high: #ffcc00;
+  --clr-resolved: #34c759;
+  --clr-surface: #0d1117;
+  --clr-card: #161b22;
+  --clr-accent: #58a6ff;
+}
+
+html,
+body {
+  background: var(--clr-surface);
+  color: #e6edf3;
+  min-height: 100vh;
+}
+
+/* Soft radial background glow centred at the viewport */
+.radar-canvas {
+  position: relative;
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(88, 166, 255, 0.08), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(255, 204, 0, 0.04), transparent 70%),
+    var(--clr-surface);
+}
+
+/* Sweeping radar circle — live GPS location scanning */
+.radar-sweep {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.radar-sweep::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 900px;
+  height: 900px;
+  margin: -450px 0 0 -450px;
+  border-radius: 9999px;
+  background: conic-gradient(
+    from 0deg,
+    rgba(88, 166, 255, 0) 0deg,
+    rgba(88, 166, 255, 0.12) 40deg,
+    rgba(88, 166, 255, 0) 60deg
+  );
+  animation: radar-spin 4s linear infinite;
+}
+.radar-sweep::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 900px;
+  height: 900px;
+  margin: -450px 0 0 -450px;
+  border-radius: 9999px;
+  border: 1px solid rgba(88, 166, 255, 0.15);
+  box-shadow:
+    0 0 0 150px rgba(88, 166, 255, 0.02),
+    0 0 0 300px rgba(88, 166, 255, 0.02);
+}
+@keyframes radar-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Glassmorphism card surface */
+.glass {
+  background: rgba(22, 27, 34, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(240, 246, 252, 0.08);
+}
+
+/* Emergency pulsing pin ring (map + badges) */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.9;
+  }
+  80%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+.pulse-ring {
+  animation: pulse-ring 1.8s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
+  transform-origin: center;
+}
+
+/* Progress shimmer for the AI loader */
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(88, 166, 255, 0.06) 25%,
+    rgba(88, 166, 255, 0.22) 50%,
+    rgba(88, 166, 255, 0.06) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+/* Amber glow for nearby cluster cards */
+.glow-amber {
+  box-shadow:
+    0 0 0 1px rgba(255, 204, 0, 0.25),
+    0 0 24px rgba(255, 204, 0, 0.12);
+}
+
+/* Leaflet dark canvas integration */
+.leaflet-container {
+  background: #0d1117;
+  font-family: inherit;
+}
+.leaflet-tile {
+  filter: brightness(0.75) hue-rotate(180deg) invert(1) contrast(0.9) saturate(0.4);
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: #161b22;
+  color: #e6edf3;
+  border: 1px solid #21262d;
+}
+
+/* SLA countdown flash when < 30 min */
+@keyframes flash-red {
+  0%,
+  100% {
+    color: var(--clr-emergency);
+  }
+  50% {
+    color: rgba(255, 59, 48, 0.35);
+  }
+}
+.flash-red {
+  animation: flash-red 1s ease-in-out infinite;
+}

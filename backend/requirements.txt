@@ -1,0 +1,18 @@
+# Nivaran AI — backend dependencies (BUILD.md §2/§3, Python 3.13)
+fastapi>=0.111
+uvicorn[standard]
+sqlalchemy>=2.0
+psycopg[binary]
+pgvector
+pydantic>=2.7
+pydantic-settings
+python-jose[cryptography]
+bcrypt
+python-multipart
+sentence-transformers
+google-generativeai
+apscheduler
+loguru
+httpx
+numpy
+pytest
