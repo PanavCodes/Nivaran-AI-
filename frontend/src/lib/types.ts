@@ -75,3 +75,27 @@ export const CATEGORY_LABELS: Record<string, string> = {
   FACILITIES: "Facilities",
   ADMINISTRATION: "Administration",
 };
+
+export interface MyClusterSnapshot {
+  id: string;
+  title: string;
+  status: string;
+  category: string;
+  priority_score: number;
+  sla_tier: string;
+  complaint_count: number;
+  sla_deadline: string | null;
+  assigned_department: string;
+}
+
+export interface MyComplaint {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  severity: number;
+  image_url: string | null;
+  resolution_proof_url: string | null;
+  created_at: string;
+  cluster: MyClusterSnapshot | null;
+}

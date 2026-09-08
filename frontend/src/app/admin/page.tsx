@@ -18,9 +18,10 @@ import {
 import { api } from "@/lib/api";
 import { logout, requireAuth, type SessionUser } from "@/lib/auth";
 import { useWebSocket, type WsMessage } from "@/hooks/useWebSocket";
+import { AnalyticsCharts } from "@/components/analytics/AnalyticsCharts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
+import { PriorityGauge } from "@/components/ui/priority-gauge";
 import type { Analytics, Cluster, ClusterDetail, Complaint } from "@/lib/types";
 import { CATEGORY_LABELS, tierForScore } from "@/lib/types";
 
@@ -57,6 +58,7 @@ export default function AdminDashboard() {
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [assigning, setAssigning] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showCharts, setShowCharts] = useState(true);
 
   /* ── Auth gate ── */
   useEffect(() => {
@@ -189,6 +191,13 @@ export default function AdminDashboard() {
           </div>
         </div>
         <div className="flex items-center gap-4">
+          <Button
+            variant={showCharts ? "primary" : "outline"}
+            onClick={() => setShowCharts((v) => !v)}
+            className="text-xs"
+          >
+            <BarChart3 size={14} /> Analytics
+          </Button>
           <span className="text-xs text-[#8b949e]">
             <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-resolved" />
             {user.full_name} ({user.role})
@@ -243,15 +252,34 @@ export default function AdminDashboard() {
                 color: "text-[#c9d1d9]",
               },
             ].map((kpi) => (
-              <div key={kpi.label} className="flex items-center gap-3 bg-[#0d1117] px-4 py-3">
+              <motion.div
+                key={`${kpi.label}-${String(kpi.value)}`}
+                initial={{ opacity: 0.4 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center gap-3 bg-[#0d1117] px-4 py-3"
+              >
                 <kpi.icon size={18} className={kpi.color} />
                 <div>
                   <div className="text-lg font-bold text-white">{kpi.value}</div>
                   <div className="text-[10px] uppercase tracking-wide text-[#8b949e]">{kpi.label}</div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
+
+          {/* ── Recharts analytics overlay (AreaChart volume + RadarChart mix) ── */}
+          <AnimatePresence>
+            {showCharts && (
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 30 }}
+                className="absolute bottom-[68px] left-0 right-0 z-20 border-t border-[#21262d] bg-[#0d1117]/95 backdrop-blur-sm"
+              >
+                <AnalyticsCharts refreshToken={analytics?.open_clusters ?? 0} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* ── Right: Cluster detail panel (40%) ── */}
@@ -298,30 +326,14 @@ export default function AdminDashboard() {
                     </div>
                   )}
 
-                  {/* Priority Score Meter */}
-                  <div className="rounded-lg border border-[#21262d] bg-[#161b22] p-4">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-[#8b949e]">Priority Score</span>
-                      <span className="font-mono font-bold text-white">{selected.priority_score}/100</span>
-                    </div>
-                    <Progress
-                      value={selected.priority_score}
-                      className="mt-2"
-                      barClassName={
-                        selected.priority_score >= 75
-                          ? "bg-emergency"
-                          : selected.priority_score >= 50
-                            ? "bg-high"
-                            : selected.priority_score >= 25
-                              ? "bg-medium"
-                              : "bg-resolved"
-                      }
-                    />
-                    <div className="mt-2 flex items-center justify-between text-[10px] text-[#8b949e]">
-                      <span>Severity {selected.severity_score}/5</span>
-                      <span>Impact {selected.impact_score}/5</span>
-                      <span>{selected.complaint_count} report(s)</span>
-                    </div>
+                  {/* Priority Score Meter — animated radial gauge (§1.2) */}
+                  <div className="flex items-center justify-center rounded-lg border border-[#21262d] bg-[#161b22] p-4">
+                    <PriorityGauge score={selected.priority_score} />
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-[#8b949e]">
+                    <span>Severity {selected.severity_score}/5</span>
+                    <span>Impact {selected.impact_score}/5</span>
+                    <span>{selected.complaint_count} report(s)</span>
                   </div>
 
                   {/* SLA Countdown */}

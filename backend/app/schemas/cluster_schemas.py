@@ -60,6 +60,21 @@ class AnalyticsOut(BaseModel):
     top_category: str
 
 
+class TrendVolumePoint(BaseModel):
+    date: str
+    count: int
+
+
+class TrendCategoryPoint(BaseModel):
+    category: str
+    count: int
+
+
+class TrendsOut(BaseModel):
+    volume: list[TrendVolumePoint]
+    categories: list[TrendCategoryPoint]
+
+
 class AuditOut(BaseModel):
     id: str
     cluster_id: str | None

@@ -82,7 +82,7 @@ def process_new_complaint(
         image_url=image_url,
         latitude=latitude,
         longitude=longitude,
-        embedding=str(embedding),
+        embedding=embedding,
         created_at=now,
     )
 
@@ -95,7 +95,7 @@ def process_new_complaint(
         cluster.impact_score = max(cluster.impact_score, intake.impact)
 
         existing_vec = list(cluster.representative_embedding)
-        cluster.representative_embedding = str(blend(existing_vec, embedding))
+        cluster.representative_embedding = blend(existing_vec, embedding)
 
         # 5. Recompute priority with new recurrence count
         score, tier, deadline = compute_priority(
@@ -130,7 +130,7 @@ def process_new_complaint(
             complaint_count=1,
             latitude=latitude,
             longitude=longitude,
-            representative_embedding=str(embedding),
+            representative_embedding=embedding,
             sla_deadline=deadline,
             first_reported_at=now,
             last_reported_at=now,

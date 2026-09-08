@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import {
   AlertTriangle,
   CheckCircle2,
+  ClipboardList,
   ImagePlus,
   Loader2,
   LogOut,
@@ -150,9 +152,16 @@ export default function ReportPortal() {
           <Radar className="text-accent" size={22} />
           <span className="font-bold tracking-tight text-white">Nivaran · Radar Intake</span>
         </div>
-        <Button variant="ghost" onClick={logout} className="text-sm">
-          <LogOut size={15} /> Sign out
-        </Button>
+        <div className="flex items-center gap-1.5">
+          <Link href="/tracker">
+            <Button variant="ghost" className="text-sm">
+              <ClipboardList size={15} /> My Reports
+            </Button>
+          </Link>
+          <Button variant="ghost" onClick={logout} className="text-sm">
+            <LogOut size={15} /> Sign out
+          </Button>
+        </div>
       </header>
 
       <div className="relative z-10 mx-auto mt-6 grid max-w-6xl gap-5 lg:grid-cols-[1fr_320px]">
@@ -358,6 +367,13 @@ export default function ReportPortal() {
                 <AlertTriangle size={12} className="mt-0.5 shrink-0 text-high" /> {result.reasoning}
               </p>
             )}
+            <Link
+              href="/tracker"
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg border border-accent/40 bg-accent/10 px-4 py-2.5 text-sm font-medium text-accent transition hover:bg-accent/20"
+              onClick={() => setResult(null)}
+            >
+              <ClipboardList size={15} /> Track this report
+            </Link>
           </div>
         )}
       </Dialog>

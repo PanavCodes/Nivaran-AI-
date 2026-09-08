@@ -22,6 +22,7 @@ import { useWebSocket, type WsMessage } from "@/hooks/useWebSocket";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import type { Cluster, ClusterDetail, Complaint } from "@/lib/types";
 import { CATEGORY_LABELS, tierForScore } from "@/lib/types";
@@ -46,7 +47,48 @@ export default function TechnicianConsole() {
   const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [techNotes, setTechNotes] = useState("");
   const [resolveResult, setResolveResult] = useState<ResolveResult | null>(null);
+  const [deferTarget, setDeferTarget] = useState<Cluster | null>(null);
+  const [deferReason, setDeferReason] = useState("Waiting for spare parts");
+  const [deferOther, setDeferOther] = useState("");
+  const [swipeHint, setSwipeHint] = useState<Record<string, "enroute" | "defer">>({});
   const proofRef = useRef<HTMLInputElement>(null);
+
+  const DEFER_REASONS = [
+    "Waiting for spare parts",
+    "Need admin approval / budget",
+    "Access to the area restricted",
+    "Escalated to external vendor",
+    "Re-scheduled — higher priority emergency",
+  ];
+
+  /* ── Field status actions (§1.3 swipes) ── */
+  async function handleEnRoute(clusterId: string) {
+    try {
+      await api.post(`/api/v1/clusters/${clusterId}/status`, { status: "IN_PROGRESS" });
+      toast.success("Marked En-Route — status is now In Progress");
+      fetchQueue();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "En-Route failed");
+    }
+  }
+
+  async function handleDefer() {
+    if (!deferTarget) return;
+    const reason = deferReason === "__other" ? deferOther.trim() : deferReason;
+    if (!reason) {
+      toast.error("Enter a reason for deferring");
+      return;
+    }
+    try {
+      await api.post(`/api/v1/clusters/${deferTarget.id}/status`, { status: "OPEN", reason });
+      toast.success(`Deferred — reason logged: ${reason}`);
+      setDeferTarget(null);
+      setDeferOther("");
+      fetchQueue();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Defer failed");
+    }
+  }
 
   /* ── Auth gate ── */
   useEffect(() => {
@@ -203,24 +245,48 @@ export default function TechnicianConsole() {
               const tier = tierForScore(cluster.priority_score);
               const sla = slaCountdown(cluster.sla_deadline);
               const emergency = tier === "EMERGENCY";
+              const hint = swipeHint[cluster.id];
 
               return (
                 <motion.div
                   key={cluster.id}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
+                  drag="x"
+                  dragConstraints={{ left: 120, right: 120 }}
+                  dragElastic={0.55}
+                  onDragStart={() => setSwipeHint((h) => ({ ...h, [cluster.id]: undefined as never }))}
+                  onDrag={(_, info) =>
+                    setSwipeHint((h) => ({
+                      ...h,
+                      [cluster.id]: info.offset.x > 50 ? "enroute" : info.offset.x < -50 ? "defer" : undefined as never,
+                    }))
+                  }
+                  onDragEnd={(_, info) => {
+                    setSwipeHint((h) => ({ ...h, [cluster.id]: undefined as never }));
+                    if (info.offset.x > 90 && info.velocity.x > 200) handleEnRoute(cluster.id);
+                    else if (info.offset.x < -90 && info.velocity.x < -200) setDeferTarget(cluster);
+                  }}
+                  whileDrag={{ scale: 1.03, cursor: "grabbing" }}
                   transition={{ delay: i * 0.05 }}
                 >
                   <Card
                     className={`cursor-pointer transition hover:border-accent/40 ${
                       emergency ? "border-emergency/40" : ""
-                    }`}
+                    } ${hint === "enroute" ? "border-resolved/60" : ""} ${hint === "defer" ? "border-high/60" : ""}`}
                     onClick={() => {
+                      if (hint) return; // ignore the click that ends a swipe
                       fetchDetail(cluster.id);
                       setResolveResult(null);
                     }}
                   >
                     <CardContent className="p-4">
+                      {/* Swipe affordance row (§1.3: right = En-Route, left = defer) */}
+                      <div className="mb-1 flex items-center justify-between text-[9px] uppercase tracking-wide text-[#8b949e]/70">
+                        <span>⟵ swipe to defer</span>
+                        <span>swipe for En-Route ⟶</span>
+                      </div>
+
                       {/* Tier + SLA row */}
                       <div className="flex items-start justify-between">
                         <Badge variant={tierVariant[tier as keyof typeof tierVariant] ?? "default"}>
@@ -514,6 +580,72 @@ export default function TechnicianConsole() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* ── Defer Reason Picker (§1.3 swipe-left) ── */}
+      <Dialog open={!!deferTarget} onClose={() => setDeferTarget(null)}>
+        {deferTarget && (
+          <div>
+            <h3 className="text-base font-bold text-white">Defer work order</h3>
+            <p className="mt-1 text-xs text-[#8b949e]">
+              {deferTarget.title} — the reason is audit-logged and the cluster returns to OPEN.
+            </p>
+            <div className="mt-4 space-y-2">
+              {DEFER_REASONS.map((r) => (
+                <label
+                  key={r}
+                  className={`flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-sm transition ${
+                    deferReason === r
+                      ? "border-accent bg-accent/10 text-white"
+                      : "border-[#30363d] text-[#c9d1d9] hover:border-accent/40"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="defer-reason"
+                    checked={deferReason === r}
+                    onChange={() => setDeferReason(r)}
+                    className="accent-[#58a6ff]"
+                  />
+                  {r}
+                </label>
+              ))}
+              <label
+                className={`flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-sm transition ${
+                  deferReason === "__other"
+                    ? "border-accent bg-accent/10 text-white"
+                    : "border-[#30363d] text-[#c9d1d9] hover:border-accent/40"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="defer-reason"
+                  checked={deferReason === "__other"}
+                  onChange={() => setDeferReason("__other")}
+                  className="accent-[#58a6ff]"
+                />
+                Other…
+              </label>
+              {deferReason === "__other" && (
+                <textarea
+                  autoFocus
+                  rows={2}
+                  value={deferOther}
+                  onChange={(e) => setDeferOther(e.target.value)}
+                  placeholder="Describe the reason…"
+                  className="w-full rounded-lg border border-[#30363d] bg-[#0d1117] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-[#8b949e] focus:border-accent"
+                />
+              )}
+            </div>
+            <div className="mt-4 flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setDeferTarget(null)}>
+                Cancel
+              </Button>
+              <Button variant="danger" className="flex-1" onClick={handleDefer}>
+                Defer &amp; log reason
+              </Button>
+            </div>
+          </div>
+        )}
+      </Dialog>
     </main>
   );
 }

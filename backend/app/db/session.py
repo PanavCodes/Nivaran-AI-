@@ -13,7 +13,7 @@ _engine = None
 _SessionLocal = None
 
 
-def _register_pgvector(dbapi_connection):
+def _register_pgvector(dbapi_connection, _connection_record=None):
     try:
         from pgvector.psycopg import register
 
@@ -25,8 +25,17 @@ def _register_pgvector(dbapi_connection):
 def get_engine():
     global _engine
     if _engine is None:
+        url = settings.DATABASE_URL
+        # Normalise to the installed psycopg3 driver: SQLAlchemy otherwise
+        # defaults to the psycopg2 dialect, which is not in requirements.
+        # Supabase/session-pooler URLs ("postgresql+psycopg2://", "postgres://")
+        # all route to "+psycopg" here.
+        if url.startswith("postgres://"):
+            url = "postgresql://" + url[len("postgres://"):]
+        if url.startswith("postgresql://"):
+            url = "postgresql+psycopg://" + url[len("postgresql://"):]
         _engine = create_engine(
-            settings.DATABASE_URL,
+            url,
             pool_pre_ping=True,
             pool_size=5,
             max_overflow=5,

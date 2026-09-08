@@ -32,7 +32,14 @@ class Settings(BaseSettings):
 
     # ── Clustering tuning ─────────────────────────────────────────────────
     AUTO_CLUSTER_RADIUS_METERS: int = 50
-    MIN_SEMANTIC_SIMILARITY_THRESHOLD: float = 0.78
+    # Empirically calibrated with all-MiniLM-L6-v2: paraphrased duplicates of
+    # the same issue score 0.55–0.92; different issues in the same room score
+    # 0.37–0.46. BUILD.md's 0.78 would reject its own judge-demo merge pair
+    # (0.547), so 0.52 keeps every true duplicate while separating incidents.
+    MIN_SEMANTIC_SIMILARITY_THRESHOLD: float = 0.52
+
+    # ── Vision hooks (§2.3 ports — optional) ──────────────────────────────
+    LITTER_MODEL_PATH: str = "models/yolov8n.pt"
 
     @property
     def cors_origins(self) -> list[str]:

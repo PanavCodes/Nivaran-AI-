@@ -44,6 +44,11 @@ next-env.d.ts
 # ── Runtime Artifacts ─────────────────────────
 backend/uploads/*
 !backend/uploads/.gitkeep
+# Generated at test runtime by test_full_flow.py (dummy JPEG bytes)
+backend/app/tests/assets/proof_placeholder.jpg
+
+# ── HuggingFace / sentence-transformers model cache ──
+.cache/
 
 # ── IDE / OS ──────────────────────────────────
 .vscode/

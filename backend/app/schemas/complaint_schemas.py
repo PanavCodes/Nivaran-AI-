@@ -41,3 +41,31 @@ class ComplaintSubmissionResult(BaseModel):
     complaint_count: int
     reasoning: str
     message: str
+
+
+class MyClusterSnapshot(BaseModel):
+    """Cluster status embedded in /complaints/mine rows."""
+
+    id: str
+    title: str
+    status: str
+    category: str
+    priority_score: float
+    sla_tier: str
+    complaint_count: int
+    sla_deadline: datetime | None
+    assigned_department: str
+
+
+class MyComplaintOut(BaseModel):
+    """Reporter-facing complaint record with live cluster status."""
+
+    id: str
+    title: str
+    description: str
+    category: str
+    severity: int
+    image_url: str | None
+    resolution_proof_url: str | None
+    created_at: datetime
+    cluster: MyClusterSnapshot | None

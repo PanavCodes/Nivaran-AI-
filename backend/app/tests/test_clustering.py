@@ -22,14 +22,14 @@ def test_similar_texts_score_above_merge_threshold():
     a = embed("Water leaking from pipe in library hallway, floor is wet")
     b = embed("The hallway floor in the library is completely wet due to water dripping from the ceiling")
     sim = float(np.dot(a, b))
-    assert sim >= 0.78, f"expected similarity >= 0.78, got {sim:.3f}"
+    assert sim >= 0.52, f"expected similarity >= 0.52, got {sim:.3f}"
 
 
 def test_different_categories_dissimilar():
     a = embed("Wifi not working in computer lab")
     b = embed("Garbage not collected near canteen dustbin")
     sim = float(np.dot(a, b))
-    assert sim < 0.78
+    assert sim < 0.52
 
 
 def test_blend_keeps_unit_norm_and_weights():

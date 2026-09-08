@@ -5,7 +5,7 @@ from sqlalchemy import text
 
 # ─────────────────────────────────────────────────────────────────────────────
 # SPATIO_SEMANTIC_SEARCH — BUILD.md §3.2 (verbatim). ① bounding-box pre-filter
-# (~50 m ≈ 0.00045°) → ② exact Haversine check → ③ cosine similarity ≥ 0.78.
+# (~50 m ≈ 0.00045°) → ② exact Haversine check → ③ cosine similarity ≥ :threshold (0.52 calibrated).
 # The similarity/distance knobs are also exposed via env (§5.3) by the
 # clustering service, which interpolates them into RADIUS/THRESHOLD markers.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -37,7 +37,7 @@ WHERE
         cos(radians(longitude) - radians(:new_lon)) +
         sin(radians(:new_lat)) * sin(radians(latitude))
     ))) <= :radius_m
-    -- ③ Cosine similarity threshold (0.78 = empirically tuned)
+    -- ③ Cosine similarity threshold (0.52 = empirically calibrated, see config.py)
     AND (1 - (representative_embedding <=> :new_embedding)) >= :threshold
 ORDER BY semantic_similarity DESC
 LIMIT 1

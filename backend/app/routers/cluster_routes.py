@@ -166,6 +166,68 @@ class AssignResponse(BaseModel):
     status: str
 
 
+class StatusChangeRequest(BaseModel):
+    """§1.3 swipe actions — En-Route (IN_PROGRESS) or defer back to OPEN."""
+
+    status: str  # OPEN | IN_PROGRESS
+    reason: str | None = None  # required when deferring
+
+
+class StatusChangeResponse(BaseModel):
+    cluster_id: str
+    status: str
+    action: str
+
+
+@router.post("/{cluster_id}/status", response_model=StatusChangeResponse)
+async def change_status(
+    cluster_id: uuid.UUID,
+    body: StatusChangeRequest,
+    user: User = Depends(require_role("TECHNICIAN", "ADMIN")),
+    db: Session = Depends(get_db),
+):
+    """Technician field transitions: swipe-right → En-Route (IN_PROGRESS),
+    swipe-left → defer with reason (back to OPEN, reason audit-logged)."""
+    cluster = db.get(IssueCluster, cluster_id)
+    if cluster is None:
+        raise HTTPException(status_code=404, detail="Cluster not found.")
+    if cluster.status in ("RESOLVED", "CLOSED"):
+        raise HTTPException(status_code=409, detail="Cluster already resolved.")
+
+    target = body.status.upper()
+    if target == "IN_PROGRESS":
+        action = "EN_ROUTE"
+        cluster.status = "IN_PROGRESS"
+        details = {"technician": user.full_name}
+    elif target == "OPEN":
+        action = "DEFERRED"
+        if not body.reason:
+            raise HTTPException(status_code=422, detail="A reason is required when deferring.")
+        cluster.status = "OPEN"
+        details = {"reason": body.reason, "deferred_by": user.full_name}
+    else:
+        raise HTTPException(status_code=422, detail="status must be OPEN or IN_PROGRESS.")
+
+    db.flush()
+    log_action(db, action_taken=action, cluster_id=cluster.id, actor_id=user.id, details=details)
+
+    payload = {
+        "cluster_id": str(cluster.id),
+        "title": cluster.title,
+        "status": cluster.status,
+        "action": action,
+        "by": user.full_name,
+        **details,
+    }
+    try:
+        await manager.broadcast("admin", "cluster.status_changed", payload)
+        await manager.broadcast("technician", "cluster.status_changed", payload)
+    except Exception as exc:
+        logger.warning(f"WS status broadcast failed: {exc}")
+
+    return StatusChangeResponse(cluster_id=str(cluster.id), status=cluster.status, action=action)
+
+
 @router.patch("/{cluster_id}/assign", response_model=AssignResponse)
 async def assign_technician(
     cluster_id: uuid.UUID,

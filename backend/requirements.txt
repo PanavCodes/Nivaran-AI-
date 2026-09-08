@@ -16,3 +16,5 @@ loguru
 httpx
 numpy
 pytest
+opencv-python-headless
+# ultralytics  # optional — YOLO waste-density hook (litter_detector)

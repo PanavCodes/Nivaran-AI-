@@ -1,0 +1,66 @@
+# Nivaran AI — local development stack (BUILD.md §5.2)
+# usage:  docker compose up --build -d
+#         docker compose exec -T database psql -U postgres -d nivaran_db -f db/seed.sql
+services:
+  database:
+    image: ankane/pgvector:latest
+    container_name: nivaran_pgvector
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: nivaran_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secure_local_db_password
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql
+      - ./backend/db/seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+    networks:
+      - nivaran_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d nivaran_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend_api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nivaran_api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:secure_local_db_password@database:5432/nivaran_db
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - JWT_SECRET=${JWT_SECRET:-dev-only-secret-replace-with-64-char-random-string}
+      - MOCK_AI=${MOCK_AI:-false}
+      - EMBEDDING_MODEL_NAME=all-MiniLM-L6-v2
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - nivaran_network
+    restart: unless-stopped
+
+  frontend_app:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-ws://localhost:8000}
+    container_name: nivaran_ui
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend_api
+    networks:
+      - nivaran_network
+
+volumes:
+  pgdata:
+
+networks:
+  nivaran_network:
+    driver: bridge

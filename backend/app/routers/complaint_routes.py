@@ -2,20 +2,28 @@
 
 POST /api/v1/complaints  (multipart: title, description, latitude, longitude,
 optional image) → runs the full intelligence pipeline → returns cluster info.
+GET  /api/v1/complaints/mine  (student/faculty status tracking — abstract
+"monitor the status of their reports and receive resolution updates")
 """
 import uuid
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from loguru import logger
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db
 from app.ai.gemini_intake import run_intake
-from app.db.models import User
-from app.schemas.complaint_schemas import ComplaintSubmissionResult
+from app.db.models import Complaint, IssueCluster, User
+from app.schemas.complaint_schemas import (
+    ComplaintSubmissionResult,
+    MyComplaintOut,
+    MyClusterSnapshot,
+)
 from app.services.audit_service import log_action
 from app.services.clustering_service import process_new_complaint
+from app.services.priority_service import tier_for_score
 from app.services.websocket_manager import manager
 
 router = APIRouter(prefix="/api/v1/complaints", tags=["Complaints"])
@@ -30,7 +38,8 @@ async def analyze_media(
     user: User = Depends(get_current_user),
 ):
     """Intake AI pre-fill: read the dropped photo, return category/severity/OCR
-    without creating a complaint (§1.1 smart report form)."""
+    without creating a complaint (§1.1 smart report form). Adds the FixMyStreet
+    damage grade (OpenCV) and, for waste scenes, the YOLO litter-density hook."""
     image_bytes = await image.read()
     if len(image_bytes) > 10 * 1024 * 1024:
         raise HTTPException(status_code=422, detail="Image exceeds 10 MB limit.")
@@ -39,13 +48,78 @@ async def analyze_media(
     except Exception as exc:
         logger.warning(f"Analyze pre-fill failed: {exc}")
         return {"category": None, "severity": None, "ocr_text": None}
+
+    # Secondary vision signals (both degrade gracefully when deps/models absent)
+    damage = None
+    litter = None
+    try:
+        from app.vision.damage_grader import grade_damage
+
+        damage = grade_damage(image_bytes)
+    except Exception as exc:
+        logger.debug(f"Damage grading skipped: {exc}")
+    if damage and intake.category == "HOUSEKEEPING":
+        try:
+            from app.vision.litter_detector import detect_waste_density
+
+            litter = detect_waste_density(image_bytes)
+        except Exception as exc:
+            logger.debug(f"Litter detection skipped: {exc}")
+
     return {
         "category": intake.category,
         "severity": intake.severity,
         "impact": intake.impact,
         "ocr_text": intake.ocr_text,
         "ai_title": intake.ai_title,
+        "image_damage": damage,
+        "litter_density": litter,
     }
+
+
+@router.get("/mine", response_model=list[MyComplaintOut])
+def my_complaints(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Status tracking for the reporter's own submissions (abstract Target
+    Users: students 'monitor the status of their reports')."""
+    rows = db.execute(
+        select(Complaint, IssueCluster)
+        .join(IssueCluster, Complaint.cluster_id == IssueCluster.id, isouter=True)
+        .where(Complaint.user_id == user.id)
+        .order_by(Complaint.created_at.desc())
+    ).all()
+
+    out: list[MyComplaintOut] = []
+    for complaint, cluster in rows:
+        snapshot = None
+        if cluster is not None:
+            snapshot = MyClusterSnapshot(
+                id=str(cluster.id),
+                title=cluster.title,
+                status=cluster.status,
+                category=cluster.category,
+                priority_score=cluster.priority_score,
+                sla_tier=tier_for_score(cluster.priority_score),
+                complaint_count=cluster.complaint_count,
+                sla_deadline=cluster.sla_deadline,
+                assigned_department=cluster.assigned_department,
+            )
+        out.append(
+            MyComplaintOut(
+                id=str(complaint.id),
+                title=complaint.title,
+                description=complaint.description,
+                category=complaint.category,
+                severity=complaint.severity,
+                image_url=complaint.image_url,
+                resolution_proof_url=complaint.resolution_proof_url,
+                created_at=complaint.created_at,
+                cluster=snapshot,
+            )
+        )
+    return out
 
 
 @router.post("", response_model=ComplaintSubmissionResult)

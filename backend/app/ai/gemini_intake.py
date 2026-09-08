@@ -38,15 +38,26 @@ Rules:
 
 
 def _keyword_fallback(description: str) -> IntakeResponse:
-    """MOCK_AI offline failsafe — keyword regex fallback."""
+    """MOCK_AI offline failsafe — keyword regex fallback (word-bounded so
+    'hallway' does not match 'hall', 'available' does not match 'lab').
+    Strong structural/electrical signals win before venue keywords so an
+    'elevator in Hostel B' routes to MAINTENANCE, not FACILITIES."""
     cat = "MAINTENANCE"
-    if re.search(r"wifi|internet|computer|printer|network|projector|password|login", description, re.I):
+    if re.search(
+        r"\b(leak\w*|flood\w*|dripp?\w*|pipes?|elevators?|lifts?|escalators?|"
+        r"short[- ]circuits?|wires?|plaster|cracks?|bulbs?|tubes?|lights?|"
+        r"stains?|seep\w*|damp\w*|water logging|wet floor|wet ceiling)\b",
+        description,
+        re.I,
+    ):
+        cat = "MAINTENANCE"
+    elif re.search(r"\b(wifi|wi-?fi|internet|computers?|printers?|network|projectors?|passwords?|login)\b", description, re.I):
         cat = "IT_SUPPORT"
-    elif re.search(r"clean|garbage|waste|litter|dustbin|trash|sanitat", description, re.I):
+    elif re.search(r"\b(clean\w*|garbage|wastes?|litter|dustbins?|trash|sanitat\w*)\b", description, re.I):
         cat = "HOUSEKEEPING"
-    elif re.search(r"admin|document|certificate|form|id card|registrar|fee", description, re.I):
+    elif re.search(r"\b(admin\w*|documents?|certificates?|forms?|id cards?|registrar|fees?)\b", description, re.I):
         cat = "ADMINISTRATION"
-    elif re.search(r"lab|equipment|facility|hall|canteen|classroom|hostel", description, re.I):
+    elif re.search(r"\b(labs?|laborator\w*|equipment|facilit(y|ies)|halls?|canteens?|classrooms?|hostels?)\b", description, re.I):
         cat = "FACILITIES"
     return IntakeResponse(
         category=cat, severity=3, impact=3,
