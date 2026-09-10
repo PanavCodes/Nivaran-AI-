@@ -1,32 +1,22 @@
-"""Geofencing utilities — pattern ported from Community_Compliance
-`backend/utils/geofencing.py` (BUILD.md §2.3): Haversine distance and radius
-checks. The DB-native spatio-semantic query (§3.2) remains the authority for
-clustering; these helpers serve Python-side checks and unit tests."""
+"""Indoor spatial utilities: 2D Euclidean distance and floor boundary checks."""
 import math
 
-EARTH_RADIUS_M = 6_371_000  # BUILD.md §3.2 constant
+
+def euclidean_distance(x1: float, y1: float, x2: float, y2: float) -> float:
+    """Calculates 2D planar distance on the SVG canvas coordinate plane."""
+    return math.hypot(x2 - x1, y2 - y1)
 
 
-def haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    """Great-circle distance in metres (same formula as the SQL query)."""
-    phi1, phi2 = math.radians(lat1), math.radians(lat2)
-    dphi = math.radians(lat2 - lat1)
-    dlmb = math.radians(lon2 - lon1)
-    a = (
-        math.sin(dphi / 2) ** 2
-        + math.cos(phi1) * math.cos(phi2) * math.sin(dlmb / 2) ** 2
-    )
-    return 2 * EARTH_RADIUS_M * math.asin(math.sqrt(a))
-
-
-def within_radius_m(
-    lat1: float, lon1: float, lat2: float, lon2: float, radius_m: float = 50.0
+def within_indoor_radius(
+    floor1: str,
+    x1: float,
+    y1: float,
+    floor2: str,
+    x2: float,
+    y2: float,
+    radius_units: float = 35.0,
 ) -> bool:
-    """True when two coordinate pairs fall inside the clustering radius."""
-    return haversine_m(lat1, lon1, lat2, lon2) <= radius_m
-
-
-def bbox_degrees(radius_m: float) -> float:
-    """Bounding-box half-width in degrees for the SQL pre-filter (§3.2:
-    50 m ≈ 0.00045°)."""
-    return radius_m * 0.000009
+    """Returns True if both points are on the exact same floor AND within radius_units."""
+    if floor1.strip().upper() != floor2.strip().upper():
+        return False
+    return euclidean_distance(x1, y1, x2, y2) <= radius_units

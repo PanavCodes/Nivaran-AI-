@@ -15,8 +15,8 @@ from app.schemas.complaint_schemas import IntakeResponse
 MOCK_AI = settings.MOCK_AI
 
 INTAKE_PROMPT = """
-You are the intake AI for Nivaran — a campus problem intelligence platform.
-Analyse the user complaint text and the attached image (if any).
+You are the intake AI for Nivaran — an indoor campus problem intelligence platform.
+Analyse the user complaint text and the attached image (if any). The building consists of floors: LG, G, 1, 2, 3, 4, 5, 6, 7, 8.
 
 Return ONLY valid JSON with this exact schema:
 {
@@ -26,22 +26,22 @@ Return ONLY valid JSON with this exact schema:
   "nsfw": <true|false>,
   "ocr_text": "<any visible text in the image, or null>",
   "ai_title": "<concise 6–10 word title for this issue>",
-  "reasoning": "<one-sentence explanation of your categorization>"
+  "reasoning": "<one-sentence explanation of your categorization>",
+  "floor": "<LG|G|1|2|3|4|5|6|7|8 or null if not detected>",
+  "room_or_zone": "<name of room, lab, or area if mentioned/detected, e.g. Hardware Lab 1, Dean Office, or null>"
 }
 
 Rules:
 - severity 5 = structural danger / safety risk; 1 = cosmetic / minor inconvenience.
 - impact 5 = affects 100+ students daily; 1 = affects 1–2 people.
 - If nsfw is true, set all other fields to null.
+- Identify the floor and room/area whenever visible in OCR or mentioned in complaint.
 - Never add markdown fences or extra text outside the JSON object.
 """
 
 
 def _keyword_fallback(description: str) -> IntakeResponse:
-    """MOCK_AI offline failsafe — keyword regex fallback (word-bounded so
-    'hallway' does not match 'hall', 'available' does not match 'lab').
-    Strong structural/electrical signals win before venue keywords so an
-    'elevator in Hostel B' routes to MAINTENANCE, not FACILITIES."""
+    """MOCK_AI offline failsafe with indoor floor and room detection."""
     cat = "MAINTENANCE"
     if re.search(
         r"\b(leak\w*|flood\w*|dripp?\w*|pipes?|elevators?|lifts?|escalators?|"
@@ -59,11 +59,31 @@ def _keyword_fallback(description: str) -> IntakeResponse:
         cat = "ADMINISTRATION"
     elif re.search(r"\b(labs?|laborator\w*|equipment|facilit(y|ies)|halls?|canteens?|classrooms?|hostels?)\b", description, re.I):
         cat = "FACILITIES"
+
+    # Detect floor from text
+    detected_floor = None
+    if re.search(r"\b(lower ground|lg|basement)\b", description, re.I):
+        detected_floor = "LG"
+    elif re.search(r"\b(ground floor|ground|g floor)\b", description, re.I):
+        detected_floor = "G"
+    else:
+        m_fl = re.search(r"\b(?:floor\s*([1-8])|([1-8])(?:st|nd|rd|th)?\s*floor|room\s*([1-8])\d\d)\b", description, re.I)
+        if m_fl:
+            detected_floor = m_fl.group(1) or m_fl.group(2) or m_fl.group(3)
+
+    # Detect room
+    detected_room = None
+    m_rm = re.search(r"\b(room\s*\d+|lab\s*\d+|hardware lab\s*\d+|faculty area\s*\d+|dean office|exam\s*\d+|pantry|services|lift)\b", description, re.I)
+    if m_rm:
+        detected_room = m_rm.group(0).title()
+
     return IntakeResponse(
         category=cat, severity=3, impact=3,
         nsfw=False, ocr_text=None,
         ai_title=description[:60],
-        reasoning="MOCK_AI mode — keyword fallback active."
+        reasoning="MOCK_AI mode — indoor keyword fallback active.",
+        floor=detected_floor,
+        room_or_zone=detected_room,
     )
 
 
@@ -121,3 +141,47 @@ def verify_resolution_proof(before_bytes: bytes, after_bytes: bytes) -> dict:
     logger.info(f"Dual-proof verification: verified={result.get('verified')} "
                 f"score={result.get('similarity_score')}")
     return result
+
+
+def recommend_work_order_checklist(category: str, title: str = "", description: str = "") -> dict:
+    """Adapted from CMMS (Atlas CMMS / Grashjs/cmms checklists and taskBases models).
+    Generates required technician tools, replacement parts, and safety precautions."""
+    checklist = {
+        "IT_SUPPORT": {
+            "estimated_hours": 1.5,
+            "safety_gear": ["Anti-static wrist strap", "Rubber sole footwear"],
+            "required_tools": ["RJ45 crimping tool", "Network cable tester", "Precision screwdriver set", "Digital multimeter"],
+            "recommended_parts": ["Cat6 patch cord (5m)", "VGA/HDMI display converter", "Replacement SMPS power supply"],
+            "procedure": ["Verify power delivery and cable connectivity", "Check switch port & IP lease", "Inspect hardware thermal state", "Perform end-to-end diagnostic"]
+        },
+        "MAINTENANCE": {
+            "estimated_hours": 2.5,
+            "safety_gear": ["Insulated electrician gloves (1000V)", "Safety goggles", "Slip-resistant work boots"],
+            "required_tools": ["Adjustable pipe wrench", "Teflon sealing tape", "Digital clamp meter", "Cordless drill", "Step ladder"],
+            "recommended_parts": ["20mm PVC pipe coupling", "E27 18W LED lamp & driver", "Copper wire roll 2.5 sq mm", "Silicone waterproof sealant"],
+            "procedure": ["Isolate local circuit breaker / main water shutoff valve", "Inspect leak source or electrical junction", "Replace damaged pipe segment / fuse unit", "Pressure test and restore power/water"]
+        },
+        "HOUSEKEEPING": {
+            "estimated_hours": 0.75,
+            "safety_gear": ["Heavy-duty nitrile gloves", "Splash-resistant apron", "N95 safety mask"],
+            "required_tools": ["Wet/dry industrial vacuum", "Microfiber flat mop", "Wet-floor safety cones", "Disinfectant atomizer"],
+            "recommended_parts": ["Bio-neutral sanitizing solution 5L", "Heavy duty bin liners", "Spill absorbent granules"],
+            "procedure": ["Deploy yellow wet-floor hazard signage", "Clear liquid hazard with absorbent compound", "Mop with hospital-grade disinfectant", "Ventilate area"]
+        },
+        "FACILITIES": {
+            "estimated_hours": 2.0,
+            "safety_gear": ["Hard hat", "Protective eyewear", "Cut-resistant gloves"],
+            "required_tools": ["Allen key set", "Claw hammer & pry bar", "Impact driver", "Laser distance measurer"],
+            "recommended_parts": ["Heavy-duty door hinge & hydraulic closer", "M6 anchor bolts", "Acoustic ceiling tile (600x600mm)"],
+            "procedure": ["Inspect structural alignment of fixture/door/tile", "Secure framing anchors", "Re-tighten hinge pins & balance door closer", "Verify clearance"]
+        },
+        "ADMINISTRATION": {
+            "estimated_hours": 1.0,
+            "safety_gear": [],
+            "required_tools": ["Official department stamp", "Barcode scanner", "Document scanner"],
+            "recommended_parts": ["University official letterhead", "Tamper-evident verification seals"],
+            "procedure": ["Verify student ID against registrar database", "Draft official incident rectification memo", "Submit for Dean/Registrar signoff"]
+        }
+    }
+    return checklist.get(category.upper(), checklist["MAINTENANCE"])
+

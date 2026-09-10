@@ -17,7 +17,7 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.ai.gemini_intake import verify_resolution_proof
+from app.ai.gemini_intake import recommend_work_order_checklist, verify_resolution_proof
 from app.core.deps import get_current_user, get_db, require_role
 from app.db.models import Complaint, IssueCluster, User
 from app.schemas.cluster_schemas import (
@@ -33,7 +33,8 @@ from app.services.priority_service import tier_for_score
 from app.services.websocket_manager import manager
 from sqlalchemy import or_
 
-from app.db.queries import NEARBY_CLUSTERS
+from app.db.queries import FLOOR_INCIDENT_SUMMARY, NEARBY_CLUSTERS
+from app.schemas.cluster_schemas import FloorSummaryItem
 
 router = APIRouter(prefix="/api/v1/clusters", tags=["Clusters"])
 
@@ -43,6 +44,7 @@ def _tier_deadline_hours(tier: str) -> int:
 
 
 def _cluster_out(c: IssueCluster) -> ClusterOut:
+    checklist = recommend_work_order_checklist(c.category, c.title, c.ai_summary or "")
     return ClusterOut(
         id=str(c.id),
         title=c.title,
@@ -53,27 +55,53 @@ def _cluster_out(c: IssueCluster) -> ClusterOut:
         severity_score=c.severity_score,
         impact_score=c.impact_score,
         complaint_count=c.complaint_count,
-        latitude=float(c.latitude),
-        longitude=float(c.longitude),
+        floor=c.floor,
+        x_coord=float(c.x_coord),
+        y_coord=float(c.y_coord),
+        room_or_zone=c.room_or_zone,
         sla_deadline=c.sla_deadline,
         assigned_technician_id=str(c.assigned_technician_id) if c.assigned_technician_id else None,
         assigned_department=c.assigned_department,
         first_reported_at=c.first_reported_at,
         last_reported_at=c.last_reported_at,
+        work_order_checklist=checklist,
     )
+
+
+@router.get("/floors/summary", response_model=list[FloorSummaryItem])
+def floors_summary(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Floor incident density for the indoor building navigator."""
+    rows = db.execute(FLOOR_INCIDENT_SUMMARY).mappings().all()
+    indexed = {r["floor"]: r for r in rows}
+    all_floors = ["8", "7", "6", "5", "4", "3", "2", "1", "G", "LG"]
+    return [
+        FloorSummaryItem(
+            floor=f,
+            open_count=int(indexed.get(f, {}).get("open_count", 0)),
+            emergency_count=int(indexed.get(f, {}).get("emergency_count", 0)),
+            max_priority=float(indexed.get(f, {}).get("max_priority", 0.0)),
+        )
+        for f in all_floors
+    ]
 
 
 @router.get("/active")
 def active_clusters(
     status: str | None = None,
+    floor: str | None = None,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Active clusters sorted by priority_score desc. `status` = CSV filter."""
+    """Active clusters sorted by priority_score desc. Supports status & floor filtering."""
     q = select(IssueCluster)
     if status:
         wanted = [s.strip().upper() for s in status.split(",") if s.strip()]
         q = q.where(IssueCluster.status.in_(wanted))
+    if floor:
+        q = q.where(IssueCluster.floor == floor.strip().upper())
     q = q.order_by(IssueCluster.priority_score.desc())
     clusters = db.execute(q).scalars().all()
     return [_cluster_out(c).model_dump() for c in clusters]
@@ -81,17 +109,17 @@ def active_clusters(
 
 @router.get("/nearby", response_model=list[NearbyCluster])
 def nearby_clusters(
-    lat: float,
-    lon: float,
+    floor: str,
+    x: float,
+    y: float,
     q: str | None = None,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Nearby active clusters for the intake portal's floating sidebar (§1.1)."""
-    bbox_deg = 0.005  # ~550 m around the reporter
+    """Nearby active clusters on the current indoor floor for the intake portal's floating sidebar."""
     rows = db.execute(
         NEARBY_CLUSTERS,
-        {"lat": lat, "lon": lon, "bbox_deg": bbox_deg, "q": q},
+        {"floor": floor.strip().upper(), "x": x, "y": y, "q": q},
     ).mappings().all()
     return [
         NearbyCluster(
@@ -100,9 +128,11 @@ def nearby_clusters(
             category=r["category"],
             priority_score=r["priority_score"],
             complaint_count=r["complaint_count"],
-            distance_m=round(float(r["distance_m"]), 1),
-            latitude=float(r["latitude"]),
-            longitude=float(r["longitude"]),
+            distance_units=float(r["distance_units"]),
+            floor=r["floor"],
+            x_coord=float(r["x_coord"]),
+            y_coord=float(r["y_coord"]),
+            room_or_zone=r["room_or_zone"],
         )
         for r in rows
     ]
@@ -137,6 +167,7 @@ def cluster_detail(
         .scalars()
         .all()
     )
+
     base = _cluster_out(cluster)
     return ClusterDetail(
         **base.model_dump(),
@@ -151,8 +182,10 @@ def cluster_detail(
                 "category": cp.category,
                 "severity": cp.severity,
                 "image_url": cp.image_url,
-                "latitude": float(cp.latitude),
-                "longitude": float(cp.longitude),
+                "floor": cp.floor,
+                "x_coord": float(cp.x_coord),
+                "y_coord": float(cp.y_coord),
+                "room_or_zone": cp.room_or_zone,
                 "created_at": cp.created_at,
             }
             for cp in complaints
@@ -325,7 +358,8 @@ async def resolve_cluster(
     (Path("uploads") / proof_name).write_bytes(proof_bytes)
 
     cluster.status = "RESOLVED"
-    first_complaint.resolution_proof_url = f"/uploads/{proof_name}"
+    if first_complaint:
+        first_complaint.resolution_proof_url = f"/uploads/{proof_name}"
     db.flush()
 
     log_action(
@@ -379,3 +413,55 @@ def cluster_audit(
         )
         for a in get_cluster_logs(db, cluster_id)
     ]
+
+
+@router.post("/{cluster_id}/reinforce")
+async def reinforce_cluster(
+    cluster_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """'Me Too / Upvote Reinforce' pattern adapted from CampFeed & Civic-Fix.
+    Allows students/faculty to reinforce an existing cluster, boosting urgency and priority."""
+    cluster = db.get(IssueCluster, cluster_id)
+    if cluster is None:
+        raise HTTPException(status_code=404, detail="Cluster not found.")
+
+    # Increment count and boost priority
+    cluster.complaint_count += 1
+    cluster.priority_score = min(100.0, float(cluster.priority_score) + 8.5)
+    cluster.last_reported_at = datetime.now(timezone.utc)
+    db.flush()
+
+    log_action(
+        db,
+        action_taken="CLUSTER_REINFORCED",
+        cluster_id=cluster.id,
+        actor_id=user.id,
+        details={
+            "new_count": cluster.complaint_count,
+            "new_priority": cluster.priority_score,
+            "user": user.full_name,
+        },
+    )
+
+    payload = {
+        "cluster_id": str(cluster.id),
+        "title": cluster.title,
+        "complaint_count": cluster.complaint_count,
+        "priority_score": cluster.priority_score,
+        "floor": cluster.floor,
+        "room_or_zone": cluster.room_or_zone,
+    }
+    try:
+        await manager.broadcast("admin", "cluster.reinforced", payload)
+        await manager.broadcast("technician", "cluster.reinforced", payload)
+    except Exception as exc:
+        logger.warning(f"WS reinforce broadcast failed: {exc}")
+
+    return {
+        "status": "success",
+        "cluster_id": str(cluster.id),
+        "complaint_count": cluster.complaint_count,
+        "priority_score": cluster.priority_score,
+    }

@@ -1,0 +1,1276 @@
+{
+  "LG": [
+    {
+      "id": "Services",
+      "name": "Services",
+      "x": 27.5,
+      "y": 495.8
+    },
+    {
+      "id": "Electrical Panel Room",
+      "name": "Electrical Panel Room",
+      "x": 132.4,
+      "y": 489.8
+    },
+    {
+      "id": "Maintenance Room",
+      "name": "Maintenance Room",
+      "x": 290.1,
+      "y": 489.8
+    },
+    {
+      "id": "Pantry",
+      "name": "Pantry",
+      "x": 307.0,
+      "y": 272.0
+    },
+    {
+      "id": "E. CR LG 1",
+      "name": "E. CR LG 1",
+      "x": 23.0,
+      "y": 338.0
+    },
+    {
+      "id": "Mini Auditorium",
+      "name": "Mini Auditorium",
+      "x": 9.0,
+      "y": 212.0
+    },
+    {
+      "id": "AHU",
+      "name": "AHU",
+      "x": 32.0,
+      "y": 98.0
+    },
+    {
+      "id": "Lift",
+      "name": "Lift",
+      "x": 172.5,
+      "y": 404.9
+    },
+    {
+      "id": "Faculty Dining",
+      "name": "Faculty Dining",
+      "x": 201.0,
+      "y": 339.0
+    },
+    {
+      "id": "Cafeteria (AC)",
+      "name": "Cafeteria (AC)",
+      "x": 129.0,
+      "y": 345.0
+    },
+    {
+      "id": "Cafeteria",
+      "name": "Cafeteria",
+      "x": 161.3,
+      "y": 213.9
+    },
+    {
+      "id": "Lift_2",
+      "name": "Lift_2",
+      "x": 172.5,
+      "y": 131.8
+    },
+    {
+      "id": "Bhagubhai Lift Entrance",
+      "name": "Bhagubhai Lift Entrance",
+      "x": 134.3,
+      "y": 99.4
+    },
+    {
+      "id": "Cooper Lift Entrance",
+      "name": "Cooper Lift Entrance",
+      "x": 140.4,
+      "y": 441.4
+    },
+    {
+      "id": "Fire Fighting output at ceiling level",
+      "name": "Fire Fighting output at ceiling level",
+      "x": 126.2,
+      "y": 44.8
+    }
+  ],
+  "G": [
+    {
+      "id": "AMU Room 1",
+      "name": "AMU Room 1",
+      "x": 15.0,
+      "y": 44.8
+    },
+    {
+      "id": "Exam 2",
+      "name": "Exam 2",
+      "x": 231.3,
+      "y": 44.8
+    },
+    {
+      "id": "Exam 3",
+      "name": "Exam 3",
+      "x": 304.3,
+      "y": 44.8
+    },
+    {
+      "id": "Server Room",
+      "name": "Server Room",
+      "x": 26.9,
+      "y": 489.8
+    },
+    {
+      "id": "IBMS Room",
+      "name": "IBMS Room",
+      "x": 104.3,
+      "y": 489.8
+    },
+    {
+      "id": "E. CR G3",
+      "name": "E. CR G3",
+      "x": 302.0,
+      "y": 164.0
+    },
+    {
+      "id": "Staircase",
+      "name": "Staircase",
+      "x": 301.0,
+      "y": 365.5
+    },
+    {
+      "id": "Staircase to Lower Ground",
+      "name": "Staircase to Lower Ground",
+      "x": 292.0,
+      "y": 424.5
+    },
+    {
+      "id": "E. CR G1",
+      "name": "E. CR G1",
+      "x": 26.0,
+      "y": 316.5
+    },
+    {
+      "id": "E. CR G2",
+      "name": "E. CR G2",
+      "x": 25.0,
+      "y": 262.5
+    },
+    {
+      "id": "Exam 1",
+      "name": "Exam 1",
+      "x": 28.0,
+      "y": 208.5
+    },
+    {
+      "id": "Lift",
+      "name": "Lift",
+      "x": 172.5,
+      "y": 404.9
+    },
+    {
+      "id": "Conference Room",
+      "name": "Conference Room",
+      "x": 189.0,
+      "y": 339.0
+    },
+    {
+      "id": "Admin Department",
+      "name": "Admin Department",
+      "x": 124.0,
+      "y": 339.0
+    },
+    {
+      "id": "Ground Floor_2",
+      "name": "Ground Floor_2",
+      "x": 142.5,
+      "y": 258.5
+    },
+    {
+      "id": "E. CR G5",
+      "name": "E. CR G5",
+      "x": 196.0,
+      "y": 175.0
+    },
+    {
+      "id": "E. CR G4",
+      "name": "E. CR G4",
+      "x": 133.0,
+      "y": 175.0
+    },
+    {
+      "id": "Lift_2",
+      "name": "Lift_2",
+      "x": 172.5,
+      "y": 132.8
+    },
+    {
+      "id": "Bhagubhai Lift Entrance",
+      "name": "Bhagubhai Lift Entrance",
+      "x": 132.2,
+      "y": 99.3
+    },
+    {
+      "id": "Exit and Bhagubhai Entrance",
+      "name": "Exit and Bhagubhai Entrance",
+      "x": 259.1,
+      "y": 96.3
+    },
+    {
+      "id": "Cooper Lift Entrance",
+      "name": "Cooper Lift Entrance",
+      "x": 139.3,
+      "y": 441.3
+    }
+  ],
+  "1": [
+    {
+      "id": "Faculty Area 102",
+      "name": "Faculty Area 102",
+      "x": 38.2,
+      "y": 44.8
+    },
+    {
+      "id": "Faculty Area 101",
+      "name": "Faculty Area 101",
+      "x": 267.3,
+      "y": 44.8
+    },
+    {
+      "id": "Hardware Lab 3",
+      "name": "Hardware Lab 3",
+      "x": 20.9,
+      "y": 489.8
+    },
+    {
+      "id": "Hardware Lab 2",
+      "name": "Hardware Lab 2",
+      "x": 93.9,
+      "y": 489.8
+    },
+    {
+      "id": "Hardware Lab 1",
+      "name": "Hardware Lab 1",
+      "x": 225.4,
+      "y": 489.8
+    },
+    {
+      "id": "Dean Office",
+      "name": "Dean Office",
+      "x": 296.2,
+      "y": 495.8
+    },
+    {
+      "id": "E. CR 104",
+      "name": "E. CR 104",
+      "x": 303.0,
+      "y": 177.0
+    },
+    {
+      "id": "E. CL 101",
+      "name": "E. CL 101",
+      "x": 26.0,
+      "y": 367.0
+    },
+    {
+      "id": "E. CL 102",
+      "name": "E. CL 102",
+      "x": 25.0,
+      "y": 331.0
+    },
+    {
+      "id": "E. CR 101",
+      "name": "E. CR 101",
+      "x": 25.0,
+      "y": 245.5
+    },
+    {
+      "id": "E. CR 102",
+      "name": "E. CR 102",
+      "x": 24.0,
+      "y": 191.5
+    },
+    {
+      "id": "E. CR 103",
+      "name": "E. CR 103",
+      "x": 24.0,
+      "y": 137.5
+    },
+    {
+      "id": "Lift",
+      "name": "Lift",
+      "x": 172.5,
+      "y": 404.9
+    },
+    {
+      "id": "E. CR 105",
+      "name": "E. CR 105",
+      "x": 195.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CR 106",
+      "name": "E. CR 106",
+      "x": 132.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CR 108",
+      "name": "E. CR 108",
+      "x": 195.0,
+      "y": 175.0
+    },
+    {
+      "id": "E. CR 107",
+      "name": "E. CR 107",
+      "x": 132.0,
+      "y": 175.0
+    },
+    {
+      "id": "Lift_2",
+      "name": "Lift_2",
+      "x": 172.5,
+      "y": 132.8
+    },
+    {
+      "id": "Bhagubhai Lift Entrance",
+      "name": "Bhagubhai Lift Entrance",
+      "x": 134.3,
+      "y": 99.4
+    },
+    {
+      "id": "Cooper Lift Entrance",
+      "name": "Cooper Lift Entrance",
+      "x": 140.4,
+      "y": 441.4
+    }
+  ],
+  "2": [
+    {
+      "id": "Faculty Area 202",
+      "name": "Faculty Area 202",
+      "x": 37.2,
+      "y": 44.8
+    },
+    {
+      "id": "Faculty Area 201",
+      "name": "Faculty Area 201",
+      "x": 266.3,
+      "y": 44.8
+    },
+    {
+      "id": "E. CR 202",
+      "name": "E. CR 202",
+      "x": 22.8,
+      "y": 495.8
+    },
+    {
+      "id": "E. CR 201",
+      "name": "E. CR 201",
+      "x": 96.9,
+      "y": 495.8
+    },
+    {
+      "id": "E. CC 201",
+      "name": "E. CC 201",
+      "x": 228.2,
+      "y": 495.8
+    },
+    {
+      "id": "Physics Lab",
+      "name": "Physics Lab",
+      "x": 304.3,
+      "y": 489.8
+    },
+    {
+      "id": "E. CR 204",
+      "name": "E. CR 204",
+      "x": 301.0,
+      "y": 326.0
+    },
+    {
+      "id": "E. CR 203",
+      "name": "E. CR 203",
+      "x": 302.0,
+      "y": 176.0
+    },
+    {
+      "id": "E. TR 201",
+      "name": "E. TR 201",
+      "x": 25.0,
+      "y": 305.5
+    },
+    {
+      "id": "E. TR 202",
+      "name": "E. TR 202",
+      "x": 24.0,
+      "y": 227.5
+    },
+    {
+      "id": "E. TR 203",
+      "name": "E. TR 203",
+      "x": 24.0,
+      "y": 149.5
+    },
+    {
+      "id": "Lift",
+      "name": "Lift",
+      "x": 172.5,
+      "y": 404.9
+    },
+    {
+      "id": "E. CR 206",
+      "name": "E. CR 206",
+      "x": 194.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CR 207",
+      "name": "E. CR 207",
+      "x": 131.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CR 209",
+      "name": "E. CR 209",
+      "x": 194.0,
+      "y": 175.0
+    },
+    {
+      "id": "E. CR 208",
+      "name": "E. CR 208",
+      "x": 131.0,
+      "y": 175.0
+    },
+    {
+      "id": "Lift_2",
+      "name": "Lift_2",
+      "x": 172.5,
+      "y": 132.8
+    },
+    {
+      "id": "Bhagubhai Lift Entrance",
+      "name": "Bhagubhai Lift Entrance",
+      "x": 134.3,
+      "y": 99.4
+    },
+    {
+      "id": "Cooper Lift Entrance",
+      "name": "Cooper Lift Entrance",
+      "x": 140.4,
+      "y": 441.4
+    }
+  ],
+  "3": [
+    {
+      "id": "Faculty Area 302",
+      "name": "Faculty Area 302",
+      "x": 37.3,
+      "y": 44.8
+    },
+    {
+      "id": "Faculty Area 301",
+      "name": "Faculty Area 301",
+      "x": 266.4,
+      "y": 44.8
+    },
+    {
+      "id": "E. CR 302",
+      "name": "E. CR 302",
+      "x": 22.3,
+      "y": 495.8
+    },
+    {
+      "id": "E. CR 301",
+      "name": "E. CR 301",
+      "x": 97.3,
+      "y": 495.8
+    },
+    {
+      "id": "E. CC 301",
+      "name": "E. CC 301",
+      "x": 228.1,
+      "y": 495.8
+    },
+    {
+      "id": "E. TR 303",
+      "name": "E. TR 303",
+      "x": 302.2,
+      "y": 495.8
+    },
+    {
+      "id": "E. CR 306",
+      "name": "E. CR 306",
+      "x": 302.0,
+      "y": 347.0
+    },
+    {
+      "id": "E. CR 305",
+      "name": "E. CR 305",
+      "x": 302.0,
+      "y": 269.0
+    },
+    {
+      "id": "E. CR 304",
+      "name": "E. CR 304",
+      "x": 302.0,
+      "y": 159.0
+    },
+    {
+      "id": "Girls Common Room",
+      "name": "Girls Common Room",
+      "x": 6.0,
+      "y": 287.0
+    },
+    {
+      "id": "E. TR 301",
+      "name": "E. TR 301",
+      "x": 25.0,
+      "y": 251.5
+    },
+    {
+      "id": "E. TR 302",
+      "name": "E. TR 302",
+      "x": 24.0,
+      "y": 197.5
+    },
+    {
+      "id": "E. TR 303_2",
+      "name": "E. TR 303_2",
+      "x": 24.0,
+      "y": 143.5
+    },
+    {
+      "id": "Lift",
+      "name": "Lift",
+      "x": 172.5,
+      "y": 404.9
+    },
+    {
+      "id": "E. CR 307",
+      "name": "E. CR 307",
+      "x": 194.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CR 308",
+      "name": "E. CR 308",
+      "x": 131.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CR 310",
+      "name": "E. CR 310",
+      "x": 195.0,
+      "y": 175.0
+    },
+    {
+      "id": "E. CR 309",
+      "name": "E. CR 309",
+      "x": 131.0,
+      "y": 175.0
+    },
+    {
+      "id": "Lift_2",
+      "name": "Lift_2",
+      "x": 172.5,
+      "y": 132.8
+    },
+    {
+      "id": "Bhagubhai Lift Entrance",
+      "name": "Bhagubhai Lift Entrance",
+      "x": 134.3,
+      "y": 99.4
+    },
+    {
+      "id": "Cooper Lift Entrance",
+      "name": "Cooper Lift Entrance",
+      "x": 140.4,
+      "y": 441.4
+    }
+  ],
+  "4": [
+    {
+      "id": "Faculty Area 402",
+      "name": "Faculty Area 402",
+      "x": 37.2,
+      "y": 44.8
+    },
+    {
+      "id": "Faculty Area 401",
+      "name": "Faculty Area 401",
+      "x": 266.3,
+      "y": 44.8
+    },
+    {
+      "id": "E. CR 402",
+      "name": "E. CR 402",
+      "x": 22.1,
+      "y": 495.8
+    },
+    {
+      "id": "E. CR 401",
+      "name": "E. CR 401",
+      "x": 97.1,
+      "y": 495.8
+    },
+    {
+      "id": "E. CL 408",
+      "name": "E. CL 408",
+      "x": 219.1,
+      "y": 495.8
+    },
+    {
+      "id": "E. CL 407",
+      "name": "E. CL 407",
+      "x": 267.4,
+      "y": 495.8
+    },
+    {
+      "id": "E. TR 401",
+      "name": "E. TR 401",
+      "x": 316.1,
+      "y": 495.8
+    },
+    {
+      "id": "E. CR 404",
+      "name": "E. CR 404",
+      "x": 302.0,
+      "y": 350.0
+    },
+    {
+      "id": "E. CR 403",
+      "name": "E. CR 403",
+      "x": 302.0,
+      "y": 280.0
+    },
+    {
+      "id": "DE LAB",
+      "name": "DE LAB",
+      "x": 307.0,
+      "y": 192.0
+    },
+    {
+      "id": "ES LAB",
+      "name": "ES LAB",
+      "x": 307.0,
+      "y": 137.0
+    },
+    {
+      "id": "E. CL 401",
+      "name": "E. CL 401",
+      "x": 25.0,
+      "y": 325.0
+    },
+    {
+      "id": "E. CL 402",
+      "name": "E. CL 402",
+      "x": 24.0,
+      "y": 284.0
+    },
+    {
+      "id": "E. CL 403",
+      "name": "E. CL 403",
+      "x": 24.0,
+      "y": 245.0
+    },
+    {
+      "id": "E. CL 404",
+      "name": "E. CL 404",
+      "x": 24.0,
+      "y": 206.0
+    },
+    {
+      "id": "E. CL 405",
+      "name": "E. CL 405",
+      "x": 24.0,
+      "y": 167.0
+    },
+    {
+      "id": "E. CL 406",
+      "name": "E. CL 406",
+      "x": 24.0,
+      "y": 128.0
+    },
+    {
+      "id": "Lift",
+      "name": "Lift",
+      "x": 172.5,
+      "y": 404.9
+    },
+    {
+      "id": "E. CR 405",
+      "name": "E. CR 405",
+      "x": 194.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CR 406",
+      "name": "E. CR 406",
+      "x": 131.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CR 408",
+      "name": "E. CR 408",
+      "x": 194.0,
+      "y": 175.0
+    },
+    {
+      "id": "E. CR 407",
+      "name": "E. CR 407",
+      "x": 131.0,
+      "y": 175.0
+    },
+    {
+      "id": "Lift_2",
+      "name": "Lift_2",
+      "x": 172.5,
+      "y": 132.8
+    },
+    {
+      "id": "Bhagubhai Lift Entrance",
+      "name": "Bhagubhai Lift Entrance",
+      "x": 134.3,
+      "y": 99.4
+    },
+    {
+      "id": "Cooper Lift Entrance",
+      "name": "Cooper Lift Entrance",
+      "x": 140.4,
+      "y": 441.4
+    }
+  ],
+  "5": [
+    {
+      "id": "Faculty Area 502",
+      "name": "Faculty Area 502",
+      "x": 37.2,
+      "y": 44.8
+    },
+    {
+      "id": "Faculty Area 501",
+      "name": "Faculty Area 501",
+      "x": 266.3,
+      "y": 44.8
+    },
+    {
+      "id": "Lift",
+      "name": "Lift",
+      "x": 172.5,
+      "y": 404.9
+    },
+    {
+      "id": "E. CR 506",
+      "name": "E. CR 506",
+      "x": 194.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CR 507",
+      "name": "E. CR 507",
+      "x": 131.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CR 504",
+      "name": "E. CR 504",
+      "x": 194.0,
+      "y": 175.0
+    },
+    {
+      "id": "E. CR 508",
+      "name": "E. CR 508",
+      "x": 131.0,
+      "y": 175.0
+    },
+    {
+      "id": "Lift_2",
+      "name": "Lift_2",
+      "x": 172.5,
+      "y": 132.8
+    },
+    {
+      "id": "Bhagubhai Lift Entrance",
+      "name": "Bhagubhai Lift Entrance",
+      "x": 134.3,
+      "y": 99.4
+    },
+    {
+      "id": "Cooper Lift Entrance",
+      "name": "Cooper Lift Entrance",
+      "x": 140.4,
+      "y": 441.4
+    },
+    {
+      "id": "Boys Common Room",
+      "name": "Boys Common Room",
+      "x": 6.0,
+      "y": 283.0
+    },
+    {
+      "id": "E. TR 501",
+      "name": "E. TR 501",
+      "x": 25.0,
+      "y": 251.5
+    },
+    {
+      "id": "E. CL 501",
+      "name": "E. CL 501",
+      "x": 25.0,
+      "y": 202.5
+    },
+    {
+      "id": "E. CR 503",
+      "name": "E. CR 503",
+      "x": 23.0,
+      "y": 144.5
+    },
+    {
+      "id": "E. CR 502",
+      "name": "E. CR 502",
+      "x": 22.1,
+      "y": 495.8
+    },
+    {
+      "id": "E. CR 501",
+      "name": "E. CR 501",
+      "x": 97.1,
+      "y": 495.8
+    },
+    {
+      "id": "E. CL 506",
+      "name": "E. CL 506",
+      "x": 219.1,
+      "y": 495.8
+    },
+    {
+      "id": "E. CL 505",
+      "name": "E. CL 505",
+      "x": 267.1,
+      "y": 495.8
+    },
+    {
+      "id": "E. CL 504",
+      "name": "E. CL 504",
+      "x": 315.1,
+      "y": 495.8
+    },
+    {
+      "id": "E. CR 505",
+      "name": "E. CR 505",
+      "x": 302.0,
+      "y": 349.0
+    },
+    {
+      "id": "E. CR 509",
+      "name": "E. CR 509",
+      "x": 302.0,
+      "y": 279.0
+    },
+    {
+      "id": "E. CL 503",
+      "name": "E. CL 503",
+      "x": 303.0,
+      "y": 191.0
+    },
+    {
+      "id": "E. CL 502",
+      "name": "E. CL 502",
+      "x": 302.0,
+      "y": 136.0
+    }
+  ],
+  "6": [
+    {
+      "id": "Faculty Area 602",
+      "name": "Faculty Area 602",
+      "x": 37.1,
+      "y": 44.8
+    },
+    {
+      "id": "Faculty Area 601",
+      "name": "Faculty Area 601",
+      "x": 266.2,
+      "y": 44.8
+    },
+    {
+      "id": "E. CR 602",
+      "name": "E. CR 602",
+      "x": 22.6,
+      "y": 495.8
+    },
+    {
+      "id": "E. CR 601",
+      "name": "E. CR 601",
+      "x": 96.6,
+      "y": 495.8
+    },
+    {
+      "id": "AI LAB",
+      "name": "AI LAB",
+      "x": 233.4,
+      "y": 495.8
+    },
+    {
+      "id": "Robotics Lab",
+      "name": "Robotics Lab",
+      "x": 294.1,
+      "y": 495.8
+    },
+    {
+      "id": "Lift",
+      "name": "Lift",
+      "x": 172.5,
+      "y": 404.9
+    },
+    {
+      "id": "E. CR 606",
+      "name": "E. CR 606",
+      "x": 194.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CR 607",
+      "name": "E. CR 607",
+      "x": 131.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CR 609",
+      "name": "E. CR 609",
+      "x": 194.0,
+      "y": 175.0
+    },
+    {
+      "id": "E. CR 608",
+      "name": "E. CR 608",
+      "x": 131.0,
+      "y": 175.0
+    },
+    {
+      "id": "Lift_2",
+      "name": "Lift_2",
+      "x": 172.5,
+      "y": 132.8
+    },
+    {
+      "id": "Bhagubhai Lift Entrance",
+      "name": "Bhagubhai Lift Entrance",
+      "x": 134.3,
+      "y": 99.4
+    },
+    {
+      "id": "Cooper Lift Entrance",
+      "name": "Cooper Lift Entrance",
+      "x": 140.4,
+      "y": 441.4
+    },
+    {
+      "id": "E. CR 603",
+      "name": "E. CR 603",
+      "x": 7.0,
+      "y": 281.0
+    },
+    {
+      "id": "E. TR 601",
+      "name": "E. TR 601",
+      "x": 26.0,
+      "y": 249.5
+    },
+    {
+      "id": "E. CL 601",
+      "name": "E. CL 601",
+      "x": 26.0,
+      "y": 200.5
+    },
+    {
+      "id": "E. CR 604",
+      "name": "E. CR 604",
+      "x": 24.0,
+      "y": 143.5
+    },
+    {
+      "id": "E. CR 605",
+      "name": "E. CR 605",
+      "x": 302.0,
+      "y": 358.0
+    },
+    {
+      "id": "E. CL 603",
+      "name": "E. CL 603",
+      "x": 303.0,
+      "y": 305.5
+    },
+    {
+      "id": "E. CL 602",
+      "name": "E. CL 602",
+      "x": 303.0,
+      "y": 258.5
+    },
+    {
+      "id": "Basic Communication Lab",
+      "name": "Basic Communication Lab",
+      "x": 282.0,
+      "y": 172.0
+    },
+    {
+      "id": "Advance Communication Lab",
+      "name": "Advance Communication Lab",
+      "x": 285.0,
+      "y": 120.0
+    }
+  ],
+  "7": [
+    {
+      "id": "Faculty Area 701",
+      "name": "Faculty Area 701",
+      "x": 265.2,
+      "y": 45.8
+    },
+    {
+      "id": "E. CC 701",
+      "name": "E. CC 701",
+      "x": 23.3,
+      "y": 495.8
+    },
+    {
+      "id": "E. CR 701",
+      "name": "E. CR 701",
+      "x": 97.0,
+      "y": 495.8
+    },
+    {
+      "id": "AR/VR LAB",
+      "name": "AR/VR LAB",
+      "x": 225.4,
+      "y": 495.8
+    },
+    {
+      "id": "E. CL 705",
+      "name": "E. CL 705",
+      "x": 302.5,
+      "y": 495.8
+    },
+    {
+      "id": "E. CL 704",
+      "name": "E. CL 704",
+      "x": 302.0,
+      "y": 363.5
+    },
+    {
+      "id": "E. CL 703",
+      "name": "E. CL 703",
+      "x": 302.0,
+      "y": 319.5
+    },
+    {
+      "id": "E. CL 702",
+      "name": "E. CL 702",
+      "x": 302.0,
+      "y": 275.5
+    },
+    {
+      "id": "E. CL 701",
+      "name": "E. CL 701",
+      "x": 303.0,
+      "y": 231.5
+    },
+    {
+      "id": "E. CR 702",
+      "name": "E. CR 702",
+      "x": 302.0,
+      "y": 147.5
+    },
+    {
+      "id": "Library",
+      "name": "Library",
+      "x": 31.0,
+      "y": 171.0
+    },
+    {
+      "id": "Lift",
+      "name": "Lift",
+      "x": 172.5,
+      "y": 404.9
+    },
+    {
+      "id": "E. CR 703",
+      "name": "E. CR 703",
+      "x": 194.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CR 704",
+      "name": "E. CR 704",
+      "x": 131.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CC 702",
+      "name": "E. CC 702",
+      "x": 194.0,
+      "y": 175.0
+    },
+    {
+      "id": "E. CL 706",
+      "name": "E. CL 706",
+      "x": 132.0,
+      "y": 175.0
+    },
+    {
+      "id": "Lift_2",
+      "name": "Lift_2",
+      "x": 172.5,
+      "y": 132.8
+    },
+    {
+      "id": "Bhagubhai Lift Entrance",
+      "name": "Bhagubhai Lift Entrance",
+      "x": 134.3,
+      "y": 99.4
+    },
+    {
+      "id": "Cooper Lift Entrance",
+      "name": "Cooper Lift Entrance",
+      "x": 140.4,
+      "y": 441.4
+    }
+  ],
+  "8": [
+    {
+      "id": "Faculty Area 302",
+      "name": "Faculty Area 302",
+      "x": 30.3,
+      "y": 44.8
+    },
+    {
+      "id": "Additive Manufacturing Lab",
+      "name": "Additive Manufacturing Lab",
+      "x": 204.7,
+      "y": 34.8
+    },
+    {
+      "id": "Faculty Area 301",
+      "name": "Faculty Area 301",
+      "x": 275.4,
+      "y": 44.8
+    },
+    {
+      "id": "Placement Office 1 and 2",
+      "name": "Placement Office 1 and 2",
+      "x": 13.5,
+      "y": 495.8
+    },
+    {
+      "id": "E. CL 804",
+      "name": "E. CL 804",
+      "x": 228.1,
+      "y": 495.8
+    },
+    {
+      "id": "E. CR 801",
+      "name": "E. CR 801",
+      "x": 302.1,
+      "y": 495.8
+    },
+    {
+      "id": "Placement Office 3",
+      "name": "Placement Office 3",
+      "x": 148.5,
+      "y": 489.8
+    },
+    {
+      "id": "E. CL 803",
+      "name": "E. CL 803",
+      "x": 302.0,
+      "y": 285.0
+    },
+    {
+      "id": "E. CL 802",
+      "name": "E. CL 802",
+      "x": 302.0,
+      "y": 241.0
+    },
+    {
+      "id": "E. CC 801",
+      "name": "E. CC 801",
+      "x": 302.0,
+      "y": 152.0
+    },
+    {
+      "id": "Hydraulics Lab",
+      "name": "Hydraulics Lab",
+      "x": 21.0,
+      "y": 320.0
+    },
+    {
+      "id": "E. CL 801",
+      "name": "E. CL 801",
+      "x": 23.0,
+      "y": 279.0
+    },
+    {
+      "id": "Automation Lab",
+      "name": "Automation Lab",
+      "x": 19.0,
+      "y": 227.0
+    },
+    {
+      "id": "Pneumatic Lab",
+      "name": "Pneumatic Lab",
+      "x": 21.0,
+      "y": 179.0
+    },
+    {
+      "id": "Sensor IOT Lab",
+      "name": "Sensor IOT Lab",
+      "x": 20.0,
+      "y": 133.0
+    },
+    {
+      "id": "Lift",
+      "name": "Lift",
+      "x": 172.5,
+      "y": 404.9
+    },
+    {
+      "id": "E. CC 802",
+      "name": "E. CC 802",
+      "x": 193.0,
+      "y": 345.0
+    },
+    {
+      "id": "E. CC 803",
+      "name": "E. CC 803",
+      "x": 130.0,
+      "y": 345.0
+    },
+    {
+      "id": "V.C. Room 2",
+      "name": "V.C. Room 2",
+      "x": 188.0,
+      "y": 175.0
+    },
+    {
+      "id": "V.C. Room 1",
+      "name": "V.C. Room 1",
+      "x": 126.0,
+      "y": 175.0
+    },
+    {
+      "id": "Lift_2",
+      "name": "Lift_2",
+      "x": 172.5,
+      "y": 132.8
+    },
+    {
+      "id": "Bhagubhai Lift Entrance",
+      "name": "Bhagubhai Lift Entrance",
+      "x": 134.3,
+      "y": 99.4
+    },
+    {
+      "id": "Cooper Lift Entrance",
+      "name": "Cooper Lift Entrance",
+      "x": 140.4,
+      "y": 441.4
+    }
+  ]
+}

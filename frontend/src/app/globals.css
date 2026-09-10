@@ -135,19 +135,14 @@ body {
     0 0 24px rgba(255, 204, 0, 0.12);
 }
 
-/* Leaflet dark canvas integration */
-.leaflet-container {
-  background: #0d1117;
-  font-family: inherit;
+/* Indoor SVG Blueprint Styling */
+.floor-blueprint-svg {
+  filter: drop-shadow(0 0 12px rgba(88, 166, 255, 0.08));
 }
-.leaflet-tile {
-  filter: brightness(0.75) hue-rotate(180deg) invert(1) contrast(0.9) saturate(0.4);
-}
-.leaflet-popup-content-wrapper,
-.leaflet-popup-tip {
-  background: #161b22;
-  color: #e6edf3;
-  border: 1px solid #21262d;
+
+.floor-blueprint-svg text {
+  font-family: var(--font-inter), system-ui, sans-serif;
+  user-select: none;
 }
 
 /* SLA countdown flash when < 30 min */

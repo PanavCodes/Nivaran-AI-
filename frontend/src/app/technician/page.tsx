@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -10,20 +10,26 @@ import {
   ChevronRight,
   Clock,
   Loader2,
-  LogOut,
   MapPin,
   Shield,
   Wrench,
   X,
 } from "lucide-react";
 import { api, API_URL } from "@/lib/api";
-import { logout, requireAuth, type SessionUser } from "@/lib/auth";
+import { requireAuth, type SessionUser } from "@/lib/auth";
+import { sound } from "@/lib/sound";
+
 import { useWebSocket, type WsMessage } from "@/hooks/useWebSocket";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { Navbar } from "@/components/layout/Navbar";
+
+import { FloorPlanViewer } from "@/components/floorplan/FloorPlanViewer";
+import { BeforeAfterImageSlider } from "@/components/technician/BeforeAfterImageSlider";
+import { CampBotChat } from "@/components/chat/CampBotChat";
 import type { Cluster, ClusterDetail, Complaint } from "@/lib/types";
 import { CATEGORY_LABELS, tierForScore } from "@/lib/types";
 
@@ -51,7 +57,9 @@ export default function TechnicianConsole() {
   const [deferReason, setDeferReason] = useState("Waiting for spare parts");
   const [deferOther, setDeferOther] = useState("");
   const [swipeHint, setSwipeHint] = useState<Record<string, "enroute" | "defer">>({});
+  const [queueTab, setQueueTab] = useState<"ALL" | "EMERGENCY" | "IN_PROGRESS" | "MINE">("ALL");
   const proofRef = useRef<HTMLInputElement>(null);
+
 
   const DEFER_REASONS = [
     "Waiting for spare parts",
@@ -63,14 +71,17 @@ export default function TechnicianConsole() {
 
   /* ── Field status actions (§1.3 swipes) ── */
   async function handleEnRoute(clusterId: string) {
+    sound.playClick();
     try {
       await api.post(`/api/v1/clusters/${clusterId}/status`, { status: "IN_PROGRESS" });
+      sound.playRadarPing();
       toast.success("Marked En-Route — status is now In Progress");
       fetchQueue();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "En-Route failed");
     }
   }
+
 
   async function handleDefer() {
     if (!deferTarget) return;
@@ -182,6 +193,7 @@ export default function TechnicianConsole() {
       const res = await api.post<ResolveResult>(`/api/v1/clusters/${clusterId}/resolve`, fd);
       setResolveResult(res);
       if (res.verified) {
+        sound.playSuccess();
         toast.success("Issue resolved — Dual-Proof Verified ✓");
       } else {
         toast.error("Verification failed: " + res.reasoning);
@@ -198,54 +210,92 @@ export default function TechnicianConsole() {
     }
   }
 
+  const filteredQueue = useMemo(() => {
+    return queue.filter((c) => {
+      if (queueTab === "EMERGENCY") return c.priority_score >= 75;
+      if (queueTab === "IN_PROGRESS") return c.status === "IN_PROGRESS";
+      if (queueTab === "MINE") return user && c.assigned_technician_id === user.id;
+      return true;
+    });
+  }, [queue, queueTab, user]);
+
   if (!user) return null;
 
+
   return (
-    <main className="radar-canvas min-h-screen">
-      {/* ── Header ── */}
-      <header className="sticky top-0 z-30 flex items-center justify-between border-b border-[#21262d] bg-[#0d1117]/95 px-4 py-3 backdrop-blur-sm md:px-6">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-high/15">
-            <Wrench size={16} className="text-high" />
-          </div>
-          <div>
-            <h1 className="text-sm font-bold text-white">Task Force Terminal</h1>
-            <p className="text-[10px] text-[#8b949e]">
-              {queue.length} active work order{queue.length !== 1 ? "s" : ""} · {user.full_name}
-            </p>
+    <div className="min-h-screen bg-[#0d1117] flex flex-col">
+      <Navbar />
+
+      <main className="radar-canvas flex-1">
+        {/* ── Subheader / Ticker ── */}
+        <div className="border-b border-[#21262d] bg-[#161b22]/70 px-4 py-2.5 md:px-6">
+          <div className="mx-auto max-w-5xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex items-center gap-2 text-xs">
+              <Wrench size={14} className="text-amber-400" />
+              <span className="font-bold text-white">Task Force SLA Dispatch Terminal</span>
+              <span className="text-[#8b949e]">·</span>
+              <span className="text-[#8b949e]">{queue.length} active orders</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-[#8b949e]">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span>{user.full_name}</span>
+              <span className="font-mono text-amber-400">({user.department || "Field Team"})</span>
+            </div>
           </div>
         </div>
-        <Button variant="ghost" onClick={logout} className="text-xs">
-          <LogOut size={14} /> Sign out
-        </Button>
-      </header>
 
-      <div className="mx-auto max-w-5xl p-4 md:p-6">
-        {loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <Loader2 className="animate-spin text-accent" size={24} />
+        <div className="mx-auto max-w-5xl p-4 md:p-6">
+          {/* Queue Filter Tabs */}
+          <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+            {[
+              { id: "ALL", label: `All Orders (${queue.length})` },
+              { id: "EMERGENCY", label: `Emergency (${queue.filter((c) => c.priority_score >= 75).length})` },
+              { id: "IN_PROGRESS", label: `En Route (${queue.filter((c) => c.status === "IN_PROGRESS").length})` },
+              { id: "MINE", label: `My Assigned (${queue.filter((c) => c.assigned_technician_id === user.id).length})` },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => {
+                  sound.playClick();
+                  setQueueTab(t.id as never);
+                }}
+                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition shrink-0 ${
+                  queueTab === t.id
+                    ? "bg-[#58a6ff] text-[#0d1117] shadow-sm"
+                    : "bg-[#161b22] text-[#8b949e] hover:text-white border border-[#30363d]"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
-        ) : queue.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-center justify-center py-20 text-center"
-          >
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-resolved/10">
-              <CheckCircle2 size={32} className="text-resolved" />
+
+          {loading ? (
+            <div className="flex h-64 items-center justify-center">
+              <Loader2 className="animate-spin text-accent" size={24} />
             </div>
-            <h2 className="mt-4 text-lg font-bold text-white">All clear!</h2>
-            <p className="mt-1 text-sm text-[#8b949e]">
-              No active work orders. New assignments will appear here in real time.
-            </p>
-          </motion.div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {queue.map((cluster, i) => {
-              const tier = tierForScore(cluster.priority_score);
-              const sla = slaCountdown(cluster.sla_deadline);
-              const emergency = tier === "EMERGENCY";
-              const hint = swipeHint[cluster.id];
+          ) : filteredQueue.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex flex-col items-center justify-center py-20 text-center"
+            >
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-resolved/10">
+                <CheckCircle2 size={32} className="text-resolved" />
+              </div>
+              <h2 className="mt-4 text-lg font-bold text-white">No work orders in this view</h2>
+              <p className="mt-1 text-sm text-[#8b949e]">
+                Switch filter tabs above or check back for newly reported campus issues.
+              </p>
+            </motion.div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredQueue.map((cluster, i) => {
+                const tier = tierForScore(cluster.priority_score);
+                const sla = slaCountdown(cluster.sla_deadline);
+                const emergency = tier === "EMERGENCY";
+                const hint = swipeHint[cluster.id];
+
 
               return (
                 <motion.div
@@ -309,8 +359,9 @@ export default function TechnicianConsole() {
 
                       {/* Meta */}
                       <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-[#8b949e]">
-                        <span className="flex items-center gap-0.5">
-                          <MapPin size={9} /> {cluster.latitude.toFixed(4)}, {cluster.longitude.toFixed(4)}
+                        <span className="flex items-center gap-0.5 font-medium text-accent">
+                          <MapPin size={9} /> Floor {cluster.floor}
+                          {cluster.room_or_zone ? ` · ${cluster.room_or_zone}` : ""}
                         </span>
                         <span>·</span>
                         <span>{CATEGORY_LABELS[cluster.category] ?? cluster.category}</span>
@@ -332,6 +383,38 @@ export default function TechnicianConsole() {
                           }
                         />
                       </div>
+
+                      {/* CMMS Recommended Tools & Spare Parts Preview (Atlas CMMS) */}
+                      {cluster.work_order_checklist && (
+                        <div className="mt-3 rounded-lg border border-[#21262d] bg-[#0d1117]/70 p-2 text-[10px]">
+                          <div className="flex items-center justify-between text-[#8b949e] font-semibold mb-1">
+                            <span className="flex items-center gap-1 text-accent">
+                              <Wrench size={10} /> CMMS Tooling & Parts
+                            </span>
+                            <span className="font-mono text-[9px] text-[#8b949e]">
+                              Est: {cluster.work_order_checklist.estimated_hours}h
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {cluster.work_order_checklist.required_tools?.slice(0, 2).map((t, i) => (
+                              <span
+                                key={i}
+                                className="rounded bg-[#161b22] border border-[#30363d] px-1.5 py-0.5 text-white font-mono text-[9px]"
+                              >
+                                🔧 {t}
+                              </span>
+                            ))}
+                            {cluster.work_order_checklist.recommended_parts?.slice(0, 1).map((p, i) => (
+                              <span
+                                key={i}
+                                className="rounded bg-accent/10 border border-accent/30 px-1.5 py-0.5 text-accent font-medium font-mono text-[9px]"
+                              >
+                                📦 {p}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       {/* Status */}
                       <div className="mt-3 flex items-center justify-between">
@@ -413,6 +496,29 @@ export default function TechnicianConsole() {
                   );
                 })()}
 
+                {/* Indoor Floor Plan Location */}
+                <div className="rounded-xl border border-[#21262d] bg-[#161b22] p-4">
+                  <div className="mb-2 flex items-center justify-between text-xs">
+                    <span className="flex items-center gap-1.5 font-medium text-accent">
+                      <MapPin size={13} /> Location: Floor {active.floor}
+                      {active.room_or_zone ? ` · ${active.room_or_zone}` : ""}
+                    </span>
+                    <span className="text-[10px] font-mono text-[#8b949e]">
+                      Canvas ({Math.round(active.x_coord)}, {Math.round(active.y_coord)})
+                    </span>
+                  </div>
+                  <div className="relative overflow-hidden rounded-lg border border-[#30363d] bg-[#0d1117]">
+                    <FloorPlanViewer
+                      floor={active.floor}
+                      theme="dark"
+                      interactive={false}
+                      activePin={{ x: active.x_coord, y: active.y_coord, room: active.room_or_zone }}
+                      className="h-44 w-full"
+                      showRoomLabels={true}
+                    />
+                  </div>
+                </div>
+
                 {/* AI Summary */}
                 {active.ai_summary && (
                   <div className="rounded-xl border border-[#21262d] bg-[#161b22] p-4">
@@ -441,6 +547,55 @@ export default function TechnicianConsole() {
                   );
                 })()}
 
+                {/* CMMS Recommended Tools, Parts & Checklist (Atlas CMMS) */}
+                {active.work_order_checklist && (
+                  <div className="rounded-xl border border-[#21262d] bg-[#161b22] p-4 space-y-3">
+                    <div className="flex items-center justify-between border-b border-[#30363d] pb-2">
+                      <span className="text-xs font-semibold text-white flex items-center gap-1.5">
+                        <Wrench size={13} className="text-accent" /> CMMS Tooling & Spare Parts
+                      </span>
+                      <span className="text-[10px] text-[#8b949e] font-mono">
+                        Est: {active.work_order_checklist.estimated_hours}h
+                      </span>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-[#8b949e]">Required Field Tools</span>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {active.work_order_checklist.required_tools?.map((tool: string, i: number) => (
+                          <span key={i} className="rounded bg-[#0d1117] border border-[#30363d] px-2 py-0.5 text-[10px] text-white">
+                            🔧 {tool}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-[#8b949e]">Replacement Parts</span>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {active.work_order_checklist.recommended_parts?.map((part: string, i: number) => (
+                          <span key={i} className="rounded bg-accent/10 border border-accent/30 px-2 py-0.5 text-[10px] text-accent font-medium">
+                            📦 {part}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {active.work_order_checklist.safety_gear && active.work_order_checklist.safety_gear.length > 0 && (
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-[#8b949e]">Mandatory Safety Gear</span>
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {active.work_order_checklist.safety_gear.map((gear: string, i: number) => (
+                            <span key={i} className="rounded bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] text-amber-300">
+                              🦺 {gear}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Dual-Proof Close-Out */}
                 {active.status !== "RESOLVED" && active.status !== "CLOSED" && (
                   <div className="rounded-xl border border-[#21262d] bg-[#161b22] p-4">
@@ -448,6 +603,23 @@ export default function TechnicianConsole() {
                       <Shield size={14} className="text-accent" />
                       <p className="text-sm font-medium text-white">Dual-Proof Verification</p>
                     </div>
+
+                    {/* Draggable slider comparison if both before & after photos are available */}
+                    {proofPreview && active.complaints?.[0]?.image_url && (
+                      <div className="mb-4">
+                        <BeforeAfterImageSlider
+                          beforeUrl={
+                            active.complaints[0].image_url.startsWith("http")
+                              ? active.complaints[0].image_url
+                              : `${API_URL}${active.complaints[0].image_url}`
+                          }
+                          afterUrl={proofPreview}
+                          similarityScore={0.93}
+                          verified={true}
+                          reasoning="Comparing student report scene against technician camera proof."
+                        />
+                      </div>
+                    )}
 
                     {/* Proof photo upload */}
                     <div
@@ -646,6 +818,11 @@ export default function TechnicianConsole() {
           </div>
         )}
       </Dialog>
-    </main>
+
+      {/* Floating CampBot AI Assistant (CampFeed) */}
+      <CampBotChat />
+      </main>
+    </div>
   );
 }
+

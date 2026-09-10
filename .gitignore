@@ -23,6 +23,12 @@ env/
 htmlcov/
 .coverage
 .coverage.*
+coverage/
+
+# Local database artifacts (offline dev)
+*.db
+*.sqlite
+*.sqlite3
 
 # mypy / ruff
 .mypy_cache/
@@ -40,6 +46,10 @@ next-env.d.ts
 .env
 .env.local
 .env.*.local
+.env.development
+.env.production
+*.pem
+*.key
 
 # ── Runtime Artifacts ─────────────────────────
 backend/uploads/*

@@ -4,12 +4,14 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 type Variant = "primary" | "ghost" | "danger" | "success" | "outline";
+type Size = "sm" | "md" | "lg";
 
 export function Button({
   className,
   variant = "primary",
+  size = "md",
   ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
+}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }) {
   const variants: Record<Variant, string> = {
     primary: "bg-accent text-[#0d1117] hover:bg-accent/85 font-semibold",
     ghost: "bg-transparent text-[#c9d1d9] hover:bg-white/5",
@@ -17,11 +19,17 @@ export function Button({
     success: "bg-resolved/90 text-[#0d1117] hover:bg-resolved font-semibold",
     outline: "border border-[#30363d] text-[#c9d1d9] hover:border-accent/60 hover:text-accent",
   };
+  const sizes: Record<Size, string> = {
+    sm: "px-2.5 py-1 text-xs",
+    md: "px-4 py-2 text-sm",
+    lg: "px-5 py-2.5 text-base",
+  };
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],
+        sizes[size],
         className,
       )}
       {...props}

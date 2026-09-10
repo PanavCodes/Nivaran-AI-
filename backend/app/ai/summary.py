@@ -9,8 +9,8 @@ from app.core.config import settings
 def generate_cluster_summary(cluster, category: str) -> str:
     texts = [
         f"Cluster: {cluster.title}. "
-        f"{cluster.complaint_count} report(s) at approx "
-        f"({float(cluster.latitude):.5f}, {float(cluster.longitude):.5f}). "
+        f"{cluster.complaint_count} report(s) on Floor {cluster.floor} "
+        f"({cluster.room_or_zone or f'canvas ({cluster.x_coord:.1f}, {cluster.y_coord:.1f})'}). "
         f"Severity {cluster.severity_score}/5, impact {cluster.impact_score}/5, "
         f"status {cluster.status}."
     ]

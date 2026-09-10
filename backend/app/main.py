@@ -9,7 +9,7 @@ from loguru import logger
 from sqlalchemy import text
 
 from app.core.config import settings
-from app.routers import admin_routes, auth_routes, cluster_routes, complaint_routes
+from app.routers import admin_routes, assistant_routes, auth_routes, cluster_routes, complaint_routes
 
 
 @asynccontextmanager
@@ -61,6 +61,7 @@ app.include_router(auth_routes.router)
 app.include_router(complaint_routes.router)
 app.include_router(cluster_routes.router)
 app.include_router(admin_routes.router)
+app.include_router(assistant_routes.router)
 
 
 @app.get("/")

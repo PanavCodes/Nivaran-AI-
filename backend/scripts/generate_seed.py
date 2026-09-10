@@ -1,17 +1,12 @@
-"""Generate backend/db/seed.sql — BUILD.md Day 4 Step 1.
+"""Generate backend/db/seed.sql — Indoor Campus Multi-Floor Architecture.
 
-Produces 30+ geographically-clustered demo complaints across the six coordinate
-groups specified in BUILD.md §4 (library ×3, cafeteria ×4, IT lab ×2, sports
-field ×2, hostel ×3, main gate ×2 — plus additional groups to exceed 30), each
-with a real all-MiniLM-L6-v2 embedding so the HNSW index and demo clustering
-behave exactly like production traffic.
+Produces 30+ geographically-clustered demo complaints across indoor floors
+(LG, G, 1, 3, 4, 5, 8) mapped to exact SVG coordinates and rooms, with real
+all-MiniLM-L6-v2 embeddings so HNSW and indoor clustering behave like production.
 
 Usage:
     cd backend
-    ./.venv/Scripts/python scripts/generate_seed.py
-
-Then apply (fresh DB only):
-    psql $DATABASE_URL -f db/seed.sql
+    .venv/Scripts/python scripts/generate_seed.py
 """
 from __future__ import annotations
 
@@ -46,235 +41,254 @@ USERS = [
     ("student6@nivaran.edu", "Student@123", "Ananya Iyer", "STUDENT", "Physics"),
 ]
 
-# BUILD.md §4 coordinate groups (50 m clustering radius → intra-group merge)
-CLUSTERS = [
+INDOOR_CLUSTERS = [
     {
-        "title": "Leaking pipe flooding library corridor",
+        "title": "Hardware Lab 1 projector & AC malfunction",
+        "category": "IT_SUPPORT",
+        "severity": 4, "impact": 4,
+        "floor": "1",
+        "x": 245.0, "y": 492.0,
+        "room_or_zone": "Hardware Lab 1",
+        "department": "IT Services",
+        "hours_ago": 3,
+        "complaints": [
+            ("Projector bulb dead in Lab 1", "The ceiling-mounted HDMI projector in Hardware Lab 1 does not display anything and flashes red bulb error."),
+            ("Hardware Lab 1 display down", "Cannot conduct afternoon lecture in Hardware Lab 1 because the projector screen remains blank despite rebooting."),
+            ("AC dripping over server rack in Lab 1", "The split AC unit right above equipment rack in Hardware Lab 1 is leaking water down the wall."),
+            ("Workstation 4 video signal lost", "Workstation 4 in Hardware Lab 1 has no video output to the display monitor."),
+        ],
+    },
+    {
+        "title": "Leaking pipe near Faculty Area 102",
         "category": "MAINTENANCE",
         "severity": 4, "impact": 4,
-        "lat": 18.9220, "lon": 72.8347,
+        "floor": "1",
+        "x": 66.0, "y": 41.0,
+        "room_or_zone": "Faculty Area 102",
         "department": "Civil & Electrical Maintenance",
         "hours_ago": 2,
         "complaints": [
-            ("Water everywhere in library", "Main corridor near Room 102 in the library has a leaking pipe causing severe flooding. Water is spreading towards the reading hall."),
-            ("Slippery library hallway", "The hallway floor in the library is completely wet due to water dripping from the ceiling. People are slipping near the stairs."),
-            ("Ceiling drip near Room 102", "There is a constant drip from the ceiling in the library corridor close to Room 102. A bucket has been placed but it overflows."),
-            ("Books getting wet in library", "The leak near the periodicals section is dripping onto the shelves. Books on the bottom rack are soaked."),
+            ("Water leak near Faculty Area 102", "Corridor ceiling pipe near Faculty Area 102 has a severe water leak spreading towards faculty cubicles."),
+            ("Slippery floor in 1st floor corridor", "The floor outside Faculty Area 102 is completely flooded with dripping ceiling water. Faculty members are slipping."),
+            ("Ceiling tiles soaked near 102", "Damp water stains on ceiling tiles outside 102 corridor; two ceiling panels are sagging dangerously."),
+            ("Water dripping into faculty cabin", "Water from the corridor leak has started seeping under the door into cabin 102B."),
         ],
     },
     {
-        "title": "Cafeteria garbage not collected",
-        "category": "HOUSEKEEPING",
-        "severity": 3, "impact": 4,
-        "lat": 18.9228, "lon": 72.8351,
-        "department": "Sanitation & Housekeeping",
-        "hours_ago": 9,
-        "complaints": [
-            ("Overflowing bins at cafeteria", "Garbage bins outside the main cafeteria have not been collected for two days. Waste is overflowing onto the walkway and it smells."),
-            ("Foul smell near canteen", "The area behind the canteen stinks because of uncleared food waste. Flies everywhere near the seating."),
-            ("Litter around cafeteria entrance", "Food wrappers and bottles are piling up at the cafeteria entrance. Dustbins are full to the brim."),
-            ("Waste truck has not come", "The cleaning staff says the waste collection truck has not come since Friday. Cafeteria trash is now spilling into the parking area."),
-            ("Trash attracting stray dogs", "Stray dogs are rummaging through the overflowing garbage bags near the canteen back gate. Students feel unsafe walking past at night."),
-        ],
-    },
-    {
-        "title": "IT lab computers will not start",
-        "category": "IT_SUPPORT",
-        "severity": 3, "impact": 3,
-        "lat": 18.9215, "lon": 72.8340,
-        "department": "IT Services",
-        "hours_ago": 26,
-        "complaints": [
-            ("Lab PCs dead in morning", "Around six computers in Lab 3 do not power on. The monitor stays black when the button is pressed."),
-            ("Computers not booting", "Systems 12 to 18 in the computer lab fail at boot with an error screen. Practical session is stuck."),
-            ("Lab network keeps dropping", "The wired internet in the computer lab disconnects every few minutes. Cannot submit the online assignment from there."),
-        ],
-    },
-    {
-        "title": "Floodlights out at sports field",
-        "category": "FACILITIES",
-        "severity": 2, "impact": 3,
-        "lat": 18.9240, "lon": 72.8360,
-        "department": "Campus Estate Office",
-        "hours_ago": 33,
-        "complaints": [
-            ("Sports field lights off", "The floodlights at the main sports field have been out for three evenings. Evening practice is impossible in the dark."),
-            ("Dark jogging track", "Half the lights along the jogging track around the field are not working. It is unsafe after 7 pm."),
-            ("Broken lamp posts near field", "Two lamp posts on the path to the sports field are leaning and dead. The whole stretch is pitch black."),
-        ],
-    },
-    {
-        "title": "Hostel elevator stuck between floors",
+        "title": "Main breaker tripping in Electrical Panel Room",
         "category": "MAINTENANCE",
         "severity": 5, "impact": 5,
-        "lat": 18.9210, "lon": 72.8335,
+        "floor": "LG",
+        "x": 162.0, "y": 492.0,
+        "room_or_zone": "Electrical Panel Room",
         "department": "Civil & Electrical Maintenance",
         "hours_ago": 5,
         "complaints": [
-            ("Elevator stalled again", "The lift in Hostel B got stuck between the 3rd and 4th floor this morning with two students inside. It is happening repeatedly this week."),
-            ("Lift makes grinding noise", "The hostel elevator grinds loudly and jerks when moving. Someone was trapped for ten minutes yesterday night."),
-            ("Elevator door jams", "The B hostel lift door jams every time it reaches the ground floor. My grandmother-visiting parents could not use it."),
-            ("Fourth floor lift button dead", "The button for the fourth floor inside the hostel lift does not light up at all. Residents climb four flights daily."),
+            ("Sparks from main breaker panel", "Audible sparks and humming sound coming from secondary distribution breaker in LG Electrical Panel Room."),
+            ("Power fluctuating in lower ground wing", "Frequent voltage drops and brownouts affecting lower ground laboratories. Burning insulation smell near panel."),
+            ("Panel room breaker tripped again", "The 415V main feeder breaker in Electrical Panel Room tripped twice today during load ramp."),
         ],
     },
     {
-        "title": "Broken main gate turnstile",
-        "category": "FACILITIES",
-        "severity": 2, "impact": 4,
-        "lat": 18.9200, "lon": 72.8330,
-        "department": "Campus Estate Office",
-        "hours_ago": 47,
-        "complaints": [
-            ("Turnstile stuck at gate", "The second turnstile at the main gate is jammed and everyone has to squeeze through one lane during morning rush."),
-            ("Entry gate scanner broken", "The ID card scanner at gate 2 shows an error for every card. Security is letting people in manually."),
-            ("Gate barrier stuck open", "The vehicle barrier at the main gate is stuck half-open and scrapes every car. Traffic backs up till the road."),
-        ],
-    },
-    # ── Extra groups to push the total past 30 (BUILD.md: "30+ issues") ──
-    {
-        "title": "Projector flickering in seminar hall",
-        "category": "IT_SUPPORT",
-        "severity": 2, "impact": 3,
-        "lat": 18.9225, "lon": 72.8344,
-        "department": "IT Services",
-        "hours_ago": 20,
-        "complaints": [
-            ("Projector flickers in hall A", "The projector in Seminar Hall A flickers every few minutes and the colour washes out. Lectures are hard to follow."),
-            ("No display from ceiling projector", "The ceiling projector in the seminar hall shows nothing until it warms up for twenty minutes."),
-            ("HDMI port dead at podium", "The HDMI input at the seminar hall podium does not detect any laptop. Presentations fall back to the small classroom."),
-        ],
-    },
-    {
-        "title": "Blocked washroom drains in academic block",
+        "title": "Clogged floor drain and stagnation in LG Pantry",
         "category": "HOUSEKEEPING",
         "severity": 4, "impact": 4,
-        "lat": 18.9218, "lon": 72.8352,
+        "floor": "LG",
+        "x": 100.0, "y": 500.0,
+        "room_or_zone": "Pantry",
         "department": "Sanitation & Housekeeping",
-        "hours_ago": 14,
+        "hours_ago": 12,
         "complaints": [
-            ("Washroom drain clogged", "The ground floor washroom drains in the academic block are completely clogged and water is stagnating. Unhygienic smell all over."),
-            ("Water logging in washroom", "First floor ladies washroom has water all over the floor because the drain is blocked since yesterday."),
-            ("Bad smell from toilets", "The toilets near Room 210 stink because of choked drains. Several students have complained to the class rep."),
-            ("Overflowing washroom dustbin", "The sanitary bin in the academic block washroom overflows by midday every day. Cleaning happens only once a day."),
+            ("Pantry drain backing up", "The floor drain inside the Lower Ground pantry is completely clogged with grease and water is overflowing."),
+            ("Foul sewage odor in LG service corridor", "Stagnant wastewater pooling around LG pantry exit causing unbearable stench across the hallway."),
+            ("Pantry sink blocked since morning", "Staff cannot wash utensils because dirty water is pooling 3 inches deep on the pantry tiles."),
         ],
     },
     {
-        "title": "Cracked wall plaster in classroom 114",
-        "category": "MAINTENANCE",
-        "severity": 3, "impact": 3,
-        "lat": 18.9222, "lon": 72.8339,
-        "department": "Civil & Electrical Maintenance",
-        "hours_ago": 55,
+        "title": "Central Campus Server Room AC failure",
+        "category": "IT_SUPPORT",
+        "severity": 5, "impact": 5,
+        "floor": "G",
+        "x": 180.0, "y": 40.0,
+        "room_or_zone": "Server Room",
+        "department": "IT Services",
+        "hours_ago": 1,
         "complaints": [
-            ("Plaster falling in class 114", "Chunks of plaster keep falling from the wall in classroom 114 near the blackboard. One piece almost hit a student."),
-            ("Big crack in classroom wall", "There is a widening diagonal crack on the wall of Room 114. Dust keeps settling on the front benches."),
-            ("Ceiling stain spreading in 114", "A brown water stain on the ceiling of classroom 114 keeps growing after every rain. Feels unsafe during lectures."),
+            ("Server room ambient temperature critical", "Precision AC unit #2 in Ground Floor Server Room stopped working. Ambient temp reached 39 degrees."),
+            ("Thermal alarm sounding in Server Room", "Audible high-temp buzzer activated inside the core rack area on Ground Floor."),
+            ("Cooling compressor tripped", "The primary condenser on the ground floor server room cooling loop is locked out."),
+        ],
+    },
+    {
+        "title": "Broken door hinge and lock in AMU Room 1",
+        "category": "FACILITIES",
+        "severity": 3, "impact": 3,
+        "floor": "G",
+        "x": 40.0, "y": 41.0,
+        "room_or_zone": "AMU Room 1",
+        "department": "Campus Estate Office",
+        "hours_ago": 18,
+        "complaints": [
+            ("AMU Room 1 door will not latch", "The heavy wooden entrance door to AMU Room 1 on Ground Floor is misaligned and cannot be locked."),
+            ("Door handle came off AMU 1", "Students cannot open the door from the inside because the latch mechanism came loose."),
+            ("Door scrapes bottom frame", "The hinge screws have stripped causing the door to drag loudly against the ground floor tiles."),
+        ],
+    },
+    {
+        "title": "Power socket sparks in Faculty Area 301",
+        "category": "MAINTENANCE",
+        "severity": 4, "impact": 3,
+        "floor": "3",
+        "x": 294.0, "y": 41.0,
+        "room_or_zone": "Faculty Area 301",
+        "department": "Civil & Electrical Maintenance",
+        "hours_ago": 15,
+        "complaints": [
+            ("Electrical spark from cubicle socket", "A professor plugged in their charger in Faculty Area 301 and a loud pop with visible sparks occurred."),
+            ("Charred wall outlet in Area 301", "The dual switch socket on the west wall of 301 has blackened plastic and smells of electrical burning."),
+            ("Cubicle power rail dead", "The entire bank of 4 desks in 301 lost power after the short circuit."),
+        ],
+    },
+    {
+        "title": "Audio feedback and mic failure in E. CR 302",
+        "category": "IT_SUPPORT",
+        "severity": 3, "impact": 4,
+        "floor": "3",
+        "x": 40.0, "y": 492.0,
+        "room_or_zone": "E. CR 302",
+        "department": "IT Services",
+        "hours_ago": 28,
+        "complaints": [
+            ("Microphone screeching in Room 302", "The PA amplifier in 3rd floor classroom 302 produces continuous high-pitch screeching during lectures."),
+            ("Wireless lapel mic dead in 302", "The receiver unit on the podium has no power indicator and batteries were replaced without effect."),
+            ("Ceiling speakers crackling", "Right side ceiling speaker in E. CR 302 crackles loudly making lectures unintelligible in the back."),
+        ],
+    },
+    {
+        "title": "Central Lift stalled between Floor 4 and 5",
+        "category": "MAINTENANCE",
+        "severity": 5, "impact": 5,
+        "floor": "4",
+        "x": 175.0, "y": 405.0,
+        "room_or_zone": "Lift",
+        "department": "Civil & Electrical Maintenance",
+        "hours_ago": 2,
+        "complaints": [
+            ("Elevator trapped between 4th and 5th floor", "The main passenger elevator stopped abruptly between floors 4 and 5 with three students inside."),
+            ("Lift alarm button sounding", "Alarm bell is ringing continuously from elevator shaft at the fourth floor landing."),
+            ("Elevator doors jammed shut", "Door clutch mechanism on Lift 1 is stuck; cannot open from floor 4 landing."),
+            ("Call button dead on floor 4", "The external lift call button on floor 4 shows no illumination and elevator is motionless in shaft."),
+        ],
+    },
+    {
+        "title": "Fume extractor exhaust failure in 3D Print Lab",
+        "category": "FACILITIES",
+        "severity": 4, "impact": 3,
+        "floor": "8",
+        "x": 120.0, "y": 45.0,
+        "room_or_zone": "Additive Manufacturing Lab",
+        "department": "Campus Estate Office",
+        "hours_ago": 20,
+        "complaints": [
+            ("Plastic odor in 8th floor Additive Lab", "The ventilation fume hood in the 8th floor 3D printing lab is not pulling air; resin fumes accumulating."),
+            ("Exhaust duct motor humming", "Exhaust fan on the roof above Additive Manufacturing Lab is stalled and buzzing."),
+            ("Air quality alert in Additive Lab", "The VOC air sensor triggered amber light inside the printing room due to lack of extraction."),
         ],
     },
 ]
 
 
-def q(s: str) -> str:
-    return "'" + s.replace("'", "''") + "'"
-
-
-def vec(v: list[float]) -> str:
-    return "[" + ",".join(f"{x:.7f}" for x in v) + "]"
+def sql_str(v: str | None) -> str:
+    if v is None:
+        return "NULL"
+    return "'" + v.replace("'", "''") + "'"
 
 
 def main() -> None:
+    print(f"Generating indoor seed dataset ({len(INDOOR_CLUSTERS)} clusters across 10 floors)...")
     lines: list[str] = [
-        "-- backend/db/seed.sql — Nivaran AI demo data (BUILD.md Day 4 Step 1).",
-        "-- 34 complaints across 9 coordinate groups; groups are within 50 m of",
-        "-- themselves so the spatio-semantic engine treats them as clusters.",
-        "-- FRESH DATABASE ONLY (truncate option below).",
+        "-- backend/db/seed.sql — Auto-generated indoor campus seed data (10-floor SVG architecture)",
+        "-- Contains realistic complaints with real all-MiniLM-L6-v2 embeddings.",
         "",
-        "-- TRUNCATE audit_logs, sla_escalations, complaints, issue_clusters, users CASCADE;",
+        "TRUNCATE complaints, audit_logs, sla_escalations, issue_clusters, users CASCADE;",
         "",
-        "BEGIN;",
+        "-- ── USERS ───────────────────────────────────────────────────────────────────",
     ]
 
     user_ids: dict[str, str] = {}
-    for i, (email, password, full_name, role, dept) in enumerate(USERS):
+    for i, (email, pw, name, role, dept) in enumerate(USERS, 1):
         uid = f"11111111-0000-0000-0000-{i:012d}"
         user_ids[email] = uid
-        pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+        pwhash = bcrypt.hashpw(pw.encode(), bcrypt.gensalt()).decode()
         lines.append(
-            "INSERT INTO users (id, email, password_hash, full_name, role, department) VALUES ("
-            f"'{uid}', {q(email)}, {q(pw_hash)}, {q(full_name)}, {q(role)}, {q(dept)});"
+            f"INSERT INTO users (id, email, password_hash, full_name, role, department, is_active) "
+            f"VALUES ('{uid}', {sql_str(email)}, {sql_str(pwhash)}, {sql_str(name)}, '{role}', {sql_str(dept)}, TRUE);"
         )
 
-    students = [e for e, *_ in USERS if e.startswith("student")]
-    complaint_no = 0
-    cluster_no = 0
-    for spec in CLUSTERS:
-        cluster_no += 1
-        cid = f"22222222-0000-0000-0000-{cluster_no:012d}"
-        first_at = NOW - timedelta(hours=spec["hours_ago"])
-        complaints = spec["complaints"]
-        reps = [embed(f"{t}. {d}") for t, d in complaints]
+    student_keys = [e for e, _, _, r, _ in USERS if r == "STUDENT"]
+    complaint_counter = 0
 
-        # Blended representative embedding (0.7 existing + 0.3 new per merge)
-        rep = reps[0]
-        for nxt in reps[1:]:
-            blended = [0.7 * a + 0.3 * b for a, b in zip(rep, nxt)]
-            norm = sum(x * x for x in blended) ** 0.5
-            rep = [x / norm for x in blended]
+    for c_idx, cluster_spec in enumerate(INDOOR_CLUSTERS, 1):
+        cluster_id = f"22222222-0000-0000-0000-{c_idx:012d}"
+        title = cluster_spec["title"]
+        category = cluster_spec["category"]
+        severity = cluster_spec["severity"]
+        impact = cluster_spec["impact"]
+        floor = cluster_spec["floor"]
+        base_x = cluster_spec["x"]
+        base_y = cluster_spec["y"]
+        room = cluster_spec["room_or_zone"]
+        dept = cluster_spec["department"]
+        n_complaints = len(cluster_spec["complaints"])
+        first_reported = NOW - timedelta(hours=cluster_spec["hours_ago"])
+        last_reported = first_reported + timedelta(minutes=15 * (n_complaints - 1))
 
         score, tier, deadline = compute_priority(
-            spec["severity"], len(complaints), spec["impact"], first_at
+            severity, n_complaints, impact, first_reported
         )
-        deadline = first_at + timedelta(
-            hours={"EMERGENCY": 2, "HIGH": 12, "MEDIUM": 24, "LOW": 72}[tier]
-        )
-        summary = (
-            f"{len(complaints)} report(s) of \"{spec['title']}\" ({spec['category']}). "
-            f"Peak severity {spec['severity']}/5 with impact {spec['impact']}/5 — currently OPEN."
-        )
+
+        # Compute combined representative embedding
+        combined_text = f"{title}. " + " ".join(t for t, _ in cluster_spec["complaints"])
+        cluster_emb = embed(combined_text)
+
         lines.append("")
-        lines.append(f"-- ── Cluster {cluster_no}: {spec['title']} (P={score}, {tier}) ──")
+        lines.append(f"-- ── Cluster {c_idx}: Floor {floor} · {room} — {title} (P={score}, {tier}) ──")
+        summary_text = (
+            f"{n_complaints} report(s) on Floor {floor} in {room} ({category}). "
+            f"Peak severity {severity}/5 with impact {impact}/5 — currently OPEN."
+        )
         lines.append(
-            "INSERT INTO issue_clusters (id, title, ai_summary, category, status, "
-            "priority_score, severity_score, impact_score, complaint_count, latitude, "
-            "longitude, representative_embedding, sla_deadline, first_reported_at, "
-            "last_reported_at, assigned_department) VALUES ("
-            f"'{cid}', {q(spec['title'])}, {q(summary)}, {q(spec['category'])}, 'OPEN', "
-            f"{score}, {spec['severity']}, {spec['impact']}, {len(complaints)}, "
-            f"{spec['lat']}, {spec['lon']}, '{vec(rep)}', "
-            f"'{deadline.isoformat()}', '{first_at.isoformat()}', "
-            f"'{(first_at + timedelta(minutes=17 * len(complaints))).isoformat()}', "
-            f"{q(spec['department'])});"
+            f"INSERT INTO issue_clusters (id, title, ai_summary, category, status, priority_score, "
+            f"severity_score, impact_score, complaint_count, floor, x_coord, y_coord, room_or_zone, "
+            f"representative_embedding, sla_deadline, first_reported_at, last_reported_at, assigned_department) "
+            f"VALUES ('{cluster_id}', {sql_str(title)}, {sql_str(summary_text)}, '{category}', 'OPEN', "
+            f"{score}, {severity}, {impact}, {n_complaints}, '{floor}', {base_x}, {base_y}, {sql_str(room)}, "
+            f"'{json.dumps(cluster_emb)}', '{deadline.isoformat()}', '{first_reported.isoformat()}', "
+            f"'{last_reported.isoformat()}', {sql_str(dept)});"
         )
 
-        for j, (title, desc) in enumerate(complaints):
-            complaint_no += 1
-            uid = user_ids[students[complaint_no % len(students)]]
-            created = first_at + timedelta(minutes=17 * j + 3)
+        for offset, (c_title, c_desc) in enumerate(cluster_spec["complaints"]):
+            complaint_counter += 1
+            cid = f"33333333-0000-0000-0000-{complaint_counter:012d}"
+            u_email = student_keys[(complaint_counter - 1) % len(student_keys)]
+            uid = user_ids[u_email]
+            c_time = first_reported + timedelta(minutes=offset * 12)
+
+            # Small jitter within the room canvas area (±2 to 4 units)
+            jitter_x = round(base_x + (offset * 1.5 - 2.0), 1)
+            jitter_y = round(base_y + (offset * 1.0 - 1.5), 1)
+            c_emb = embed(f"{c_title} {c_desc}")
+
             lines.append(
-                "INSERT INTO complaints (id, user_id, cluster_id, title, description, "
-                "category, severity, latitude, longitude, embedding, created_at) VALUES ("
-                f"'33333333-0000-0000-0000-{complaint_no:012d}', '{uid}', '{cid}', "
-                f"{q(title)}, {q(desc)}, {q(spec['category'])}, {spec['severity']}, "
-                f"{spec['lat'] + 0.000004 * j}, {spec['lon'] + 0.000004 * j}, "
-                f"'{vec(reps[j])}', '{created.isoformat()}');"
-            )
-        lines.append(
-            "INSERT INTO audit_logs (cluster_id, action_taken, details) VALUES ("
-            f"'{cid}', 'CLUSTER_SEEDED', '{json.dumps({'source': 'seed.sql', 'complaints': len(complaints)})}');"
-        )
-        if tier in ("EMERGENCY", "HIGH") and spec["hours_ago"] >= 5:
-            lines.append(
-                "INSERT INTO sla_escalations (cluster_id, escalation_level, "
-                "notified_emails, next_check_at) VALUES ("
-                f"'{cid}', 1, ARRAY['admin@nivaran.edu'::text, 'warden@nivaran.edu'::text], "
-                f"'{(NOW + timedelta(minutes=60)).isoformat()}');"
+                f"INSERT INTO complaints (id, user_id, cluster_id, title, description, category, "
+                f"severity, floor, x_coord, y_coord, room_or_zone, embedding, created_at) "
+                f"VALUES ('{cid}', '{uid}', '{cluster_id}', {sql_str(c_title)}, {sql_str(c_desc)}, "
+                f"'{category}', {severity}, '{floor}', {jitter_x}, {jitter_y}, {sql_str(room)}, "
+                f"'{json.dumps(c_emb)}', '{c_time.isoformat()}');"
             )
 
-    lines.append("")
-    lines.append("COMMIT;")
-    lines.append("")
-    OUT_PATH.write_text("\n".join(lines), encoding="utf-8")
-    print(f"Wrote {OUT_PATH} — {complaint_no} complaints across {cluster_no} clusters.")
+    OUT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Generated {OUT_PATH} with {len(USERS)} users, {len(INDOOR_CLUSTERS)} clusters, and {complaint_counter} complaints!")
 
 
 if __name__ == "__main__":

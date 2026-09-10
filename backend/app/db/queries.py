@@ -4,10 +4,11 @@ via SQLAlchemy `text()`; never filter in Python."""
 from sqlalchemy import text
 
 # ─────────────────────────────────────────────────────────────────────────────
-# SPATIO_SEMANTIC_SEARCH — BUILD.md §3.2 (verbatim). ① bounding-box pre-filter
-# (~50 m ≈ 0.00045°) → ② exact Haversine check → ③ cosine similarity ≥ :threshold (0.52 calibrated).
-# The similarity/distance knobs are also exposed via env (§5.3) by the
-# clustering service, which interpolates them into RADIUS/THRESHOLD markers.
+# SPATIO_SEMANTIC_SEARCH — Indoor Floor-Aware Spatial + Semantic Search:
+# ① floor match (must be on the same floor)
+# ② bounding box pre-filter in SVG canvas units
+# ③ exact 2D Euclidean distance check (<= :radius_units)
+# ④ cosine similarity >= :threshold (0.52 calibrated)
 # ─────────────────────────────────────────────────────────────────────────────
 SPATIO_SEMANTIC_SEARCH = text(
     """
@@ -21,48 +22,55 @@ SELECT
     severity_score,
     impact_score,
     sla_deadline,
-    latitude,
-    longitude,
+    floor,
+    x_coord,
+    y_coord,
+    room_or_zone,
     (1 - (representative_embedding <=> :new_embedding)) AS semantic_similarity
 FROM issue_clusters
 WHERE
     category     = :new_category
     AND status  NOT IN ('RESOLVED', 'CLOSED')
-    -- ① Spatial bounding-box pre-filter (~50 m, ~0.00045 degrees)
-    AND latitude  BETWEEN (:new_lat - :bbox_deg) AND (:new_lat + :bbox_deg)
-    AND longitude BETWEEN (:new_lon - :bbox_deg) AND (:new_lon + :bbox_deg)
-    -- ② Exact Haversine distance check (Earth radius = 6 371 000 m)
-    AND (6371000 * acos(LEAST(1.0,
-        cos(radians(:new_lat)) * cos(radians(latitude)) *
-        cos(radians(longitude) - radians(:new_lon)) +
-        sin(radians(:new_lat)) * sin(radians(latitude))
-    ))) <= :radius_m
-    -- ③ Cosine similarity threshold (0.52 = empirically calibrated, see config.py)
+    -- ① Indoor floor boundary (must match the exact floor)
+    AND floor    = :new_floor
+    -- ② 2D bounding-box pre-filter in canvas units
+    AND x_coord BETWEEN (:new_x - :radius_units) AND (:new_x + :radius_units)
+    AND y_coord BETWEEN (:new_y - :radius_units) AND (:new_y + :radius_units)
+    -- ③ Exact 2D Euclidean distance check
+    AND sqrt(power(x_coord - :new_x, 2) + power(y_coord - :new_y, 2)) <= :radius_units
+    -- ④ Cosine similarity threshold (0.52 = empirically calibrated)
     AND (1 - (representative_embedding <=> :new_embedding)) >= :threshold
 ORDER BY semantic_similarity DESC
 LIMIT 1
 """
 )
 
-# Nearby active clusters for the intake portal's floating sidebar (§1.1).
+# Nearby active clusters on the current floor for the intake portal (§1.1).
 NEARBY_CLUSTERS = text(
     """
 SELECT
     id AS cluster_id, title, category, status, priority_score,
     complaint_count, severity_score, impact_score, sla_deadline,
-    latitude, longitude,
-    (6371000 * acos(LEAST(1.0,
-        cos(radians(:lat)) * cos(radians(latitude)) *
-        cos(radians(longitude) - radians(:lon)) +
-        sin(radians(:lat)) * sin(radians(latitude))
-    ))) AS distance_m
+    floor, x_coord, y_coord, room_or_zone,
+    round(cast(sqrt(power(x_coord - :x, 2) + power(y_coord - :y, 2)) as numeric), 1) AS distance_units
 FROM issue_clusters
 WHERE status NOT IN ('RESOLVED', 'CLOSED')
-  AND latitude  BETWEEN (:lat - :bbox_deg) AND (:lat + :bbox_deg)
-  AND longitude BETWEEN (:lon - :bbox_deg) AND (:lon + :bbox_deg)
-  AND (:q IS NULL OR title ILIKE ('%' || :q || '%') OR category::text ILIKE ('%' || :q || '%'))
-ORDER BY distance_m ASC
+  AND floor = :floor
+  AND (cast(:q as text) IS NULL OR title ILIKE ('%' || cast(:q as text) || '%') OR category::text ILIKE ('%' || cast(:q as text) || '%') OR room_or_zone ILIKE ('%' || cast(:q as text) || '%'))
+ORDER BY distance_units ASC
 LIMIT 10
+"""
+)
+
+FLOOR_INCIDENT_SUMMARY = text(
+    """
+SELECT
+    floor,
+    COUNT(*) FILTER (WHERE status NOT IN ('RESOLVED', 'CLOSED')) AS open_count,
+    COUNT(*) FILTER (WHERE status NOT IN ('RESOLVED', 'CLOSED') AND priority_score >= 75) AS emergency_count,
+    COALESCE(MAX(priority_score) FILTER (WHERE status NOT IN ('RESOLVED', 'CLOSED')), 0) AS max_priority
+FROM issue_clusters
+GROUP BY floor
 """
 )
 

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 
 
 class IntakeResponse(BaseModel):
-    """Gemini intake contract — BUILD.md §3.3 JSON schema."""
+    """Gemini intake contract with indoor floor and room detection."""
     category: str
     severity: int
     impact: int
@@ -13,6 +13,8 @@ class IntakeResponse(BaseModel):
     ocr_text: str | None = None
     ai_title: str
     reasoning: str
+    floor: str | None = None
+    room_or_zone: str | None = None
 
 
 class ComplaintOut(BaseModel):
@@ -24,8 +26,10 @@ class ComplaintOut(BaseModel):
     category: str
     severity: int
     image_url: str | None
-    latitude: float
-    longitude: float
+    floor: str
+    x_coord: float
+    y_coord: float
+    room_or_zone: str | None = None
     created_at: datetime
 
 
@@ -39,6 +43,10 @@ class ComplaintSubmissionResult(BaseModel):
     sla_tier: str
     sla_deadline: datetime
     complaint_count: int
+    floor: str
+    x_coord: float
+    y_coord: float
+    room_or_zone: str | None = None
     reasoning: str
     message: str
 
@@ -55,6 +63,8 @@ class MyClusterSnapshot(BaseModel):
     complaint_count: int
     sla_deadline: datetime | None
     assigned_department: str
+    floor: str = "1"
+    room_or_zone: str | None = None
 
 
 class MyComplaintOut(BaseModel):
@@ -67,5 +77,10 @@ class MyComplaintOut(BaseModel):
     severity: int
     image_url: str | None
     resolution_proof_url: str | None
+    floor: str
+    x_coord: float
+    y_coord: float
+    room_or_zone: str | None = None
     created_at: datetime
     cluster: MyClusterSnapshot | None
+

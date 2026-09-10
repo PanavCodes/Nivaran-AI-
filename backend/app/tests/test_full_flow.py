@@ -31,11 +31,13 @@ def fail(msg: str) -> None:
     sys.exit(1)
 
 
-def run_offset(suffix: str) -> tuple[float, float]:
-    """Per-run offset (0.002–0.02°, 200 m–2 km) so reruns never merge into
-    clusters left behind by previous runs — each run gets a fresh spot."""
+def run_offset(suffix: str) -> tuple[str, float, float]:
+    """Per-run unique floor & canvas coordinates so reruns never clash with previous runs."""
     seed = int(suffix[:4], 16) if len(suffix) >= 4 else abs(hash(suffix)) % 65536
-    return 18.9000 + (seed % 200) * 0.001, 72.8200 + ((seed >> 8) % 200) * 0.001
+    floor = "1"
+    x = 100.0 + (seed % 80)
+    y = 150.0 + ((seed >> 4) % 150)
+    return floor, round(x, 1), round(y, 1)
 
 
 def register(client: httpx.Client, role: str, suffix: str) -> dict:
@@ -61,7 +63,7 @@ def register(client: httpx.Client, role: str, suffix: str) -> dict:
 
 def main() -> None:
     suffix = uuid.uuid4().hex[:8]
-    lat, lon = run_offset(suffix)
+    floor, x_coord, y_coord = run_offset(suffix)
     with httpx.Client(base_url=BASE, timeout=30) as client:
         health = client.get("/health").json()
         print(f"health: {health['status']} (pgvector={health['database']['pgvector_extension']})")
@@ -80,10 +82,12 @@ def main() -> None:
             "/api/v1/complaints",
             headers=s1,
             data={
-                "title": "Leaking pipe in library",
-                "description": "Main corridor near Room 102 has a leaking pipe causing severe flooding.",
-                "latitude": str(lat),
-                "longitude": str(lon),
+                "title": "Leaking pipe near Faculty Area 102",
+                "description": "Corridor ceiling pipe near Faculty Area 102 has a severe water leak spreading towards faculty cubicles.",
+                "floor": floor,
+                "x_coord": str(x_coord),
+                "y_coord": str(y_coord),
+                "room_or_zone": "Faculty Area 102",
             },
         )
         if r.status_code != 200:
@@ -92,17 +96,19 @@ def main() -> None:
         assert first["merged"] is False, "first report must create a fresh cluster"
         cluster_id = first["cluster_id"]
         ok_steps.append(STEPS[0])
-        print(" ".join(ok_steps), f"→ cluster {cluster_id[:8]} P={first['priority_score']}")
+        print(" ".join(ok_steps), f"→ cluster {cluster_id[:8]} P={first['priority_score']} on Floor {first['floor']}")
 
-        # ── 2. Cluster merge (second student, ±12 m, same story) ─────────
+        # ── 2. Cluster merge (second student, ±5 canvas units, same story) ─────────
         r = client.post(
             "/api/v1/complaints",
             headers=s2,
             data={
-                "title": "Wet floor in library hallway",
-                "description": "The hallway floor in the library is completely wet due to water dripping from the ceiling. People are slipping.",
-                "latitude": str(lat + 0.00010),
-                "longitude": str(lon + 0.00008),
+                "title": "Slippery floor in corridor near 102",
+                "description": "The floor outside Faculty Area 102 is completely flooded with dripping ceiling water. Faculty members are slipping.",
+                "floor": floor,
+                "x_coord": str(x_coord + 4.0),
+                "y_coord": str(y_coord + 3.0),
+                "room_or_zone": "Faculty Area 102",
             },
         )
         if r.status_code != 200:

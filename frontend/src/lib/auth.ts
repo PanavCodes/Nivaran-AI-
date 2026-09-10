@@ -65,6 +65,18 @@ export async function register(data: {
   return me;
 }
 
+export const DEMO_ACCOUNTS = {
+  ADMIN: { email: "admin@nivaran.edu", password: "Admin@123", label: "Admin (Mission Control)" },
+  TECHNICIAN: { email: "tech.maintenance@nivaran.edu", password: "Tech@123", label: "Technician (Task Force)" },
+  STUDENT: { email: "student1@nivaran.edu", password: "Student@123", label: "Student (Radar Intake)" },
+  FACULTY: { email: "faculty@nivaran.edu", password: "Faculty@123", label: "Faculty (Campus Rep)" },
+} as const;
+
+export async function quickLoginAs(role: keyof typeof DEMO_ACCOUNTS): Promise<SessionUser> {
+  const creds = DEMO_ACCOUNTS[role];
+  return login(creds.email, creds.password);
+}
+
 export function logout() {
   clearToken();
   window.location.href = "/login";
@@ -79,3 +91,4 @@ export function requireAuth(): SessionUser | null {
   }
   return user;
 }
+

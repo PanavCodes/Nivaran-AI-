@@ -1,7 +1,7 @@
 """Complaint intake router — BUILD.md Day 2 gate endpoint.
 
-POST /api/v1/complaints  (multipart: title, description, latitude, longitude,
-optional image) → runs the full intelligence pipeline → returns cluster info.
+POST /api/v1/complaints  (multipart: title, description, floor, x_coord, y_coord,
+                          room_or_zone, image) → runs the full intelligence pipeline → returns cluster info.
 GET  /api/v1/complaints/mine  (student/faculty status tracking — abstract
 "monitor the status of their reports and receive resolution updates")
 """
@@ -72,6 +72,8 @@ async def analyze_media(
         "impact": intake.impact,
         "ocr_text": intake.ocr_text,
         "ai_title": intake.ai_title,
+        "floor": intake.floor,
+        "room_or_zone": intake.room_or_zone,
         "image_damage": damage,
         "litter_density": litter,
     }
@@ -105,6 +107,8 @@ def my_complaints(
                 complaint_count=cluster.complaint_count,
                 sla_deadline=cluster.sla_deadline,
                 assigned_department=cluster.assigned_department,
+                floor=cluster.floor,
+                room_or_zone=cluster.room_or_zone,
             )
         out.append(
             MyComplaintOut(
@@ -115,6 +119,10 @@ def my_complaints(
                 severity=complaint.severity,
                 image_url=complaint.image_url,
                 resolution_proof_url=complaint.resolution_proof_url,
+                floor=complaint.floor,
+                x_coord=complaint.x_coord,
+                y_coord=complaint.y_coord,
+                room_or_zone=complaint.room_or_zone,
                 created_at=complaint.created_at,
                 cluster=snapshot,
             )
@@ -126,14 +134,20 @@ def my_complaints(
 async def submit_complaint(
     title: str = Form(...),
     description: str = Form(...),
-    latitude: float = Form(...),
-    longitude: float = Form(...),
+    floor: str = Form("1"),
+    x_coord: float = Form(180.0),
+    y_coord: float = Form(267.0),
+    room_or_zone: str | None = Form(None),
+    is_anonymous: bool = Form(False),
     image: UploadFile | None = File(None),
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
-        raise HTTPException(status_code=422, detail="Invalid GPS coordinates.")
+    # Validate indoor floor ID
+    valid_floors = {"LG", "G", "1", "2", "3", "4", "5", "6", "7", "8"}
+    norm_floor = floor.strip().upper()
+    if norm_floor not in valid_floors:
+        norm_floor = "1"
 
     image_url = None
     image_bytes = None
@@ -151,8 +165,10 @@ async def submit_complaint(
         user_id=user.id,
         title=title,
         description=description,
-        latitude=latitude,
-        longitude=longitude,
+        floor=norm_floor,
+        x_coord=x_coord,
+        y_coord=y_coord,
+        room_or_zone=room_or_zone,
         image_bytes=image_bytes,
         image_url=image_url,
     )
@@ -163,8 +179,14 @@ async def submit_complaint(
         action_taken="COMPLAINT_SUBMITTED",
         cluster_id=cluster.id,
         complaint_id=complaint.id,
-        actor_id=user.id,
-        details={"merged": result["merged"], "category": intake_category(result)},
+        actor_id=user.id if not is_anonymous else None,
+        details={
+            "merged": result["merged"],
+            "category": intake_category(result),
+            "floor": cluster.floor,
+            "room_or_zone": cluster.room_or_zone,
+            "is_anonymous": is_anonymous,
+        },
     )
 
     # Real-time broadcast (§3.5) — never blocks the response
@@ -176,9 +198,9 @@ async def submit_complaint(
 
     tier = result["sla_tier"]
     message = (
-        f"Complaint merged into existing cluster — priority reinforced."
+        f"Complaint merged into existing cluster on Floor {cluster.floor} — priority reinforced."
         if result["merged"]
-        else f"New cluster registered and routed to {cluster.assigned_department}."
+        else f"New cluster registered on Floor {cluster.floor} and routed to {cluster.assigned_department}."
     )
     return ComplaintSubmissionResult(
         complaint_id=str(complaint.id),
@@ -190,6 +212,10 @@ async def submit_complaint(
         sla_tier=tier,
         sla_deadline=result["sla_deadline"],
         complaint_count=cluster.complaint_count,
+        floor=cluster.floor,
+        x_coord=float(cluster.x_coord),
+        y_coord=float(cluster.y_coord),
+        room_or_zone=cluster.room_or_zone,
         reasoning=result["intake"].reasoning,
         message=message,
     )

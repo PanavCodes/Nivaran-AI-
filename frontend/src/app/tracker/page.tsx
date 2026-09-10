@@ -4,21 +4,23 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-  ArrowLeft,
   CheckCircle2,
   Clock,
   Image as ImageIcon,
   Loader2,
-  LogOut,
   MapPin,
-  Radar,
   ShieldCheck,
 } from "lucide-react";
 import { api, API_URL } from "@/lib/api";
-import { logout, requireAuth, type SessionUser } from "@/lib/auth";
+import { requireAuth, type SessionUser } from "@/lib/auth";
+import { sound } from "@/lib/sound";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Navbar } from "@/components/layout/Navbar";
+import { CampBotChat } from "@/components/chat/CampBotChat";
+import { FloorPlanViewer } from "@/components/floorplan/FloorPlanViewer";
 import type { MyComplaint } from "@/lib/types";
 import { CATEGORY_LABELS, tierForScore } from "@/lib/types";
 
@@ -43,6 +45,7 @@ export default function TrackerPage() {
   const [reports, setReports] = useState<MyComplaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
+  const [expandedBlueprint, setExpandedBlueprint] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     const u = requireAuth();
@@ -83,25 +86,31 @@ export default function TrackerPage() {
   if (!user) return null;
 
   return (
-    <main className="radar-canvas min-h-screen p-4 md:p-8">
-      <header className="relative z-10 mx-auto flex max-w-4xl items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Radar className="text-accent" size={22} />
-          <span className="font-bold tracking-tight text-white">Nivaran · My Reports</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href="/report">
-            <Button variant="ghost" className="text-sm">
-              <ArrowLeft size={15} /> Report an issue
+    <div className="min-h-screen bg-[#0d1117] flex flex-col">
+      <Navbar />
+
+      <main className="radar-canvas flex-1 p-4 md:p-8 relative">
+        <div className="radar-sweep opacity-20 pointer-events-none" />
+
+        <div className="relative z-10 mx-auto max-w-4xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#30363d] pb-4 mb-6">
+          <div>
+            <h1 className="text-xl font-bold text-white flex items-center gap-2">
+              My Incident Redressal Tracker
+              <Badge variant="accent" className="text-[10px]">Live SLA</Badge>
+            </h1>
+            <p className="text-xs text-[#8b949e] mt-0.5">
+              Real-time status, cluster priority escalation, and dual-proof photo verification.
+            </p>
+          </div>
+          <Link href="/report" onClick={() => sound.playClick()}>
+            <Button size="sm" className="text-xs">
+              + Report New Problem
             </Button>
           </Link>
-          <Button variant="ghost" onClick={logout} className="text-sm">
-            <LogOut size={15} /> Sign out
-          </Button>
         </div>
-      </header>
 
-      <div className="relative z-10 mx-auto mt-6 max-w-4xl space-y-4">
+        <div className="relative z-10 mx-auto max-w-4xl space-y-4">
+
         {loading && (
           <div className="flex h-40 items-center justify-center">
             <Loader2 className="animate-spin text-accent" size={22} />
@@ -149,12 +158,29 @@ export default function TrackerPage() {
                     <div className="min-w-0 flex-1">
                       <h3 className="text-sm font-bold text-white">{r.title}</h3>
                       <p className="mt-0.5 line-clamp-2 text-xs text-[#8b949e]">{r.description}</p>
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-[#8b949e]">
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-[#8b949e]">
+                        <span className="flex items-center gap-0.5 font-semibold text-accent">
+                          <MapPin size={10} /> Floor {r.floor}
+                          {r.room_or_zone ? ` · ${r.room_or_zone}` : ""}
+                        </span>
+                        <span>·</span>
                         <span>{CATEGORY_LABELS[r.category] ?? r.category}</span>
                         <span>·</span>
                         <span className="flex items-center gap-0.5">
-                          <MapPin size={9} /> reported {new Date(r.created_at).toLocaleString()}
+                          <Clock size={10} /> {new Date(r.created_at).toLocaleString()}
                         </span>
+                        <span>·</span>
+                        <button
+                          onClick={() =>
+                            setExpandedBlueprint((prev) => ({
+                              ...prev,
+                              [r.id]: !prev[r.id],
+                            }))
+                          }
+                          className="text-accent underline hover:text-accent/80"
+                        >
+                          {expandedBlueprint[r.id] ? "Hide blueprint" : "View on floor plan"}
+                        </button>
                       </div>
                     </div>
                     {cluster && tier && (
@@ -163,6 +189,23 @@ export default function TrackerPage() {
                       </Badge>
                     )}
                   </div>
+
+                  {/* Optional expanded floor plan blueprint */}
+                  {expandedBlueprint[r.id] && (
+                    <div className="mt-3 overflow-hidden rounded-lg border border-[#30363d] bg-[#0d1117] p-2">
+                      <div className="mb-1 text-[10px] text-[#8b949e]">
+                        Incident pinpointed on Floor {r.floor} ({Math.round(r.x_coord)}, {Math.round(r.y_coord)})
+                      </div>
+                      <FloorPlanViewer
+                        floor={r.floor}
+                        theme="dark"
+                        interactive={false}
+                        activePin={{ x: r.x_coord, y: r.y_coord, room: r.room_or_zone }}
+                        className="h-40 w-full"
+                        showRoomLabels={true}
+                      />
+                    </div>
+                  )}
 
                   {/* Resolution-stage timeline (abstract: "progress monitored
                       through different resolution stages") */}
@@ -251,7 +294,11 @@ export default function TrackerPage() {
             </motion.div>
           );
         })}
-      </div>
-    </main>
+        </div>
+      </main>
+
+      <CampBotChat />
+    </div>
   );
 }
+

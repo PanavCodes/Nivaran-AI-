@@ -29,20 +29,27 @@ CATEGORY_DEPARTMENT_MAP = {
     "ADMINISTRATION": "Registrar Operations",
 }
 
-# Degrees for the bounding-box pre-filter (§3.2: 50 m ≈ 0.00045°).
-_BBOX_DEG = settings.AUTO_CLUSTER_RADIUS_METERS * 0.000009
+# Degrees bounding box no longer needed — replaced by SVG canvas radius units
+_RADIUS_UNITS = settings.AUTO_CLUSTER_RADIUS_UNITS
 
 
-def _find_matching_cluster(db: Session, category: str, lat: float, lon: float, embedding: list[float]):
+def _find_matching_cluster(
+    db: Session,
+    category: str,
+    floor: str,
+    x_coord: float,
+    y_coord: float,
+    embedding: list[float],
+):
     result = db.execute(
         SPATIO_SEMANTIC_SEARCH,
         {
             "new_category": category,
-            "new_lat": lat,
-            "new_lon": lon,
+            "new_floor": floor.upper(),
+            "new_x": float(x_coord),
+            "new_y": float(y_coord),
             "new_embedding": str(embedding),
-            "bbox_deg": _BBOX_DEG,
-            "radius_m": settings.AUTO_CLUSTER_RADIUS_METERS,
+            "radius_units": _RADIUS_UNITS,
             "threshold": settings.MIN_SEMANTIC_SIMILARITY_THRESHOLD,
         },
     )
@@ -55,22 +62,27 @@ def process_new_complaint(
     user_id: uuid.UUID,
     title: str,
     description: str,
-    latitude: float,
-    longitude: float,
+    floor: str = "1",
+    x_coord: float = 180.0,
+    y_coord: float = 267.0,
+    room_or_zone: str | None = None,
     image_bytes: bytes | None = None,
     image_url: str | None = None,
 ) -> dict:
-    """Full intake → cluster → priority pipeline. Returns submission result dict."""
-    # 1. Gemini multi-modal intake (category, severity, impact, ocr, title)
+    """Full intake → cluster → priority pipeline for indoor campus building. Returns submission result dict."""
+    # 1. Gemini multi-modal intake (category, severity, impact, ocr, title, floor, room)
     intake = run_intake(f"{title}. {description}" if title else description, image_bytes)
     if title:
         intake.ai_title = title  # reporter's own title wins for the complaint record
 
+    norm_floor = (floor or intake.floor or "1").strip().upper()
+    resolved_room = room_or_zone or intake.room_or_zone
+
     # 2. Embed the complaint text (384-dim, normalised)
     embedding = embed(f"{title} {description}".strip())
 
-    # 3. Spatio-semantic search for an existing open cluster
-    match = _find_matching_cluster(db, intake.category, latitude, longitude, embedding)
+    # 3. Spatio-semantic search for an existing open cluster on the same floor
+    match = _find_matching_cluster(db, intake.category, norm_floor, x_coord, y_coord, embedding)
 
     now = datetime.now(timezone.utc)
     complaint = Complaint(
@@ -80,8 +92,10 @@ def process_new_complaint(
         category=intake.category,
         severity=intake.severity,
         image_url=image_url,
-        latitude=latitude,
-        longitude=longitude,
+        floor=norm_floor,
+        x_coord=x_coord,
+        y_coord=y_coord,
+        room_or_zone=resolved_room,
         embedding=embedding,
         created_at=now,
     )
@@ -114,7 +128,7 @@ def process_new_complaint(
         cluster.ai_summary = generate_cluster_summary(cluster, intake.category)
         merged = True
         event = "cluster.merged"
-        logger.info(f"Complaint merged into cluster {cluster.id} (count={cluster.complaint_count}, P={score})")
+        logger.info(f"Complaint merged into cluster {cluster.id} (Floor {cluster.floor}, count={cluster.complaint_count}, P={score})")
     else:
         # ── CREATE fresh cluster (§3.2 decision logic) ─────────────────────
         score, tier, deadline = compute_priority(
@@ -128,8 +142,10 @@ def process_new_complaint(
             severity_score=intake.severity,
             impact_score=intake.impact,
             complaint_count=1,
-            latitude=latitude,
-            longitude=longitude,
+            floor=norm_floor,
+            x_coord=x_coord,
+            y_coord=y_coord,
+            room_or_zone=resolved_room,
             representative_embedding=embedding,
             sla_deadline=deadline,
             first_reported_at=now,
@@ -147,7 +163,7 @@ def process_new_complaint(
         cluster.ai_summary = generate_cluster_summary(cluster, intake.category)
         merged = False
         event = "cluster.created"
-        logger.info(f"New cluster created {cluster.id} (P={score}, tier={tier})")
+        logger.info(f"New cluster created {cluster.id} on Floor {cluster.floor} (P={score}, tier={tier})")
 
     # 6. Real-time broadcast to the admin room (§3.5 event table)
     payload = {
@@ -156,8 +172,10 @@ def process_new_complaint(
         "new_priority_score": cluster.priority_score,
         "priority_score": cluster.priority_score,
         "complaint_count": cluster.complaint_count,
-        "lat": float(cluster.latitude),
-        "lon": float(cluster.longitude),
+        "floor": cluster.floor,
+        "x_coord": float(cluster.x_coord),
+        "y_coord": float(cluster.y_coord),
+        "room_or_zone": cluster.room_or_zone,
     }
 
     return {

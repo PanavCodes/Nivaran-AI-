@@ -1,5 +1,5 @@
--- backend/db/schema.sql
--- Nivaran AI — verbatim DDL from BUILD.md §3.1. Do not paraphrase.
+-- backend/app/db/schema.sql
+-- Nivaran AI — verbatim DDL for indoor campus intelligence
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "vector";
 
@@ -37,8 +37,10 @@ CREATE TABLE issue_clusters (
     severity_score           INT NOT NULL CHECK (severity_score BETWEEN 1 AND 5),
     impact_score             INT NOT NULL CHECK (impact_score BETWEEN 1 AND 5),
     complaint_count          INT NOT NULL DEFAULT 1,
-    latitude                 DECIMAL(9,6) NOT NULL,
-    longitude                DECIMAL(9,6) NOT NULL,
+    floor                    VARCHAR(10) NOT NULL,
+    x_coord                  FLOAT NOT NULL,
+    y_coord                  FLOAT NOT NULL,
+    room_or_zone             VARCHAR(100),
     representative_embedding vector(384) NOT NULL,
     assigned_technician_id   UUID REFERENCES users(id) ON DELETE SET NULL,
     sla_deadline             TIMESTAMP WITH TIME ZONE,
@@ -46,7 +48,7 @@ CREATE TABLE issue_clusters (
     last_reported_at         TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_at               TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at               TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    assigned_department VARCHAR(100) NOT NULL DEFAULT 'MAINTENANCE'
+    assigned_department      VARCHAR(100) NOT NULL DEFAULT 'MAINTENANCE'
 );
 
 -- ─────────────────────────────────────────────
@@ -62,8 +64,10 @@ CREATE TABLE complaints (
     severity             INT NOT NULL CHECK (severity BETWEEN 1 AND 5),
     image_url            VARCHAR(512),
     resolution_proof_url VARCHAR(512),
-    latitude             DECIMAL(9,6) NOT NULL,
-    longitude            DECIMAL(9,6) NOT NULL,
+    floor                VARCHAR(10) NOT NULL,
+    x_coord              FLOAT NOT NULL,
+    y_coord              FLOAT NOT NULL,
+    room_or_zone         VARCHAR(100),
     embedding            vector(384) NOT NULL,
     created_at           TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -101,8 +105,8 @@ CREATE INDEX idx_clusters_hnsw
     ON issue_clusters USING hnsw (representative_embedding vector_cosine_ops)
     WITH (m = 16, ef_construction = 64);
 
--- Spatial composite index for bounding-box pre-filter
-CREATE INDEX idx_clusters_spatial    ON issue_clusters (latitude, longitude);
+-- Indoor floor spatial composite index for fast area pre-filter
+CREATE INDEX idx_clusters_floor_spatial ON issue_clusters (floor, x_coord, y_coord);
 CREATE INDEX idx_clusters_status     ON issue_clusters (status);
 CREATE INDEX idx_clusters_category   ON issue_clusters (category);
 CREATE INDEX idx_complaints_cluster  ON complaints (cluster_id);

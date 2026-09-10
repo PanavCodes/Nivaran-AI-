@@ -50,6 +50,24 @@ def get_current_user(
     return user
 
 
+def get_current_user_optional(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Optional user resolution — returns None if unauthenticated instead of raising 401."""
+    if credentials is None or not credentials.credentials:
+        return None
+    try:
+        payload = decode_access_token(credentials.credentials)
+        user = db.get(User, uuid.UUID(payload["sub"]))
+        if user and user.is_active:
+            return user
+    except Exception:
+        pass
+    return None
+
+
+
 def require_role(*roles: str):
     """Allow any of the listed roles (exact match, no hierarchy)."""
 

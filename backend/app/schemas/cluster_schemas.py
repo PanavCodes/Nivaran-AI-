@@ -16,13 +16,16 @@ class ClusterOut(BaseModel):
     severity_score: int
     impact_score: int
     complaint_count: int
-    latitude: float
-    longitude: float
+    floor: str
+    x_coord: float
+    y_coord: float
+    room_or_zone: str | None = None
     sla_deadline: datetime | None
     assigned_technician_id: str | None
     assigned_department: str
     first_reported_at: datetime | None
     last_reported_at: datetime | None
+    work_order_checklist: dict | None = None
 
 
 class ClusterDetail(ClusterOut):
@@ -36,9 +39,18 @@ class NearbyCluster(BaseModel):
     category: str
     priority_score: float
     complaint_count: int
-    distance_m: float
-    latitude: float
-    longitude: float
+    distance_units: float
+    floor: str
+    x_coord: float
+    y_coord: float
+    room_or_zone: str | None = None
+
+
+class FloorSummaryItem(BaseModel):
+    floor: str
+    open_count: int
+    emergency_count: int
+    max_priority: float
 
 
 class AssignRequest(BaseModel):

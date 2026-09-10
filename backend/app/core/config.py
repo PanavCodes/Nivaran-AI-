@@ -30,12 +30,11 @@ class Settings(BaseSettings):
     NEXT_PUBLIC_API_URL: str = "http://localhost:8000"
     ALLOWED_CORS_ORIGINS: str = '["http://localhost:3000"]'
 
-    # ── Clustering tuning ─────────────────────────────────────────────────
-    AUTO_CLUSTER_RADIUS_METERS: int = 50
-    # Empirically calibrated with all-MiniLM-L6-v2: paraphrased duplicates of
-    # the same issue score 0.55–0.92; different issues in the same room score
-    # 0.37–0.46. BUILD.md's 0.78 would reject its own judge-demo merge pair
-    # (0.547), so 0.52 keeps every true duplicate while separating incidents.
+    # ── Indoor Clustering tuning ──────────────────────────────────────────
+    # Standardized on the 360 x 534 SVG floor canvas.
+    # 35 canvas units represents proximity within the same room or corridor area.
+    AUTO_CLUSTER_RADIUS_UNITS: float = 35.0
+    AUTO_CLUSTER_RADIUS_METERS: float = 35.0  # backward compatibility alias
     MIN_SEMANTIC_SIMILARITY_THRESHOLD: float = 0.52
 
     # ── Vision hooks (§2.3 ports — optional) ──────────────────────────────
