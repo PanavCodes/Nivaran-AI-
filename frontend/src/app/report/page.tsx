@@ -8,16 +8,11 @@ import {
   AlertTriangle,
   Building,
   CheckCircle2,
-  ClipboardList,
   ImagePlus,
   Layers,
   Loader2,
   MapPin,
-  Send,
   X,
-  Sparkles,
-  Scan,
-  ThumbsUp,
   Shield,
   Search,
 } from "lucide-react";
@@ -298,9 +293,9 @@ export default function ReportPortal() {
                       variant="outline"
                       size="sm"
                       onClick={() => setIsQrOpen(true)}
-                      className="border-slate-200 text-slate-700 hover:bg-slate-50 flex items-center gap-1.5 text-xs h-9"
+                      className="border-slate-200 text-slate-700 hover:bg-slate-50 text-xs h-9 px-3"
                     >
-                      <Scan size={14} className="text-indigo-600" /> Door QR
+                      Scan door QR
                     </Button>
                   </div>
                 </div>
@@ -385,8 +380,7 @@ export default function ReportPortal() {
                       animate={{ opacity: 1, y: 0 }}
                       className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50/60 px-3.5 py-2.5 text-xs text-indigo-800"
                     >
-                      <Sparkles size={14} className="text-indigo-600" />
-                      <span className="font-semibold">Detected Information:</span>
+                      <span className="font-semibold text-slate-800">Detected location:</span>
                       {aiDetected.floor && (
                         <Badge variant="accent" className="text-[10px]">
                           Floor {aiDetected.floor}
@@ -612,13 +606,8 @@ export default function ReportPortal() {
                     />
                   </div>
 
-                  <Button type="submit" disabled={submitting || analyzing} className="w-full py-3">
-                    {submitting ? (
-                      <Loader2 className="animate-spin" size={16} />
-                    ) : (
-                      <Send size={15} />
-                    )}
-                    {submitting ? "Processing Report…" : "Submit Incident Report"}
+                  <Button type="submit" disabled={submitting || analyzing} className="w-full py-2.5 text-xs font-semibold">
+                    {submitting ? "Processing report…" : "Submit incident report"}
                   </Button>
                 </form>
               </CardContent>
@@ -671,21 +660,15 @@ export default function ReportPortal() {
                       <p className="mt-1 text-xs text-slate-600">
                         {c.complaint_count} {c.complaint_count === 1 ? "person has" : "people have"} reported this.
                       </p>
-                      {/* Me Too Reinforce button */}
                       <Button
                         type="button"
                         size="sm"
                         variant="outline"
                         disabled={reinforcingId === c.cluster_id}
                         onClick={() => handleReinforceCluster(c.cluster_id, c.title)}
-                        className="mt-3 w-full border-amber-300 bg-white text-amber-800 hover:bg-amber-50 flex items-center justify-center gap-1.5 text-xs h-8 font-semibold cursor-pointer shadow-2xs"
+                        className="mt-3 w-full border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs h-8 font-medium cursor-pointer"
                       >
-                        {reinforcingId === c.cluster_id ? (
-                          <Loader2 size={13} className="animate-spin" />
-                        ) : (
-                          <ThumbsUp size={13} />
-                        )}
-                        Me Too (+1 Urgency)
+                        {reinforcingId === c.cluster_id ? "Confirming…" : "Confirm you are also affected"}
                       </Button>
                     </div>
                   ))}
@@ -773,10 +756,10 @@ export default function ReportPortal() {
 
               <Link
                 href="/tracker"
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-indigo-700 transition"
+                className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 transition"
                 onClick={() => setResult(null)}
               >
-                <ClipboardList size={16} /> Track this Incident
+                Track this incident
               </Link>
             </div>
           )}

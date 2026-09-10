@@ -5,18 +5,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Layers,
-  LayoutDashboard,
-  Wrench,
-  ClipboardList,
-  CheckCircle2,
-  Volume2,
-  VolumeX,
   ChevronDown,
   LogOut,
   Menu,
   X,
-  Sparkles,
 } from "lucide-react";
 import {
   getStoredUser,
@@ -25,30 +17,27 @@ import {
   type SessionUser,
   type Role,
 } from "@/lib/auth";
-import { sound } from "@/lib/sound";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 
 interface NavItem {
   label: string;
   href: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
   badge?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Intake", href: "/report", icon: Layers },
-  { label: "Mission Control", href: "/admin", icon: LayoutDashboard },
-  { label: "Technician Queue", href: "/technician", icon: Wrench },
-  { label: "Status Tracker", href: "/tracker", icon: ClipboardList },
-  { label: "Transparency", href: "/transparency", icon: CheckCircle2, badge: "Verified" },
+  { label: "Report an Issue", href: "/report" },
+  { label: "Dispatch Console", href: "/admin" },
+  { label: "Work Orders", href: "/technician" },
+  { label: "Status Tracker", href: "/tracker" },
+  { label: "Public Audit", href: "/transparency" },
 ];
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
-  const [isMuted, setIsMuted] = useState(true);
   const [personaMenuOpen, setPersonaMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
@@ -56,7 +45,6 @@ export const Navbar: React.FC = () => {
 
   useEffect(() => {
     setUser(getStoredUser());
-    setIsMuted(sound.isMuted());
 
     const handleClickOutside = (e: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -66,16 +54,6 @@ export const Navbar: React.FC = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-
-  const handleToggleSound = () => {
-    const next = sound.toggleMute();
-    setIsMuted(next);
-    if (!next) {
-      toast.info("Audio enabled", { duration: 1500 });
-    } else {
-      toast.info("Audio muted", { duration: 1500 });
-    }
-  };
 
   const handleQuickSwitch = async (role: "ADMIN" | "TECHNICIAN" | "STUDENT" | "FACULTY") => {
     setSwitching(true);
@@ -106,55 +84,40 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-md transition-all">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white transition-all">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* Brand Logo */}
+        {/* Brand */}
         <div className="flex items-center gap-8">
           <Link href="/" className="group flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-xs">
-              <Layers size={17} className="text-white" />
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-slate-900 text-white font-bold text-xs">
+              N
             </div>
             <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="text-sm font-bold tracking-tight text-slate-900 group-hover:text-indigo-600 transition">
-                  Nivaran AI
-                </span>
-                <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] font-medium text-slate-600 border border-slate-200 hidden sm:inline-block">
-                  v2.0
-                </span>
-              </div>
-              <span className="text-[10px] text-slate-500 -mt-0.5 hidden sm:block">
-                Campus Operations Intelligence
+              <span className="text-sm font-semibold tracking-tight text-slate-900 group-hover:text-indigo-600 transition">
+                Nivaran
               </span>
             </div>
           </Link>
 
-          {/* Desktop Navigation Links */}
+          {/* Desktop Navigation Links — Clean Typography */}
           <nav className="hidden md:flex items-center gap-1">
             {NAV_ITEMS.map((item) => {
               const active = pathname === item.href;
-              const Icon = item.icon;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                  className={`relative rounded-md px-3 py-1.5 text-xs font-medium transition ${
                     active
-                      ? "text-slate-900 bg-slate-100 shadow-2xs"
+                      ? "text-slate-900 bg-slate-100 font-semibold"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                   }`}
                 >
-                  <Icon size={14} className={active ? "text-indigo-600" : "text-slate-500"} />
                   <span>{item.label}</span>
-                  {item.badge && (
-                    <span className="rounded-full bg-emerald-50 px-1.5 py-0.2 text-[9px] font-bold text-emerald-700 border border-emerald-200/60">
-                      {item.badge}
-                    </span>
-                  )}
                   {active && (
                     <motion.span
                       layoutId="activeNavIndicator"
-                      className="absolute bottom-0 left-2.5 right-2.5 h-0.5 rounded-full bg-indigo-600"
+                      className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-slate-900"
                     />
                   )}
                 </Link>
@@ -163,31 +126,15 @@ export const Navbar: React.FC = () => {
           </nav>
         </div>
 
-        {/* Right Section: System Indicator + Sound + Role Switcher */}
+        {/* Right Section: Role Switcher & Evaluation Menu */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Steady Status Indicator */}
-          <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            <span>10-Floor Engine Online</span>
-          </div>
-
-          {/* Optional Audio Toggle */}
-          <button
-            onClick={handleToggleSound}
-            title={isMuted ? "Unmute Audio" : "Mute Audio"}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-900 hover:border-slate-300 transition shadow-2xs"
-          >
-            {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} className="text-indigo-600" />}
-          </button>
-
-          {/* User Persona & Role Switcher */}
           <div className="relative" ref={menuRef}>
             {user ? (
               <button
                 onClick={() => setPersonaMenuOpen(!personaMenuOpen)}
                 className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 hover:border-slate-300 transition shadow-2xs font-medium cursor-pointer"
               >
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-50 text-indigo-700 font-semibold text-[10px]">
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-700 font-semibold text-[10px]">
                   {user.full_name.charAt(0)}
                 </div>
                 <span className="max-w-[90px] sm:max-w-[120px] truncate">
@@ -202,17 +149,16 @@ export const Navbar: React.FC = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setPersonaMenuOpen(!personaMenuOpen)}
-                  className="flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100/70 transition cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
                 >
-                  <Sparkles size={13} />
-                  <span>Demo Switcher</span>
+                  <span>Role switch</span>
                   <ChevronDown size={12} />
                 </button>
                 <Link
                   href="/login"
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
+                  className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-slate-800 transition"
                 >
-                  Sign In
+                  Sign in
                 </Link>
               </div>
             )}
@@ -326,25 +272,16 @@ export const Navbar: React.FC = () => {
           >
             {NAV_ITEMS.map((item) => {
               const active = pathname === item.href;
-              const Icon = item.icon;
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold ${
-                    active ? "bg-slate-100 text-slate-900" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  className={`flex items-center justify-between rounded-md px-3 py-2 text-xs font-medium ${
+                    active ? "bg-slate-100 text-slate-900 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <Icon size={15} className={active ? "text-indigo-600" : "text-slate-500"} />
-                    <span>{item.label}</span>
-                  </div>
-                  {item.badge && (
-                    <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 border border-emerald-200">
-                      {item.badge}
-                    </span>
-                  )}
+                  <span>{item.label}</span>
                 </Link>
               );
             })}

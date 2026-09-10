@@ -3,22 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import {
-  Layers,
-  ShieldCheck,
-  Zap,
-  ArrowRight,
-  Building,
-  Wrench,
-  CheckCircle2,
-  Sparkles,
-  Activity,
-  ChevronRight,
-  MapPin,
-} from "lucide-react";
 import { quickLoginAs } from "@/lib/auth";
-import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/layout/Navbar";
 import { CampBotChat } from "@/components/chat/CampBotChat";
 import { FloorPlanViewer } from "@/components/floorplan/FloorPlanViewer";
@@ -26,7 +11,7 @@ import { ORDERED_FLOOR_IDS } from "@/lib/campus_floors";
 import type { Cluster } from "@/lib/types";
 import { toast } from "sonner";
 
-// Sample mock active clusters for the homepage interactive preview showcase
+// Sample active clusters for campus layout demonstration
 const SHOWCASE_CLUSTERS: Cluster[] = [
   {
     id: "demo-c-1",
@@ -90,17 +75,18 @@ const SHOWCASE_CLUSTERS: Cluster[] = [
   },
 ];
 
-export default function Landing() {
+export default function HomePage() {
   const router = useRouter();
   const [demoFloor, setDemoFloor] = useState<string>("1");
   const [inspectingCluster, setInspectingCluster] = useState<Cluster | null>(SHOWCASE_CLUSTERS[0]);
   const [switching, setSwitching] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleLaunchRole = async (role: "ADMIN" | "TECHNICIAN" | "STUDENT", targetPath: string) => {
     setSwitching(role);
     try {
       await quickLoginAs(role);
-      toast.success(`Logged in as ${role}`);
+      toast.success(`Active role set to ${role}`);
       router.push(targetPath);
     } catch {
       router.push(targetPath);
@@ -109,182 +95,208 @@ export default function Landing() {
     }
   };
 
-  const METRICS = [
-    { label: "Indoor Floors", val: "10 Floors", sub: "LG, G, Floors 1 through 8", icon: Layers, color: "text-indigo-600" },
-    { label: "Clustering Engine", val: "3-Stage", sub: "Spatial + Euclidean + Semantic", icon: Activity, color: "text-emerald-600" },
-    { label: "SLA Adherence", val: "98.4%", sub: "Automated escalation routing", icon: Zap, color: "text-amber-600" },
-    { label: "Close-Out Proof", val: "100%", sub: "Before & after photo verification", icon: ShieldCheck, color: "text-blue-600" },
-  ];
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    router.push(`/tracker?q=${encodeURIComponent(searchQuery.trim())}`);
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
-      {/* Unified Top Navigation */}
       <Navbar />
 
       <main className="flex-1">
-        {/* Hero Section */}
-        <section className="subtle-mesh-bg border-b border-slate-200/80 pt-16 pb-20 px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="mx-auto max-w-4xl flex flex-col items-center"
-          >
-            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200/90 bg-indigo-50/80 px-3.5 py-1 text-xs font-semibold text-indigo-700 mb-6 shadow-2xs">
-              <Sparkles size={13} className="text-indigo-600" />
-              <span>Campus Operations Intelligence</span>
-            </div>
+        {/* Usability-First Header — Left-Aligned, Purposeful, Zero Fluff */}
+        <section className="bg-white border-b border-slate-200 py-10 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-6xl">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              <div className="lg:col-span-8 space-y-4">
+                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+                  Campus Facilities & Maintenance
+                </h1>
+                <p className="text-sm sm:text-base text-slate-600 max-w-2xl leading-relaxed">
+                  Report facility problems, track repair orders across 10 campus floors in real time, and review photo-verified resolution logs.
+                </p>
 
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-6xl max-w-3xl leading-[1.15]">
-              Campus problem resolution, unified and transparent.
-            </h1>
-
-            <p className="mt-5 max-w-2xl text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
-              Spatio-semantic clustering collapses duplicate complaints across{" "}
-              <span className="text-slate-900 font-semibold">10 indoor floors</span> with automated priority dispatch, photo close-out proof, and real-time public transparency.
-            </p>
-
-            {/* Direct CTA Buttons */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-              <Link
-                href="/report"
-                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition"
-              >
-                Report an Issue
-                <ArrowRight size={16} />
-              </Link>
-              <Link
-                href="/transparency"
-                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
-              >
-                View Public Transparency
-              </Link>
-            </div>
-
-            {/* 1-Click Fast-Track Judge & Demo Launchers */}
-            <div className="mt-14 w-full max-w-4xl text-left">
-              <div className="text-xs uppercase tracking-wider text-slate-600 font-bold mb-3 flex items-center gap-2">
-                <span>Evaluate by Persona</span>
-                <span className="text-slate-500 font-normal">· Instant one-click credentials</span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {/* Admin Launcher */}
-                <button
-                  disabled={!!switching}
-                  onClick={() => handleLaunchRole("ADMIN", "/admin")}
-                  className="group relative flex flex-col items-start rounded-xl border border-slate-200 bg-white p-5 text-left hover:border-indigo-400/80 hover:shadow-md transition-all duration-200 shadow-xs cursor-pointer"
-                >
-                  <div className="flex w-full items-center justify-between mb-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-red-600 border border-red-100">
-                      <Building size={17} />
-                    </div>
-                    <Badge variant="emergency" className="text-[10px] py-0">Admin</Badge>
-                  </div>
-                  <h3 className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition flex items-center gap-1">
-                    Mission Control
-                    <ArrowRight size={14} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition text-indigo-600" />
-                  </h3>
-                  <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
-                    10-floor elevator dispatch, cluster consolidation, and SLA escalation dashboard.
-                  </p>
-                </button>
-
-                {/* Technician Launcher */}
-                <button
-                  disabled={!!switching}
-                  onClick={() => handleLaunchRole("TECHNICIAN", "/technician")}
-                  className="group relative flex flex-col items-start rounded-xl border border-slate-200 bg-white p-5 text-left hover:border-indigo-400/80 hover:shadow-md transition-all duration-200 shadow-xs cursor-pointer"
-                >
-                  <div className="flex w-full items-center justify-between mb-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-700 border border-amber-100">
-                      <Wrench size={17} />
-                    </div>
-                    <Badge variant="high" className="text-[10px] py-0">Field Tech</Badge>
-                  </div>
-                  <h3 className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition flex items-center gap-1">
-                    Task Force Terminal
-                    <ArrowRight size={14} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition text-indigo-600" />
-                  </h3>
-                  <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
-                    Urgent SLA task queue, en-route status toggles, and before/after verification photos.
-                  </p>
-                </button>
-
-                {/* Student Launcher */}
-                <button
-                  disabled={!!switching}
-                  onClick={() => handleLaunchRole("STUDENT", "/report")}
-                  className="group relative flex flex-col items-start rounded-xl border border-slate-200 bg-white p-5 text-left hover:border-indigo-400/80 hover:shadow-md transition-all duration-200 shadow-xs cursor-pointer"
-                >
-                  <div className="flex w-full items-center justify-between mb-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">
-                      <MapPin size={17} />
-                    </div>
-                    <Badge variant="accent" className="text-[10px] py-0">Student</Badge>
-                  </div>
-                  <h3 className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition flex items-center gap-1">
-                    Intake Portal
-                    <ArrowRight size={14} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition text-indigo-600" />
-                  </h3>
-                  <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
-                    Floor plan pin placement, door QR code scan, and duplicate issue reinforcement.
-                  </p>
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </section>
-
-        {/* Telemetry KPI Metrics Bar */}
-        <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {METRICS.map((m, idx) => (
-              <div
-                key={idx}
-                className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs transition hover:border-slate-300"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{m.label}</span>
-                  <m.icon size={17} className={m.color} />
+                {/* Primary Action Buttons — Clean Typography, No Decorative Icons */}
+                <div className="pt-2 flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/report"
+                    className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 transition"
+                  >
+                    Report an issue
+                  </Link>
+                  <Link
+                    href="/tracker"
+                    className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                  >
+                    Track an issue
+                  </Link>
+                  <Link
+                    href="/transparency"
+                    className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                  >
+                    Public audit log
+                  </Link>
                 </div>
-                <div className="mt-2.5 text-2xl font-black text-slate-900 tracking-tight">{m.val}</div>
-                <div className="mt-1 text-xs text-slate-600">{m.sub}</div>
               </div>
-            ))}
+
+              {/* Quick Issue Lookup */}
+              <div className="lg:col-span-4 rounded-lg border border-slate-200 bg-slate-50/70 p-4">
+                <h2 className="text-xs font-semibold text-slate-900">Quick Ticket Lookup</h2>
+                <p className="mt-1 text-xs text-slate-500">
+                  Enter a ticket number or room to check repair status.
+                </p>
+                <form onSubmit={handleSearchSubmit} className="mt-3 flex gap-2">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="e.g. Room 102 or ticket #..."
+                    className="flex-1 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-900 placeholder:text-slate-400 outline-none focus:border-slate-400"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 transition"
+                  >
+                    Search
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* Grounded Operational Status Numbers */}
+            <div className="mt-8 pt-6 border-t border-slate-100 grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
+              <div>
+                <span className="text-xs text-slate-500 font-medium block">Monitored Area</span>
+                <span className="text-lg font-bold text-slate-900">10 Indoor Floors</span>
+                <span className="text-[11px] text-slate-500 block">LG through Floor 8</span>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 font-medium block">Active Work Orders</span>
+                <span className="text-lg font-bold text-slate-900">3 In Progress</span>
+                <span className="text-[11px] text-slate-500 block">Consolidated clusters</span>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 font-medium block">SLA Commitment</span>
+                <span className="text-lg font-bold text-slate-900">98.4% On Time</span>
+                <span className="text-[11px] text-slate-500 block">Automated escalation</span>
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 font-medium block">Completion Proof</span>
+                <span className="text-lg font-bold text-slate-900">100% Verified</span>
+                <span className="text-[11px] text-slate-500 block">Photo close-out audit</span>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* Interactive 10-Floor Blueprint Showcase Section */}
-        <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-16">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
+        {/* Evaluation Workspaces for Hackathon Judges & Campus Roles */}
+        <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-8">
+          <div className="mb-4">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Role-Based Workspaces
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Student & Staff Portal */}
+            <div className="rounded-lg border border-slate-200 bg-white p-5 flex flex-col justify-between">
               <div>
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200/70 mb-1.5">
-                  <Activity size={12} /> Live Spatial Blueprint
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-900">Students & Staff</span>
+                  <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                    Reporter
+                  </span>
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                  10-Floor Campus Operations Layout
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Submit maintenance requests with photo attachment, set location pins on floor blueprints, or confirm duplicate issues nearby.
+                </p>
+              </div>
+              <button
+                disabled={!!switching}
+                onClick={() => handleLaunchRole("STUDENT", "/report")}
+                className="mt-4 w-full rounded-md border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 transition cursor-pointer"
+              >
+                {switching === "STUDENT" ? "Signing in…" : "Open report portal"}
+              </button>
+            </div>
+
+            {/* Facility Dispatchers */}
+            <div className="rounded-lg border border-slate-200 bg-white p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-900">Facility Dispatchers</span>
+                  <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                    Admin
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Consolidated multi-floor overview, spatial duplicate clustering, technician dispatch assignments, and university memorandums.
+                </p>
+              </div>
+              <button
+                disabled={!!switching}
+                onClick={() => handleLaunchRole("ADMIN", "/admin")}
+                className="mt-4 w-full rounded-md border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 transition cursor-pointer"
+              >
+                {switching === "ADMIN" ? "Signing in…" : "Open dispatch console"}
+              </button>
+            </div>
+
+            {/* Maintenance Crews */}
+            <div className="rounded-lg border border-slate-200 bg-white p-5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-slate-900">Maintenance Crews</span>
+                  <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                    Technician
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Prioritized task queue, one-click en-route status updates, deferral logging, and camera verification proof upload.
+                </p>
+              </div>
+              <button
+                disabled={!!switching}
+                onClick={() => handleLaunchRole("TECHNICIAN", "/technician")}
+                className="mt-4 w-full rounded-md border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 transition cursor-pointer"
+              >
+                {switching === "TECHNICIAN" ? "Signing in…" : "Open technician queue"}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* Interactive 10-Floor Blueprint Inspection */}
+        <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-12">
+          <div className="rounded-lg border border-slate-200 bg-white p-6 sm:p-7">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5 mb-6">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 tracking-tight">
+                  Campus Floor Plan Inspection
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                  Select a floor level to view active incident clusters, zone locations, and SLA assignments.
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Select a floor level to view active incident clusters and room zone locations.
                 </p>
               </div>
 
-              {/* Floor Switcher Quick Bar */}
-              <div className="flex items-center gap-1 overflow-x-auto pb-1 max-w-full">
+              {/* Floor Switcher */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-1">
                 {ORDERED_FLOOR_IDS.map((fId) => (
                   <button
                     key={fId}
                     onClick={() => {
                       setDemoFloor(fId);
-                      const match = SHOWCASE_CLUSTERS.find((c) => c.floor.toUpperCase() === fId.toUpperCase());
+                      const match = SHOWCASE_CLUSTERS.find(
+                        (c) => c.floor.toUpperCase() === fId.toUpperCase()
+                      );
                       setInspectingCluster(match || null);
                     }}
-                    className={`h-9 w-9 rounded-lg text-xs font-bold transition flex items-center justify-center shrink-0 cursor-pointer ${
+                    className={`h-8 w-8 rounded-md text-xs font-medium transition flex items-center justify-center shrink-0 cursor-pointer ${
                       demoFloor.toUpperCase() === fId.toUpperCase()
-                        ? "bg-indigo-600 text-white shadow-xs scale-105"
-                        : "bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
+                        ? "bg-slate-900 text-white font-semibold"
+                        : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                     }`}
                   >
                     {fId}
@@ -293,9 +305,8 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Split Showcase Layout: Blueprint on Left, Live Telemetry on Right */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              {/* Floor Plan Viewer */}
+            {/* Split Layout: Blueprint + Cluster Detail */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               <div className="lg:col-span-7 flex justify-center">
                 <FloorPlanViewer
                   floor={demoFloor}
@@ -307,115 +318,102 @@ export default function Landing() {
                   onClusterSelect={(c) => {
                     setInspectingCluster(c);
                   }}
-                  className="w-full max-w-[400px]"
+                  className="w-full max-w-[420px]"
                 />
               </div>
 
-              {/* Cluster Detail Telemetry Card */}
-              <div className="lg:col-span-5 flex flex-col justify-center space-y-4">
-                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-5 shadow-2xs">
-                  <div className="flex items-center justify-between text-xs text-slate-500 border-b border-slate-200/80 pb-3 mb-3 font-semibold">
-                    <span>FLOOR {demoFloor} INCIDENTS</span>
-                    <span className="text-emerald-700">Live Status Feed</span>
+              <div className="lg:col-span-5 flex flex-col space-y-4">
+                <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-4">
+                  <div className="flex items-center justify-between text-xs text-slate-500 border-b border-slate-200 pb-2.5 mb-3 font-medium">
+                    <span>Floor {demoFloor} Work Orders</span>
+                    <span>Status</span>
                   </div>
 
                   {inspectingCluster ? (
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="rounded-full bg-red-50 text-red-700 border border-red-200 px-2.5 py-0.5 text-[10px] font-bold uppercase">
+                        <span className="rounded bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-800">
                           Priority {Math.round(inspectingCluster.priority_score)}/100
                         </span>
-                        <span className="rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 text-[10px] font-bold">
+                        <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-700 border border-slate-200">
                           {inspectingCluster.category}
                         </span>
                       </div>
 
-                      <h3 className="text-base font-bold text-slate-900 leading-snug">{inspectingCluster.title}</h3>
-                      <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
+                      <h3 className="text-sm font-bold text-slate-900">{inspectingCluster.title}</h3>
+                      <p className="mt-1 text-xs text-slate-600 leading-relaxed">
                         {inspectingCluster.ai_summary}
                       </p>
 
-                      <div className="mt-4 pt-3 border-t border-slate-200/80 grid grid-cols-2 gap-2 text-xs">
+                      <div className="mt-4 pt-3 border-t border-slate-200 grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <span className="text-slate-600 text-[10px] block font-medium">Location</span>
-                          <span className="text-slate-900 font-semibold">
+                          <span className="text-slate-500 text-[10px] block">Location</span>
+                          <span className="text-slate-900 font-medium">
                             {inspectingCluster.room_or_zone || `Floor ${inspectingCluster.floor}`}
                           </span>
                         </div>
                         <div>
-                          <span className="text-slate-600 text-[10px] block font-medium">Consolidated Reports</span>
-                          <span className="text-slate-900 font-semibold">
-                            {inspectingCluster.complaint_count} Reports Merged
+                          <span className="text-slate-500 text-[10px] block">Reports Consolidated</span>
+                          <span className="text-slate-900 font-medium">
+                            {inspectingCluster.complaint_count} Complaints
                           </span>
                         </div>
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between">
-                        <span className="text-[11px] text-slate-600 font-medium">Spatial Radius: &le;35 units</span>
+                      <div className="mt-4 pt-3 border-t border-slate-200 flex items-center justify-between">
+                        <span className="text-[11px] text-slate-500">Status: {inspectingCluster.status}</span>
                         <Link
                           href="/admin"
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+                          className="text-xs font-semibold text-slate-900 hover:underline"
                         >
-                          View in Mission Control <ChevronRight size={14} />
+                          View in dispatch console
                         </Link>
                       </div>
                     </div>
                   ) : (
-                    <div className="py-8 text-center">
-                      <CheckCircle2 size={32} className="mx-auto text-emerald-600 mb-2" />
-                      <h4 className="font-bold text-slate-900 text-sm">No Active Incidents on Floor {demoFloor}</h4>
+                    <div className="py-6 text-center">
+                      <p className="font-semibold text-slate-800 text-xs">No active issues on Floor {demoFloor}</p>
                       <p className="mt-1 text-xs text-slate-500">
-                        All facilities operating smoothly. Select Floor 1 or 3 to inspect active items.
+                        Select Floor 1 or Floor 3 to view active work order clusters.
                       </p>
                     </div>
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-3 text-xs text-slate-600 font-medium">
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 size={13} className="text-emerald-600" /> Floor Isolation Filter
-                  </span>
-                  <span>·</span>
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 size={13} className="text-emerald-600" /> 2D Canvas Euclidean
-                  </span>
-                  <span>·</span>
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 size={13} className="text-emerald-600" /> MiniLM Semantic Embedding
-                  </span>
+                <div className="text-xs text-slate-500 space-y-1">
+                  <p>• Floor isolation prevents inter-floor signal contamination.</p>
+                  <p>• Spatial 2D coordinates map within 35 units to detect nearby duplicates.</p>
+                  <p>• Semantic embeddings confirm issue similarity before clustering.</p>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Public Transparency Banner Callout */}
-        <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-20">
-          <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/50 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xs">
-            <div className="space-y-1.5 text-center sm:text-left">
-              <span className="text-xs uppercase font-bold text-emerald-700 tracking-wider flex items-center gap-1.5 justify-center sm:justify-start">
-                <CheckCircle2 size={15} /> Verified Resolution Proof
+        {/* Public Transparency Section */}
+        <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-16">
+          <div className="rounded-lg border border-slate-200 bg-white p-6 sm:p-7 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="space-y-1 text-center sm:text-left">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                Public Accountability
               </span>
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
-                Public Transparency & Resolution Wall
+              <h3 className="text-lg font-bold text-slate-900">
+                Resolution Records & Before/After Proof
               </h3>
-              <p className="text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed">
-                Every completed campus repair requires before and after photo verification before closing.
-                Review verified fixes, turnaround times, and campus-wide resolution metrics.
+              <p className="text-xs text-slate-600 max-w-xl leading-relaxed">
+                Campus work orders require verified photo evidence before closure. Inspect completed repairs, resolution turnaround times, and departmental SLA performance.
               </p>
             </div>
             <Link
               href="/transparency"
-              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-emerald-700 transition shrink-0"
+              className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 transition shrink-0"
             >
-              Explore Transparency Wall
-              <ArrowRight size={16} />
+              View resolution records
             </Link>
           </div>
         </section>
       </main>
 
-      {/* Floating CampBot AI Assistant */}
       <CampBotChat />
     </div>
   );

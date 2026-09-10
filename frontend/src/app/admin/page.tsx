@@ -283,9 +283,9 @@ export default function AdminDashboard() {
                 fetchDetail(emerg.id);
               }
             }}
-            className="rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-700 transition cursor-pointer"
+            className="rounded-md bg-red-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-red-700 transition cursor-pointer"
           >
-            Locate Incident →
+            Locate incident
           </button>
         </div>
       )}
@@ -293,25 +293,24 @@ export default function AdminDashboard() {
       {/* ── Subheader Bar with Analytics Toggle & Memo ── */}
       <div className="relative z-10 flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5 py-2.5">
         <div className="flex items-center gap-2 text-xs text-slate-500">
-          <Building size={15} className="text-indigo-600" />
-          <span className="font-bold text-slate-900">Mission Control</span>
+          <span className="font-bold text-slate-900">Dispatch Console</span>
           <span>·</span>
-          <span>10-Storey Campus Operations Hub</span>
+          <span>10-Storey Campus Operations</span>
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant={showCharts ? "primary" : "outline"}
             onClick={() => setShowCharts((v) => !v)}
-            className="text-xs h-8 py-0 font-semibold"
+            className="text-xs h-8 py-0 font-medium"
           >
-            <BarChart3 size={13} /> Analytics Drawer
+            Analytics
           </Button>
           <Button
             variant="outline"
             onClick={() => setShowMemo(true)}
-            className="text-xs h-8 py-0 font-semibold text-slate-700 hover:bg-slate-50"
+            className="text-xs h-8 py-0 font-medium text-slate-700 hover:bg-slate-50"
           >
-            <FileText size={13} /> Incident Memo
+            Incident memo
           </Button>
         </div>
       </div>

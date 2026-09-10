@@ -111,31 +111,27 @@ export default function PublicTransparencyPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-6">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-emerald-700 font-bold uppercase tracking-wider flex items-center gap-1">
-                <CheckCircle2 size={14} /> Public Transparency Wall
+              <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">
+                Public Accountability
               </span>
-              <span className="text-xs text-slate-300">·</span>
-              <Badge variant="resolved" className="text-[10px] py-0 px-2">
-                Photo Verified
-              </Badge>
             </div>
-            <h1 className="mt-2 text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              Campus Redressal & Verified Proof
+            <h1 className="mt-1.5 text-2xl font-bold text-slate-900 tracking-tight">
+              Campus Resolution & Verification Log
             </h1>
-            <p className="mt-1 text-xs md:text-sm text-slate-500 max-w-2xl leading-relaxed">
-              Open public audit of resolved campus maintenance tasks, verified with before and after photo comparisons across all 10 floors.
+            <p className="mt-1 text-xs md:text-sm text-slate-600 max-w-2xl leading-relaxed">
+              Open public audit of resolved campus maintenance work orders, verified with before and after photo records across all 10 floors.
             </p>
           </div>
 
           <div className="flex items-center gap-2.5">
             <Link href="/report">
               <Button size="sm">
-                Report an Issue
+                Report an issue
               </Button>
             </Link>
             <Link href="/admin">
               <Button variant="outline" size="sm">
-                Mission Control
+                Dispatch console
               </Button>
             </Link>
           </div>

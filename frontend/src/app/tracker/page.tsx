@@ -10,7 +10,6 @@ import {
   Loader2,
   MapPin,
   ShieldCheck,
-  Plus,
 } from "lucide-react";
 import { api, API_URL } from "@/lib/api";
 import { requireAuth, type SessionUser } from "@/lib/auth";
@@ -92,17 +91,16 @@ export default function TrackerPage() {
       <main className="flex-1 p-4 md:p-8">
         <div className="mx-auto max-w-4xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200 pb-5 mb-6">
           <div>
-            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+            <h1 className="text-xl font-bold text-slate-900">
               Incident Status Tracker
-              <Badge variant="accent" className="text-[10px] py-0">Live Updates</Badge>
             </h1>
             <p className="text-xs text-slate-500 mt-1">
               Track resolution milestones, SLA commitments, and verified before/after proof.
             </p>
           </div>
           <Link href="/report">
-            <Button size="sm" className="text-xs h-9">
-              <Plus size={14} /> Report New Issue
+            <Button size="sm" className="text-xs h-9 px-3.5">
+              Report new issue
             </Button>
           </Link>
         </div>

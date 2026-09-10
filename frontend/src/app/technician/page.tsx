@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import {
   Camera,
   CheckCircle2,
-  ChevronRight,
   Clock,
   Loader2,
   MapPin,
@@ -53,7 +52,6 @@ export default function TechnicianConsole() {
   const [deferTarget, setDeferTarget] = useState<Cluster | null>(null);
   const [deferReason, setDeferReason] = useState("Waiting for spare parts");
   const [deferOther, setDeferOther] = useState("");
-  const [swipeHint, setSwipeHint] = useState<Record<string, "enroute" | "defer">>({});
   const [queueTab, setQueueTab] = useState<"ALL" | "EMERGENCY" | "IN_PROGRESS" | "MINE">("ALL");
   const proofRef = useRef<HTMLInputElement>(null);
 
@@ -281,47 +279,24 @@ export default function TechnicianConsole() {
                 const tier = tierForScore(cluster.priority_score);
                 const sla = slaCountdown(cluster.sla_deadline);
                 const emergency = tier === "EMERGENCY";
-                const hint = swipeHint[cluster.id];
 
                 return (
                   <motion.div
                     key={cluster.id}
+                    layout
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    drag="x"
-                    dragConstraints={{ left: 120, right: 120 }}
-                    dragElastic={0.5}
-                    onDragStart={() => setSwipeHint((h) => ({ ...h, [cluster.id]: undefined as never }))}
-                    onDrag={(_, info) =>
-                      setSwipeHint((h) => ({
-                        ...h,
-                        [cluster.id]: info.offset.x > 50 ? "enroute" : info.offset.x < -50 ? "defer" : undefined as never,
-                      }))
-                    }
-                    onDragEnd={(_, info) => {
-                      setSwipeHint((h) => ({ ...h, [cluster.id]: undefined as never }));
-                      if (info.offset.x > 90 && info.velocity.x > 200) handleEnRoute(cluster.id);
-                      else if (info.offset.x < -90 && info.velocity.x < -200) setDeferTarget(cluster);
-                    }}
-                    whileDrag={{ scale: 1.02, cursor: "grabbing" }}
-                    transition={{ delay: i * 0.04 }}
+                    transition={{ delay: i * 0.03 }}
                   >
                     <Card
                       className={`cursor-pointer transition border border-slate-200 bg-white hover:border-slate-300 hover:shadow-md shadow-xs ${
                         emergency ? "border-red-300" : ""
-                      } ${hint === "enroute" ? "border-emerald-500 bg-emerald-50/20" : ""} ${hint === "defer" ? "border-amber-500 bg-amber-50/20" : ""}`}
+                      }`}
                       onClick={() => {
-                        if (hint) return;
                         fetchDetail(cluster.id);
                       }}
                     >
                       <CardContent className="p-4 sm:p-5">
-                        {/* Swipe hint */}
-                        <div className="mb-2 flex items-center justify-between text-[10px] uppercase font-semibold text-slate-400">
-                          <span>⟵ swipe to defer</span>
-                          <span>swipe en route ⟶</span>
-                        </div>
-
                         {/* Tier + SLA row */}
                         <div className="flex items-start justify-between">
                           <Badge variant={tierVariant[tier as keyof typeof tierVariant] ?? "default"}>
@@ -403,13 +378,37 @@ export default function TechnicianConsole() {
                           </div>
                         )}
 
-                        {/* Status */}
-                        <div className="mt-4 flex items-center justify-between pt-2 border-t border-slate-100">
-                          <Badge variant="outline" className="text-[10px]">
-                            {cluster.status}
-                          </Badge>
-                          <span className="text-xs font-semibold text-indigo-600 flex items-center gap-0.5">
-                            Open Details <ChevronRight size={13} />
+                        {/* Status & Actions */}
+                        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
+                          <div className="flex items-center gap-1.5">
+                            <Badge variant="outline" className="text-[10px]">
+                              {cluster.status}
+                            </Badge>
+                            {cluster.status !== "IN_PROGRESS" && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEnRoute(cluster.id);
+                                }}
+                                className="rounded bg-slate-900 px-2 py-1 text-[11px] font-semibold text-white hover:bg-slate-800 transition cursor-pointer"
+                              >
+                                Mark En Route
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeferTarget(cluster);
+                              }}
+                              className="rounded border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                            >
+                              Defer
+                            </button>
+                          </div>
+                          <span className="text-xs font-semibold text-slate-900">
+                            Details
                           </span>
                         </div>
                       </CardContent>
@@ -647,14 +646,9 @@ export default function TechnicianConsole() {
                         variant="success"
                         disabled={resolving || !proofFile}
                         onClick={() => handleResolve(active.id)}
-                        className="mt-3 w-full py-2.5 font-bold"
+                        className="mt-3 w-full py-2.5 font-semibold text-xs"
                       >
-                        {resolving ? (
-                          <Loader2 className="animate-spin" size={16} />
-                        ) : (
-                          <CheckCircle2 size={16} />
-                        )}
-                        {resolving ? "Verifying…" : "Submit Proof & Mark Resolved"}
+                        {resolving ? "Verifying proof…" : "Submit proof and resolve"}
                       </Button>
                     </div>
                   )}
