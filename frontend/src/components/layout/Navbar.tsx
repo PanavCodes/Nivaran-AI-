@@ -5,20 +5,18 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Radar,
-  Building,
+  Layers,
+  LayoutDashboard,
   Wrench,
   ClipboardList,
   CheckCircle2,
   Volume2,
   VolumeX,
-  User,
   ChevronDown,
   LogOut,
-  Sparkles,
   Menu,
   X,
-  Zap,
+  Sparkles,
 } from "lucide-react";
 import {
   getStoredUser,
@@ -39,18 +37,18 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Radar Intake", href: "/report", icon: Radar },
-  { label: "Mission Control", href: "/admin", icon: Building },
-  { label: "Task Force", href: "/technician", icon: Wrench },
-  { label: "My Tracker", href: "/tracker", icon: ClipboardList },
-  { label: "Transparency", href: "/transparency", icon: CheckCircle2, badge: "Proof" },
+  { label: "Intake", href: "/report", icon: Layers },
+  { label: "Mission Control", href: "/admin", icon: LayoutDashboard },
+  { label: "Technician Queue", href: "/technician", icon: Wrench },
+  { label: "Status Tracker", href: "/tracker", icon: ClipboardList },
+  { label: "Transparency", href: "/transparency", icon: CheckCircle2, badge: "Verified" },
 ];
 
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const [personaMenuOpen, setPersonaMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
@@ -73,8 +71,7 @@ export const Navbar: React.FC = () => {
     const next = sound.toggleMute();
     setIsMuted(next);
     if (!next) {
-      sound.playClick();
-      toast.success("Cybernetic audio enabled", { duration: 1500 });
+      toast.info("Audio enabled", { duration: 1500 });
     } else {
       toast.info("Audio muted", { duration: 1500 });
     }
@@ -82,12 +79,11 @@ export const Navbar: React.FC = () => {
 
   const handleQuickSwitch = async (role: "ADMIN" | "TECHNICIAN" | "STUDENT" | "FACULTY") => {
     setSwitching(true);
-    sound.playClick();
     try {
       const u = await quickLoginAs(role);
       setUser(u);
       setPersonaMenuOpen(false);
-      toast.success(`Switched persona to ${u.full_name} (${role})!`, { icon: "⚡" });
+      toast.success(`Switched role to ${u.full_name} (${role})`);
       if (role === "ADMIN" || role === "FACULTY") {
         router.push("/admin");
       } else if (role === "TECHNICIAN") {
@@ -96,47 +92,39 @@ export const Navbar: React.FC = () => {
         router.push("/report");
       }
     } catch {
-      toast.error("Failed to switch persona");
+      toast.error("Failed to switch role");
     } finally {
       setSwitching(false);
     }
   };
 
-  const roleColor: Record<Role, string> = {
-    ADMIN: "bg-red-500/15 text-red-400 border-red-500/30",
-    TECHNICIAN: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-    STUDENT: "bg-blue-500/15 text-blue-400 border-blue-500/30",
-    FACULTY: "bg-purple-500/15 text-purple-400 border-purple-500/30",
+  const roleBadgeVariant: Record<Role, "emergency" | "high" | "accent" | "default"> = {
+    ADMIN: "emergency",
+    TECHNICIAN: "high",
+    STUDENT: "accent",
+    FACULTY: "default",
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#30363d]/80 bg-[#0d1117]/85 backdrop-blur-xl transition-all">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-md transition-all">
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand Logo */}
-        <div className="flex items-center gap-6">
-          <Link
-            href="/"
-            onClick={() => sound.playClick()}
-            className="group flex items-center gap-2.5"
-          >
-            <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-[#58a6ff] to-[#1f6feb] shadow-lg shadow-[#58a6ff]/20">
-              <Radar size={18} className="text-[#0d1117] transition group-hover:rotate-45 duration-300" />
-              <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-              </span>
+        <div className="flex items-center gap-8">
+          <Link href="/" className="group flex items-center gap-2.5">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white shadow-xs">
+              <Layers size={17} className="text-white" />
             </div>
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
-                <span className="text-sm font-bold tracking-tight text-white group-hover:text-[#58a6ff] transition">
+                <span className="text-sm font-bold tracking-tight text-slate-900 group-hover:text-indigo-600 transition">
                   Nivaran AI
                 </span>
-                <span className="rounded bg-[#58a6ff]/10 px-1 py-0.2 text-[9px] font-mono uppercase text-[#58a6ff] border border-[#58a6ff]/25 hidden sm:inline-block">
+                <span className="rounded bg-slate-100 px-1.5 py-0.2 text-[10px] font-medium text-slate-600 border border-slate-200 hidden sm:inline-block">
                   v2.0
                 </span>
               </div>
-              <span className="text-[10px] text-[#8b949e] -mt-0.5 hidden sm:block">
-                Campus Problem Intelligence
+              <span className="text-[10px] text-slate-500 -mt-0.5 hidden sm:block">
+                Campus Operations Intelligence
               </span>
             </div>
           </Link>
@@ -150,24 +138,23 @@ export const Navbar: React.FC = () => {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => sound.playClick()}
-                  className={`relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                  className={`relative flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
                     active
-                      ? "text-white bg-[#21262d]/80 shadow-sm"
-                      : "text-[#8b949e] hover:text-white hover:bg-[#161b22]"
+                      ? "text-slate-900 bg-slate-100 shadow-2xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
                   }`}
                 >
-                  <Icon size={14} className={active ? "text-[#58a6ff]" : "text-[#8b949e]"} />
+                  <Icon size={14} className={active ? "text-indigo-600" : "text-slate-500"} />
                   <span>{item.label}</span>
                   {item.badge && (
-                    <span className="rounded bg-emerald-500/20 px-1 py-0.2 text-[9px] font-bold text-emerald-400">
+                    <span className="rounded-full bg-emerald-50 px-1.5 py-0.2 text-[9px] font-bold text-emerald-700 border border-emerald-200/60">
                       {item.badge}
                     </span>
                   )}
                   {active && (
                     <motion.span
                       layoutId="activeNavIndicator"
-                      className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-[#58a6ff]"
+                      className="absolute bottom-0 left-2.5 right-2.5 h-0.5 rounded-full bg-indigo-600"
                     />
                   )}
                 </Link>
@@ -176,24 +163,21 @@ export const Navbar: React.FC = () => {
           </nav>
         </div>
 
-        {/* Right Section: Engine Status + Audio Toggle + User/Persona Switcher */}
+        {/* Right Section: System Indicator + Sound + Role Switcher */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Live Engine Status Badge */}
-          <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-400">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            </span>
-            <span className="font-mono">10-Floor Engine Live</span>
+          {/* Steady Status Indicator */}
+          <div className="hidden lg:flex items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            <span>10-Floor Engine Online</span>
           </div>
 
-          {/* Sound Toggle Button */}
+          {/* Optional Audio Toggle */}
           <button
             onClick={handleToggleSound}
-            title={isMuted ? "Unmute Cyber Audio" : "Mute Audio"}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#30363d] bg-[#161b22] text-[#8b949e] hover:text-white hover:border-[#58a6ff]/40 transition"
+            title={isMuted ? "Unmute Audio" : "Mute Audio"}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-slate-900 hover:border-slate-300 transition shadow-2xs"
           >
-            {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} className="text-[#58a6ff]" />}
+            {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} className="text-indigo-600" />}
           </button>
 
           {/* User Persona & Role Switcher */}
@@ -201,37 +185,32 @@ export const Navbar: React.FC = () => {
             {user ? (
               <button
                 onClick={() => setPersonaMenuOpen(!personaMenuOpen)}
-                className="flex items-center gap-2 rounded-lg border border-[#30363d] bg-[#161b22] px-2.5 py-1.5 text-xs text-white hover:border-[#58a6ff]/50 transition"
+                className="flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-800 hover:border-slate-300 transition shadow-2xs font-medium cursor-pointer"
               >
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#58a6ff]/20 text-[#58a6ff]">
-                  <User size={12} />
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-50 text-indigo-700 font-semibold text-[10px]">
+                  {user.full_name.charAt(0)}
                 </div>
-                <span className="max-w-[90px] sm:max-w-[120px] truncate font-medium">
+                <span className="max-w-[90px] sm:max-w-[120px] truncate">
                   {user.full_name.split(" ")[0]}
                 </span>
-                <span
-                  className={`rounded border px-1.5 py-0.2 text-[10px] font-mono uppercase ${
-                    roleColor[user.role] || "bg-gray-800 text-gray-300"
-                  }`}
-                >
+                <Badge variant={roleBadgeVariant[user.role]} className="text-[9px] py-0 px-1.5">
                   {user.role}
-                </span>
-                <ChevronDown size={13} className="text-[#8b949e]" />
+                </Badge>
+                <ChevronDown size={13} className="text-slate-400" />
               </button>
             ) : (
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setPersonaMenuOpen(!personaMenuOpen)}
-                  className="flex items-center gap-1.5 rounded-lg border border-[#58a6ff]/40 bg-[#58a6ff]/10 px-2.5 py-1.5 text-xs font-semibold text-[#58a6ff] hover:bg-[#58a6ff]/20 transition"
+                  className="flex items-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100/70 transition cursor-pointer"
                 >
-                  <Zap size={13} />
+                  <Sparkles size={13} />
                   <span>Demo Switcher</span>
                   <ChevronDown size={12} />
                 </button>
                 <Link
                   href="/login"
-                  onClick={() => sound.playClick()}
-                  className="rounded-lg border border-[#30363d] px-3 py-1.5 text-xs font-medium text-white hover:bg-[#161b22] transition"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
                 >
                   Sign In
                 </Link>
@@ -242,21 +221,21 @@ export const Navbar: React.FC = () => {
             <AnimatePresence>
               {personaMenuOpen && (
                 <motion.div
-                  initial={{ opacity: 0, y: 8, scale: 0.96 }}
+                  initial={{ opacity: 0, y: 6, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 8, scale: 0.96 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute right-0 mt-2 w-64 rounded-xl border border-[#30363d] bg-[#161b22] p-2 shadow-2xl backdrop-blur-xl z-50"
+                  exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                  transition={{ duration: 0.12 }}
+                  className="absolute right-0 mt-2 w-64 rounded-xl border border-slate-200 bg-white p-2 shadow-lg z-50"
                 >
-                  <div className="px-2.5 py-2 border-b border-[#30363d]">
+                  <div className="px-2.5 py-2 border-b border-slate-100">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1">
-                        <Sparkles size={12} className="text-[#58a6ff]" /> Quick Role Persona
+                      <span className="text-[11px] font-bold text-slate-900 uppercase tracking-wider">
+                        Role Switcher
                       </span>
-                      <span className="text-[9px] text-[#8b949e]">Judge Fast-Track</span>
+                      <span className="text-[10px] text-indigo-600 font-semibold">Judge Fast-Track</span>
                     </div>
-                    <p className="mt-1 text-[11px] text-[#8b949e]">
-                      Switch user roles instantly with seed data.
+                    <p className="mt-0.5 text-[11px] text-slate-500">
+                      Instantly test different portal permissions.
                     </p>
                   </div>
 
@@ -264,14 +243,11 @@ export const Navbar: React.FC = () => {
                     <button
                       disabled={switching}
                       onClick={() => handleQuickSwitch("ADMIN")}
-                      className="w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-left text-white hover:bg-[#21262d] transition"
+                      className="w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-left text-slate-800 hover:bg-slate-50 transition cursor-pointer"
                     >
-                      <div className="flex items-center gap-2">
-                        <Building size={14} className="text-red-400" />
-                        <div>
-                          <p className="font-medium">Administrator</p>
-                          <p className="text-[10px] text-[#8b949e]">Mission Control / Dispatch</p>
-                        </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">Administrator</p>
+                        <p className="text-[10px] text-slate-500">Mission Control & Dispatch</p>
                       </div>
                       <Badge variant="emergency" className="text-[9px] py-0 px-1">Admin</Badge>
                     </button>
@@ -279,14 +255,11 @@ export const Navbar: React.FC = () => {
                     <button
                       disabled={switching}
                       onClick={() => handleQuickSwitch("TECHNICIAN")}
-                      className="w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-left text-white hover:bg-[#21262d] transition"
+                      className="w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-left text-slate-800 hover:bg-slate-50 transition cursor-pointer"
                     >
-                      <div className="flex items-center gap-2">
-                        <Wrench size={14} className="text-amber-400" />
-                        <div>
-                          <p className="font-medium">Technician</p>
-                          <p className="text-[10px] text-[#8b949e]">Task Force / Dual-Proof</p>
-                        </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">Technician</p>
+                        <p className="text-[10px] text-slate-500">Queue & Photo Closeout</p>
                       </div>
                       <Badge variant="high" className="text-[9px] py-0 px-1">Tech</Badge>
                     </button>
@@ -294,14 +267,11 @@ export const Navbar: React.FC = () => {
                     <button
                       disabled={switching}
                       onClick={() => handleQuickSwitch("STUDENT")}
-                      className="w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-left text-white hover:bg-[#21262d] transition"
+                      className="w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-left text-slate-800 hover:bg-slate-50 transition cursor-pointer"
                     >
-                      <div className="flex items-center gap-2">
-                        <Radar size={14} className="text-[#58a6ff]" />
-                        <div>
-                          <p className="font-medium">Student</p>
-                          <p className="text-[10px] text-[#8b949e]">Radar Intake / Pinpoint</p>
-                        </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">Student</p>
+                        <p className="text-[10px] text-slate-500">Intake & Blueprint Pinpoint</p>
                       </div>
                       <Badge variant="accent" className="text-[9px] py-0 px-1">Student</Badge>
                     </button>
@@ -309,24 +279,21 @@ export const Navbar: React.FC = () => {
                     <button
                       disabled={switching}
                       onClick={() => handleQuickSwitch("FACULTY")}
-                      className="w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-left text-white hover:bg-[#21262d] transition"
+                      className="w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-left text-slate-800 hover:bg-slate-50 transition cursor-pointer"
                     >
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 size={14} className="text-purple-400" />
-                        <div>
-                          <p className="font-medium">Faculty Member</p>
-                          <p className="text-[10px] text-[#8b949e]">Department Grievances</p>
-                        </div>
+                      <div>
+                        <p className="font-semibold text-slate-900">Faculty Member</p>
+                        <p className="text-[10px] text-slate-500">Department Overview</p>
                       </div>
-                      <span className="rounded bg-purple-500/20 px-1 text-[9px] text-purple-300 font-mono">Faculty</span>
+                      <Badge variant="default" className="text-[9px] py-0 px-1">Faculty</Badge>
                     </button>
                   </div>
 
                   {user && (
-                    <div className="mt-1 pt-1 border-t border-[#30363d]">
+                    <div className="mt-1 pt-1 border-t border-slate-100">
                       <button
                         onClick={logout}
-                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-red-400 hover:bg-red-500/10 transition"
+                        className="w-full flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs text-red-600 hover:bg-red-50 transition cursor-pointer"
                       >
                         <LogOut size={13} />
                         <span>Sign Out ({user.email})</span>
@@ -341,7 +308,7 @@ export const Navbar: React.FC = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg border border-[#30363d] bg-[#161b22] text-[#8b949e]"
+            className="md:hidden flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-2xs"
           >
             {mobileMenuOpen ? <X size={16} /> : <Menu size={16} />}
           </button>
@@ -355,7 +322,7 @@ export const Navbar: React.FC = () => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden border-t border-[#30363d] bg-[#0d1117] px-4 py-3 space-y-1.5"
+            className="md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-1.5 shadow-sm"
           >
             {NAV_ITEMS.map((item) => {
               const active = pathname === item.href;
@@ -364,20 +331,17 @@ export const Navbar: React.FC = () => {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => {
-                    sound.playClick();
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`flex items-center justify-between rounded-lg px-3 py-2 text-xs font-medium ${
-                    active ? "bg-[#21262d] text-white" : "text-[#8b949e] hover:bg-[#161b22] hover:text-white"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center justify-between rounded-lg px-3 py-2 text-xs font-semibold ${
+                    active ? "bg-slate-100 text-slate-900" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >
                   <div className="flex items-center gap-2">
-                    <Icon size={15} className={active ? "text-[#58a6ff]" : "text-[#8b949e]"} />
+                    <Icon size={15} className={active ? "text-indigo-600" : "text-slate-500"} />
                     <span>{item.label}</span>
                   </div>
                   {item.badge && (
-                    <span className="rounded bg-emerald-500/20 px-1.5 py-0.5 text-[9px] font-bold text-emerald-400">
+                    <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 border border-emerald-200">
                       {item.badge}
                     </span>
                   )}

@@ -1,114 +1,73 @@
 @import "tailwindcss";
 
-/* ── Nivaran AI — Deep Dark Cyber-Intelligence theme (BUILD.md §1) ── */
+/* ── Nivaran AI — Modern Enterprise Operations Theme (Stripe/Linear Inspired) ── */
 @theme {
-  --color-emergency: #ff3b30;
-  --color-high: #ffcc00;
-  --color-medium: #ff9500;
-  --color-resolved: #34c759;
-  --color-surface: #0d1117;
-  --color-card: #161b22;
-  --color-accent: #58a6ff;
-  --color-line: #21262d;
-  --color-muted: #8b949e;
+  --color-emergency: #dc2626;
+  --color-high: #d97706;
+  --color-medium: #f59e0b;
+  --color-resolved: #16a34a;
+  --color-surface: #f8fafc;
+  --color-card: #ffffff;
+  --color-accent: #4f46e5;
+  --color-accent-hover: #4338ca;
+  --color-line: #e2e8f0;
+  --color-muted: #64748b;
 }
 
 :root {
-  --clr-emergency: #ff3b30;
-  --clr-high: #ffcc00;
-  --clr-resolved: #34c759;
-  --clr-surface: #0d1117;
-  --clr-card: #161b22;
-  --clr-accent: #58a6ff;
+  --clr-emergency: #dc2626;
+  --clr-high: #d97706;
+  --clr-resolved: #16a34a;
+  --clr-surface: #f8fafc;
+  --clr-card: #ffffff;
+  --clr-accent: #4f46e5;
+  --clr-border: #e2e8f0;
 }
 
 html,
 body {
-  background: var(--clr-surface);
-  color: #e6edf3;
+  background: #f8fafc;
+  color: #0f172a;
   min-height: 100vh;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Soft radial background glow centred at the viewport */
-.radar-canvas {
-  position: relative;
-  min-height: 100vh;
-  background:
-    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(88, 166, 255, 0.08), transparent 70%),
-    radial-gradient(ellipse 50% 40% at 80% 80%, rgba(255, 204, 0, 0.04), transparent 70%),
-    var(--clr-surface);
+/* Crisp elevated card surface */
+.card-stripe {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 4px 12px 0 rgba(0, 0, 0, 0.02);
 }
 
-/* Sweeping radar circle — live GPS location scanning */
-.radar-sweep {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-.radar-sweep::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 900px;
-  height: 900px;
-  margin: -450px 0 0 -450px;
-  border-radius: 9999px;
-  background: conic-gradient(
-    from 0deg,
-    rgba(88, 166, 255, 0) 0deg,
-    rgba(88, 166, 255, 0.12) 40deg,
-    rgba(88, 166, 255, 0) 60deg
-  );
-  animation: radar-spin 4s linear infinite;
-}
-.radar-sweep::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 900px;
-  height: 900px;
-  margin: -450px 0 0 -450px;
-  border-radius: 9999px;
-  border: 1px solid rgba(88, 166, 255, 0.15);
-  box-shadow:
-    0 0 0 150px rgba(88, 166, 255, 0.02),
-    0 0 0 300px rgba(88, 166, 255, 0.02);
-}
-@keyframes radar-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Glassmorphism card surface */
+/* Clean backdrop surface */
 .glass {
-  background: rgba(22, 27, 34, 0.72);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(240, 246, 252, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(226, 232, 240, 0.9);
 }
 
-/* Emergency pulsing pin ring (map + badges) */
-@keyframes pulse-ring {
-  0% {
-    transform: scale(0.6);
-    opacity: 0.9;
-  }
-  80%,
-  100% {
-    transform: scale(2.4);
-    opacity: 0;
-  }
-}
-.pulse-ring {
-  animation: pulse-ring 1.8s cubic-bezier(0.22, 0.61, 0.36, 1) infinite;
-  transform-origin: center;
+/* Modern subtle mesh background for hero header */
+.subtle-mesh-bg {
+  background-color: #ffffff;
+  background-image: 
+    radial-gradient(at 10% 20%, rgba(99, 102, 241, 0.04) 0px, transparent 50%),
+    radial-gradient(at 90% 10%, rgba(59, 130, 246, 0.04) 0px, transparent 50%),
+    radial-gradient(at 50% 90%, rgba(241, 245, 249, 0.6) 0px, transparent 60%);
 }
 
-/* Progress shimmer for the AI loader */
+/* Architectural blueprint canvas styling */
+.floor-blueprint-svg {
+  filter: drop-shadow(0 2px 8px rgba(15, 23, 42, 0.04));
+}
+
+.floor-blueprint-svg text {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  user-select: none;
+}
+
+/* Subtle clean shimmer skeleton */
 @keyframes shimmer {
   0% {
     background-position: -400px 0;
@@ -117,44 +76,30 @@ body {
     background-position: 400px 0;
   }
 }
+
 .shimmer {
   background: linear-gradient(
     90deg,
-    rgba(88, 166, 255, 0.06) 25%,
-    rgba(88, 166, 255, 0.22) 50%,
-    rgba(88, 166, 255, 0.06) 75%
+    rgba(241, 245, 249, 0.6) 25%,
+    rgba(226, 232, 240, 0.7) 50%,
+    rgba(241, 245, 249, 0.6) 75%
   );
   background-size: 800px 100%;
-  animation: shimmer 1.4s linear infinite;
+  animation: shimmer 1.5s ease-in-out infinite;
 }
 
-/* Amber glow for nearby cluster cards */
-.glow-amber {
-  box-shadow:
-    0 0 0 1px rgba(255, 204, 0, 0.25),
-    0 0 24px rgba(255, 204, 0, 0.12);
+/* Clean custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
 }
-
-/* Indoor SVG Blueprint Styling */
-.floor-blueprint-svg {
-  filter: drop-shadow(0 0 12px rgba(88, 166, 255, 0.08));
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
 }
-
-.floor-blueprint-svg text {
-  font-family: var(--font-inter), system-ui, sans-serif;
-  user-select: none;
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
 }
-
-/* SLA countdown flash when < 30 min */
-@keyframes flash-red {
-  0%,
-  100% {
-    color: var(--clr-emergency);
-  }
-  50% {
-    color: rgba(255, 59, 48, 0.35);
-  }
-}
-.flash-red {
-  animation: flash-red 1s ease-in-out infinite;
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }

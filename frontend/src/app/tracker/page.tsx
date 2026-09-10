@@ -10,10 +10,10 @@ import {
   Loader2,
   MapPin,
   ShieldCheck,
+  Plus,
 } from "lucide-react";
 import { api, API_URL } from "@/lib/api";
 import { requireAuth, type SessionUser } from "@/lib/auth";
-import { sound } from "@/lib/sound";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -28,8 +28,8 @@ const tierVariant = { EMERGENCY: "emergency", HIGH: "high", MEDIUM: "medium", LO
 const statusLabels: Record<string, string> = {
   OPEN: "Open — awaiting assignment",
   ASSIGNED: "Assigned to a technician",
-  IN_PROGRESS: "Technician en route / working",
-  RESOLVED: "Resolved — proof verified",
+  IN_PROGRESS: "Technician en route / active repair",
+  RESOLVED: "Resolved — verified by photo proof",
   CLOSED: "Closed",
 };
 
@@ -74,11 +74,11 @@ export default function TrackerPage() {
   const slaRemaining = (deadline: string | null) => {
     if (!deadline) return null;
     const ms = new Date(deadline).getTime() - now;
-    if (ms <= 0) return { text: "BREACHED", urgent: true };
+    if (ms <= 0) return { text: "Breached", urgent: true };
     const h = Math.floor(ms / 3600000);
     const m = Math.floor((ms % 3600000) / 60000);
     return {
-      text: h > 0 ? `${h}h ${m}m` : `${m}m`,
+      text: h > 0 ? `${h}h ${m}m remaining` : `${m}m remaining`,
       urgent: ms < 30 * 60 * 1000,
     };
   };
@@ -86,214 +86,225 @@ export default function TrackerPage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <Navbar />
 
-      <main className="radar-canvas flex-1 p-4 md:p-8 relative">
-        <div className="radar-sweep opacity-20 pointer-events-none" />
-
-        <div className="relative z-10 mx-auto max-w-4xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#30363d] pb-4 mb-6">
+      <main className="flex-1 p-4 md:p-8">
+        <div className="mx-auto max-w-4xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200 pb-5 mb-6">
           <div>
-            <h1 className="text-xl font-bold text-white flex items-center gap-2">
-              My Incident Redressal Tracker
-              <Badge variant="accent" className="text-[10px]">Live SLA</Badge>
+            <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              Incident Status Tracker
+              <Badge variant="accent" className="text-[10px] py-0">Live Updates</Badge>
             </h1>
-            <p className="text-xs text-[#8b949e] mt-0.5">
-              Real-time status, cluster priority escalation, and dual-proof photo verification.
+            <p className="text-xs text-slate-500 mt-1">
+              Track resolution milestones, SLA commitments, and verified before/after proof.
             </p>
           </div>
-          <Link href="/report" onClick={() => sound.playClick()}>
-            <Button size="sm" className="text-xs">
-              + Report New Problem
+          <Link href="/report">
+            <Button size="sm" className="text-xs h-9">
+              <Plus size={14} /> Report New Issue
             </Button>
           </Link>
         </div>
 
-        <div className="relative z-10 mx-auto max-w-4xl space-y-4">
+        <div className="mx-auto max-w-4xl space-y-4">
+          {loading && (
+            <div className="flex h-40 items-center justify-center">
+              <Loader2 className="animate-spin text-indigo-600" size={24} />
+            </div>
+          )}
 
-        {loading && (
-          <div className="flex h-40 items-center justify-center">
-            <Loader2 className="animate-spin text-accent" size={22} />
-          </div>
-        )}
-
-        {!loading && reports.length === 0 && (
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-            <Card>
-              <CardContent className="flex flex-col items-center py-14 text-center">
-                <ImageIcon size={30} className="text-[#8b949e]" />
-                <h2 className="mt-3 text-base font-bold text-white">No reports yet</h2>
-                <p className="mt-1 text-sm text-[#8b949e]">
-                  Every problem you report strengthens the campus intelligence layer.
-                </p>
-                <Link href="/report" className="mt-5">
-                  <Button>Report your first issue</Button>
-                </Link>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-
-        {reports.map((r, i) => {
-          const cluster = r.cluster;
-          const tier = cluster ? tierForScore(cluster.priority_score) : null;
-          const sla = slaRemaining(cluster?.sla_deadline ?? null);
-          const stage = stageIndex(cluster?.status);
-          const proofUrl = r.resolution_proof_url
-            ? r.resolution_proof_url.startsWith("http")
-              ? r.resolution_proof_url
-              : `${API_URL}${r.resolution_proof_url}`
-            : null;
-
-          return (
-            <motion.div
-              key={r.id}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: Math.min(i * 0.05, 0.4) }}
-            >
-              <Card>
-                <CardContent className="p-5">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <h3 className="text-sm font-bold text-white">{r.title}</h3>
-                      <p className="mt-0.5 line-clamp-2 text-xs text-[#8b949e]">{r.description}</p>
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px] text-[#8b949e]">
-                        <span className="flex items-center gap-0.5 font-semibold text-accent">
-                          <MapPin size={10} /> Floor {r.floor}
-                          {r.room_or_zone ? ` · ${r.room_or_zone}` : ""}
-                        </span>
-                        <span>·</span>
-                        <span>{CATEGORY_LABELS[r.category] ?? r.category}</span>
-                        <span>·</span>
-                        <span className="flex items-center gap-0.5">
-                          <Clock size={10} /> {new Date(r.created_at).toLocaleString()}
-                        </span>
-                        <span>·</span>
-                        <button
-                          onClick={() =>
-                            setExpandedBlueprint((prev) => ({
-                              ...prev,
-                              [r.id]: !prev[r.id],
-                            }))
-                          }
-                          className="text-accent underline hover:text-accent/80"
-                        >
-                          {expandedBlueprint[r.id] ? "Hide blueprint" : "View on floor plan"}
-                        </button>
-                      </div>
-                    </div>
-                    {cluster && tier && (
-                      <Badge variant={tierVariant[tier as keyof typeof tierVariant] ?? "default"}>
-                        {tier} · P{cluster.priority_score}
-                      </Badge>
-                    )}
+          {!loading && reports.length === 0 && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+              <Card className="border border-slate-200 bg-white">
+                <CardContent className="flex flex-col items-center py-16 text-center">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 mb-2">
+                    <ImageIcon size={24} />
                   </div>
-
-                  {/* Optional expanded floor plan blueprint */}
-                  {expandedBlueprint[r.id] && (
-                    <div className="mt-3 overflow-hidden rounded-lg border border-[#30363d] bg-[#0d1117] p-2">
-                      <div className="mb-1 text-[10px] text-[#8b949e]">
-                        Incident pinpointed on Floor {r.floor} ({Math.round(r.x_coord)}, {Math.round(r.y_coord)})
-                      </div>
-                      <FloorPlanViewer
-                        floor={r.floor}
-                        theme="dark"
-                        interactive={false}
-                        activePin={{ x: r.x_coord, y: r.y_coord, room: r.room_or_zone }}
-                        className="h-40 w-full"
-                        showRoomLabels={true}
-                      />
-                    </div>
-                  )}
-
-                  {/* Resolution-stage timeline (abstract: "progress monitored
-                      through different resolution stages") */}
-                  {cluster && (
-                    <div className="mt-4">
-                      <div className="flex items-center">
-                        {STAGES.map((s, idx) => (
-                          <div key={s} className="flex flex-1 items-center last:flex-none">
-                            <div
-                              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-[9px] font-bold ${
-                                idx < stage
-                                  ? "border-resolved bg-resolved/20 text-resolved"
-                                  : idx === stage
-                                    ? "border-accent bg-accent/20 text-accent"
-                                    : "border-[#30363d] text-[#8b949e]"
-                              }`}
-                            >
-                              {idx < stage ? "✓" : idx + 1}
-                            </div>
-                            {idx < STAGES.length - 1 && (
-                              <div
-                                className={`h-0.5 flex-1 ${
-                                  idx < stage ? "bg-resolved/50" : "bg-[#21262d]"
-                                }`}
-                              />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-1.5 flex justify-between text-[9px] uppercase tracking-wide text-[#8b949e]">
-                        {STAGES.map((s) => (
-                          <span key={s} className="w-14 first:text-left last:text-right text-center">
-                            {s === "IN_PROGRESS" ? "In progress" : s[0] + s.slice(1).toLowerCase()}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="mt-2 text-xs text-[#c9d1d9]">
-                        {statusLabels[cluster.status] ?? cluster.status}
-                        {cluster.status !== "RESOLVED" && cluster.status !== "CLOSED" && (
-                          <> — routed to {cluster.assigned_department}</>
-                        )}
-                      </p>
-                      {sla && cluster.status !== "RESOLVED" && cluster.status !== "CLOSED" && (
-                        <p
-                          className={`mt-1 flex items-center gap-1 font-mono text-xs ${
-                            sla.urgent ? "flash-red" : "text-[#8b949e]"
-                          }`}
-                        >
-                          <Clock size={11} /> SLA {sla.text}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Images: your report + verified resolution proof */}
-                  <div className="mt-4 flex flex-wrap gap-3">
-                    {r.image_url && (
-                      <div>
-                        <p className="mb-1 text-[10px] uppercase tracking-wide text-[#8b949e]">Your photo</p>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={r.image_url.startsWith("http") ? r.image_url : `${API_URL}${r.image_url}`}
-                          alt="Reported issue"
-                          className="h-24 rounded-lg object-cover"
-                        />
-                      </div>
-                    )}
-                    {proofUrl && (
-                      <div>
-                        <p className="mb-1 flex items-center gap-1 text-[10px] uppercase tracking-wide text-resolved">
-                          <ShieldCheck size={11} /> Resolution proof
-                        </p>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={proofUrl} alt="Resolution proof" className="h-24 rounded-lg object-cover" />
-                      </div>
-                    )}
-                  </div>
-                  {cluster?.status === "RESOLVED" && (
-                    <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-resolved">
-                      <CheckCircle2 size={13} /> Dual-Proof Verified — issue closed by{" "}
-                      {cluster.assigned_department}.
-                    </p>
-                  )}
+                  <h2 className="mt-2 text-base font-bold text-slate-900">No reported issues yet</h2>
+                  <p className="mt-1 text-xs text-slate-500 max-w-sm">
+                    Reports submitted by you or merged into campus incident clusters will appear here in real time.
+                  </p>
+                  <Link href="/report" className="mt-5">
+                    <Button>Submit Your First Report</Button>
+                  </Link>
                 </CardContent>
               </Card>
             </motion.div>
-          );
-        })}
+          )}
+
+          {reports.map((r, i) => {
+            const cluster = r.cluster;
+            const tier = cluster ? tierForScore(cluster.priority_score) : null;
+            const sla = slaRemaining(cluster?.sla_deadline ?? null);
+            const stage = stageIndex(cluster?.status);
+            const proofUrl = r.resolution_proof_url
+              ? r.resolution_proof_url.startsWith("http")
+                ? r.resolution_proof_url
+                : `${API_URL}${r.resolution_proof_url}`
+              : null;
+
+            return (
+              <motion.div
+                key={r.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(i * 0.05, 0.3) }}
+              >
+                <Card className="border border-slate-200 bg-white shadow-xs">
+                  <CardContent className="p-5 sm:p-6">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-base font-bold text-slate-900 leading-snug">{r.title}</h3>
+                        <p className="mt-1 line-clamp-2 text-xs text-slate-600 leading-relaxed">{r.description}</p>
+                        
+                        <div className="mt-3 flex flex-wrap items-center gap-2.5 text-xs text-slate-500 font-medium">
+                          <span className="flex items-center gap-1 font-semibold text-indigo-700">
+                            <MapPin size={12} /> Floor {r.floor}
+                            {r.room_or_zone ? ` · ${r.room_or_zone}` : ""}
+                          </span>
+                          <span>·</span>
+                          <span>{CATEGORY_LABELS[r.category] ?? r.category}</span>
+                          <span>·</span>
+                          <span className="flex items-center gap-1">
+                            <Clock size={12} /> {new Date(r.created_at).toLocaleDateString()} at {new Date(r.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                          </span>
+                          <span>·</span>
+                          <button
+                            onClick={() =>
+                              setExpandedBlueprint((prev) => ({
+                                ...prev,
+                                [r.id]: !prev[r.id],
+                              }))
+                            }
+                            className="text-indigo-600 font-semibold hover:underline cursor-pointer"
+                          >
+                            {expandedBlueprint[r.id] ? "Hide blueprint" : "View on floor plan"}
+                          </button>
+                        </div>
+                      </div>
+
+                      {cluster && tier && (
+                        <Badge variant={tierVariant[tier as keyof typeof tierVariant] ?? "default"}>
+                          {tier} · Score {Math.round(cluster.priority_score)}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Optional expanded floor plan blueprint */}
+                    {expandedBlueprint[r.id] && (
+                      <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="mb-2 text-xs font-semibold text-slate-600">
+                          Spatial Pin: Floor {r.floor} ({Math.round(r.x_coord)}, {Math.round(r.y_coord)})
+                        </div>
+                        <FloorPlanViewer
+                          floor={r.floor}
+                          theme="light"
+                          interactive={false}
+                          activePin={{ x: r.x_coord, y: r.y_coord, room: r.room_or_zone }}
+                          className="h-44 w-full"
+                          showRoomLabels={true}
+                        />
+                      </div>
+                    )}
+
+                    {/* Resolution-stage timeline */}
+                    {cluster && (
+                      <div className="mt-5 pt-4 border-t border-slate-100">
+                        <div className="flex items-center">
+                          {STAGES.map((s, idx) => (
+                            <div key={s} className="flex flex-1 items-center last:flex-none">
+                              <div
+                                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[10px] font-bold ${
+                                  idx < stage
+                                    ? "border-emerald-600 bg-emerald-50 text-emerald-700"
+                                    : idx === stage
+                                    ? "border-indigo-600 bg-indigo-50 text-indigo-700 ring-2 ring-indigo-100"
+                                    : "border-slate-200 bg-slate-50 text-slate-400"
+                                }`}
+                              >
+                                {idx < stage ? "✓" : idx + 1}
+                              </div>
+                              {idx < STAGES.length - 1 && (
+                                <div
+                                  className={`h-0.5 flex-1 ${
+                                    idx < stage ? "bg-emerald-500" : "bg-slate-200"
+                                  }`}
+                                />
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-2 flex justify-between text-[10px] uppercase font-bold tracking-wider text-slate-500">
+                          {STAGES.map((s) => (
+                            <span key={s} className="w-20 first:text-left last:text-right text-center">
+                              {s === "IN_PROGRESS" ? "In Progress" : s[0] + s.slice(1).toLowerCase()}
+                            </span>
+                          ))}
+                        </div>
+                        
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs font-semibold text-slate-800">
+                            Status: {statusLabels[cluster.status] ?? cluster.status}
+                            {cluster.status !== "RESOLVED" && cluster.status !== "CLOSED" && (
+                              <span className="text-slate-500 font-normal"> — Assigned to {cluster.assigned_department}</span>
+                            )}
+                          </p>
+
+                          {sla && cluster.status !== "RESOLVED" && cluster.status !== "CLOSED" && (
+                            <span
+                              className={`flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full ${
+                                sla.urgent
+                                  ? "bg-red-50 text-red-700 border border-red-200"
+                                  : "bg-slate-100 text-slate-700 border border-slate-200"
+                              }`}
+                            >
+                              <Clock size={11} /> SLA {sla.text}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Images: your report + verified resolution proof */}
+                    <div className="mt-4 flex flex-wrap gap-4">
+                      {r.image_url && (
+                        <div>
+                          <p className="mb-1 text-[10px] uppercase font-bold text-slate-500">Original Photo</p>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={r.image_url.startsWith("http") ? r.image_url : `${API_URL}${r.image_url}`}
+                            alt="Reported issue"
+                            className="h-28 rounded-xl object-cover border border-slate-200 shadow-2xs"
+                          />
+                        </div>
+                      )}
+                      {proofUrl && (
+                        <div>
+                          <p className="mb-1 flex items-center gap-1 text-[10px] uppercase font-bold text-emerald-700">
+                            <ShieldCheck size={12} /> Resolution Proof
+                          </p>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={proofUrl}
+                            alt="Resolution proof"
+                            className="h-28 rounded-xl object-cover border border-emerald-200 shadow-2xs"
+                          />
+                        </div>
+                      )}
+                    </div>
+
+                    {cluster?.status === "RESOLVED" && (
+                      <div className="mt-4 flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs font-semibold text-emerald-800">
+                        <CheckCircle2 size={15} className="text-emerald-600" />
+                        <span>Verified and resolved by {cluster.assigned_department} with photographic evidence.</span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
         </div>
       </main>
 
@@ -301,4 +312,3 @@ export default function TrackerPage() {
     </div>
   );
 }
-

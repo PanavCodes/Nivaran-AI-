@@ -2,9 +2,9 @@
 
 import React, { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Cluster, TIER_COLORS, tierForScore } from "@/lib/types";
+import { Cluster, tierForScore } from "@/lib/types";
 import { findClosestRoom, getFloorMeta, RoomZone } from "@/lib/campus_floors";
-import { CheckCircle2, Flame, MapPin } from "lucide-react";
+import { CheckCircle2, AlertCircle, MapPin } from "lucide-react";
 
 interface FloorPlanViewerProps {
   floor: string;
@@ -22,7 +22,7 @@ interface FloorPlanViewerProps {
 
 export const FloorPlanViewer: React.FC<FloorPlanViewerProps> = ({
   floor,
-  theme = "dark",
+  theme = "light",
   clusters = [],
   selectedClusterId = null,
   activePin = null,
@@ -60,50 +60,47 @@ export const FloorPlanViewer: React.FC<FloorPlanViewerProps> = ({
 
   return (
     <div
-      className={`relative flex flex-col items-center justify-center rounded-xl border border-[#30363d] bg-[#0d1117] p-4 shadow-2xl overflow-hidden ${className}`}
+      className={`relative flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-4 shadow-xs overflow-hidden ${className}`}
     >
       {/* Floor Plan Header Overlay */}
-      <div className="absolute top-3 left-4 z-20 flex items-center gap-2 rounded-lg bg-[#161b22]/90 px-3 py-1.5 backdrop-blur-md border border-[#30363d]">
-        <span className="flex h-2.5 w-2.5 rounded-full bg-[#58a6ff] animate-pulse" />
-        <span className="text-xs font-semibold tracking-wider text-[#58a6ff] uppercase">
+      <div className="absolute top-3 left-4 z-20 flex items-center gap-2 rounded-lg bg-white/95 px-3 py-1.5 backdrop-blur-md border border-slate-200 shadow-2xs">
+        <span className="h-2 w-2 rounded-full bg-indigo-600" />
+        <span className="text-xs font-bold tracking-tight text-slate-900 uppercase">
           {floorMeta.label}
         </span>
-        <span className="text-xs text-gray-400">·</span>
-        <span className="text-xs text-gray-300">
+        <span className="text-xs text-slate-300">·</span>
+        <span className="text-xs font-medium text-slate-600">
           {floorClusters.length} Active Incident{floorClusters.length === 1 ? "" : "s"}
         </span>
       </div>
 
       {interactive && (
-        <div className="absolute top-3 right-4 z-20 hidden sm:flex items-center gap-1.5 rounded-lg bg-[#161b22]/90 px-2.5 py-1 text-[11px] text-gray-400 border border-[#30363d]">
-          <MapPin className="h-3 w-3 text-[#58a6ff]" />
-          Click floor plan to pinpoint location
+        <div className="absolute top-3 right-4 z-20 hidden sm:flex items-center gap-1.5 rounded-lg bg-white/95 px-2.5 py-1 text-[11px] font-medium text-slate-600 border border-slate-200 shadow-2xs">
+          <MapPin className="h-3.5 w-3.5 text-indigo-600" />
+          Click to place incident marker
         </div>
       )}
 
-      {/* SOS Emergency Flame Banner when Priority >= 75 exists on this floor */}
+      {/* Clean SLA Attention Notice if Priority >= 75 */}
       {floorClusters.some((c) => c.priority_score >= 75) && (
-        <div className="absolute top-12 left-4 right-4 z-20 flex items-center justify-between rounded-lg bg-red-600/90 px-3 py-1 text-xs font-semibold text-white shadow-lg animate-pulse backdrop-blur-md">
+        <div className="absolute top-12 left-4 right-4 z-20 flex items-center justify-between rounded-lg bg-red-50 border border-red-200 px-3 py-1 text-xs font-semibold text-red-700 shadow-xs">
           <span className="flex items-center gap-1.5">
-            <Flame size={14} className="animate-bounce text-yellow-300" />
-            CRITICAL INCIDENT ON THIS FLOOR
+            <AlertCircle size={14} className="text-red-600" />
+            High-Priority Incident on this floor
           </span>
-          <span className="text-[10px] uppercase font-mono tracking-wider bg-black/30 px-1.5 py-0.5 rounded">
-            Emergency Priority
+          <span className="text-[10px] uppercase font-mono tracking-wider bg-red-100/70 text-red-800 px-1.5 py-0.5 rounded">
+            Immediate Response
           </span>
         </div>
       )}
 
-      {/* Main Vector Canvas Container with Fixed Aspect Ratio (360 x 534) */}
+      {/* Main Vector Canvas Container */}
       <div
         ref={containerRef}
         onClick={handleCanvasClick}
-        className={`relative aspect-[360/534] w-full max-w-[420px] select-none rounded-lg overflow-hidden border border-[#21262d] bg-[#161b22] ${
+        className={`relative aspect-[360/534] w-full max-w-[420px] select-none rounded-lg overflow-hidden border border-slate-200 bg-slate-50 ${
           interactive ? "cursor-crosshair" : "cursor-default"
         }`}
-        style={{
-          backgroundImage: `radial-gradient(circle at 50% 50%, rgba(88, 166, 255, 0.05) 0%, transparent 70%)`,
-        }}
       >
         {/* Floor Plan SVG Vector Base Layer */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -113,13 +110,13 @@ export const FloorPlanViewer: React.FC<FloorPlanViewerProps> = ({
           className="h-full w-full object-contain pointer-events-none transition-opacity duration-300"
         />
 
-        {/* Optional Room Zone Overlay Labels for Accessibility */}
+        {/* Room Zone Overlay Labels */}
         {showRoomLabels && (
           <div className="absolute inset-0 pointer-events-none">
             {floorMeta.rooms.map((r, idx) => (
               <div
                 key={idx}
-                className="absolute text-[8px] text-gray-500/80 -translate-x-1/2 -translate-y-1/2 select-none whitespace-nowrap"
+                className="absolute text-[8px] font-medium text-slate-500/90 -translate-x-1/2 -translate-y-1/2 select-none whitespace-nowrap"
                 style={{
                   left: `${(r.x / 360) * 100}%`,
                   top: `${(r.y / 534) * 100}%`,
@@ -131,7 +128,7 @@ export const FloorPlanViewer: React.FC<FloorPlanViewerProps> = ({
           </div>
         )}
 
-        {/* SVG Heatmap Density Layer (Smart Campus Intelligence Hub) */}
+        {/* SVG Heatmap Density Layer */}
         {heatmapMode && floorClusters.length > 0 && (
           <svg
             className="absolute inset-0 h-full w-full pointer-events-none z-10"
@@ -139,7 +136,7 @@ export const FloorPlanViewer: React.FC<FloorPlanViewerProps> = ({
           >
             <defs>
               <filter id="heat-blur" x="-50%" y="-50%" width="200%" height="200%">
-                <feGaussianBlur stdDeviation="18" result="blur" />
+                <feGaussianBlur stdDeviation="16" result="blur" />
               </filter>
             </defs>
             {floorClusters.map((c, i) => {
@@ -149,8 +146,8 @@ export const FloorPlanViewer: React.FC<FloorPlanViewerProps> = ({
                   key={`heat-${c.id || i}`}
                   cx={c.x_coord}
                   cy={c.y_coord}
-                  r={isEmerg ? 36 : 24}
-                  fill={isEmerg ? "rgba(255, 59, 48, 0.55)" : "rgba(255, 204, 0, 0.4)"}
+                  r={isEmerg ? 32 : 22}
+                  fill={isEmerg ? "rgba(220, 38, 38, 0.35)" : "rgba(245, 158, 11, 0.3)"}
                   filter="url(#heat-blur)"
                 />
               );
@@ -158,27 +155,27 @@ export const FloorPlanViewer: React.FC<FloorPlanViewerProps> = ({
           </svg>
         )}
 
-        {/* Spatial 35-Unit Spatio-Semantic Merge Radius Visualizer */}
+        {/* Spatial Radius Visualizer */}
         {activePin && (
           <svg className="absolute inset-0 h-full w-full pointer-events-none z-20" viewBox="0 0 360 534">
             <circle
               cx={activePin.x}
               cy={activePin.y}
               r={35}
-              fill="rgba(88, 166, 255, 0.08)"
-              stroke="rgba(88, 166, 255, 0.45)"
+              fill="rgba(79, 70, 229, 0.06)"
+              stroke="rgba(79, 70, 229, 0.4)"
               strokeWidth="1.5"
               strokeDasharray="4 3"
             />
           </svg>
         )}
 
-        {/* User Selected Pin Marker (for Intake / Placement) */}
+        {/* User Selected Pin Marker */}
         {activePin && (
           <motion.div
-            initial={{ scale: 0, y: -10 }}
+            initial={{ scale: 0, y: -8 }}
             animate={{ scale: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 400, damping: 25 }}
+            transition={{ type: "spring", stiffness: 450, damping: 30 }}
             className="absolute -translate-x-1/2 -translate-y-full pointer-events-none z-30"
             style={{
               left: `${(activePin.x / 360) * 100}%`,
@@ -186,28 +183,30 @@ export const FloorPlanViewer: React.FC<FloorPlanViewerProps> = ({
             }}
           >
             <div className="relative flex flex-col items-center">
-              <span className="absolute -top-1 h-8 w-8 rounded-full bg-[#58a6ff]/40 animate-ping" />
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#58a6ff] text-black shadow-lg shadow-[#58a6ff]/50 border-2 border-white">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-600 text-white shadow-md border-2 border-white">
                 <MapPin className="h-4 w-4 fill-current" />
               </div>
-              <div className="mt-1 rounded bg-[#0d1117]/95 px-1.5 py-0.5 text-[10px] font-medium text-[#58a6ff] border border-[#58a6ff]/40 shadow whitespace-nowrap">
+              <div className="mt-1 rounded bg-slate-900 px-1.5 py-0.5 text-[10px] font-semibold text-white shadow whitespace-nowrap">
                 {activePin.room || `X:${Math.round(activePin.x)} Y:${Math.round(activePin.y)}`}
               </div>
             </div>
           </motion.div>
         )}
 
-
-        {/* Active Incident Cluster Markers Overlay */}
+        {/* Active Incident Cluster Markers */}
         {floorClusters.map((cluster) => {
           const tier = tierForScore(cluster.priority_score);
           const isSelected = selectedClusterId === cluster.id;
           const isEmergency = tier === "EMERGENCY";
           const isResolved = cluster.status === "RESOLVED" || cluster.status === "CLOSED";
 
-          const pinColor = isResolved
-            ? TIER_COLORS.LOW
-            : TIER_COLORS[tier] || "#58a6ff";
+          const pinBg = isResolved
+            ? "bg-emerald-600"
+            : isEmergency
+            ? "bg-red-600"
+            : tier === "HIGH"
+            ? "bg-amber-600"
+            : "bg-indigo-600";
 
           const xPct = (cluster.x_coord / 360) * 100;
           const yPct = (cluster.y_coord / 534) * 100;
@@ -225,37 +224,18 @@ export const FloorPlanViewer: React.FC<FloorPlanViewerProps> = ({
               }}
             >
               <div className="relative flex items-center justify-center cursor-pointer">
-                {/* Emergency Pulsing Ring */}
-                {isEmergency && !isResolved && (
-                  <span
-                    className="absolute h-8 w-8 rounded-full animate-ping opacity-75"
-                    style={{ backgroundColor: pinColor }}
-                  />
-                )}
-
-                {/* Selected Accent Halo */}
-                {isSelected && (
-                  <span
-                    className="absolute h-9 w-9 rounded-full border-2 animate-spin"
-                    style={{ borderColor: "#58a6ff", borderStyle: "dashed" }}
-                  />
-                )}
-
                 {/* Central Incident Pin Anchor */}
                 <motion.div
-                  whileHover={{ scale: 1.3 }}
-                  whileTap={{ scale: 0.9 }}
-                  className={`flex h-6 w-6 items-center justify-center rounded-full shadow-lg border-2 border-[#0d1117] transition-all duration-200 ${
-                    isSelected ? "ring-2 ring-white scale-110" : ""
+                  whileHover={{ scale: 1.25 }}
+                  whileTap={{ scale: 0.92 }}
+                  className={`flex h-6 w-6 items-center justify-center rounded-full shadow-sm border-2 border-white text-white font-bold transition-all duration-150 ${pinBg} ${
+                    isSelected ? "ring-2 ring-indigo-600 ring-offset-2 scale-110" : ""
                   }`}
-                  style={{ backgroundColor: pinColor }}
                 >
                   {isResolved ? (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-black" />
-                  ) : isEmergency ? (
-                    <Flame className="h-3.5 w-3.5 text-white animate-pulse" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-white" />
                   ) : (
-                    <span className="text-[10px] font-bold text-black">
+                    <span className="text-[10px] font-bold">
                       {cluster.complaint_count}
                     </span>
                   )}
@@ -269,40 +249,48 @@ export const FloorPlanViewer: React.FC<FloorPlanViewerProps> = ({
         <AnimatePresence>
           {hoveredCluster && (
             <motion.div
-              initial={{ opacity: 0, y: 5 }}
+              initial={{ opacity: 0, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 5 }}
-              className="absolute pointer-events-none z-40 w-56 rounded-lg bg-[#161b22]/95 p-3 text-xs shadow-2xl border border-[#30363d] backdrop-blur-md"
+              exit={{ opacity: 0, y: 4 }}
+              className="absolute pointer-events-none z-40 w-60 rounded-xl bg-white p-3 text-xs shadow-xl border border-slate-200"
               style={{
-                left: `${Math.min(70, Math.max(15, (hoveredCluster.x_coord / 360) * 100))}%`,
-                top: `${Math.min(75, Math.max(20, (hoveredCluster.y_coord / 534) * 100))}%`,
+                left: `${Math.min(68, Math.max(15, (hoveredCluster.x_coord / 360) * 100))}%`,
+                top: `${Math.min(72, Math.max(20, (hoveredCluster.y_coord / 534) * 100))}%`,
               }}
             >
-              <div className="flex items-center justify-between gap-1 mb-1">
+              <div className="flex items-center justify-between gap-1 mb-1.5">
                 <span
-                  className="rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-black"
+                  className="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider"
                   style={{
                     backgroundColor:
                       hoveredCluster.status === "RESOLVED"
-                        ? TIER_COLORS.LOW
-                        : TIER_COLORS[tierForScore(hoveredCluster.priority_score)],
+                        ? "#ecfdf5"
+                        : hoveredCluster.priority_score >= 70
+                        ? "#fef2f2"
+                        : "#fef3c7",
+                    color:
+                      hoveredCluster.status === "RESOLVED"
+                        ? "#047857"
+                        : hoveredCluster.priority_score >= 70
+                        ? "#b91c1c"
+                        : "#b45309",
                   }}
                 >
                   {hoveredCluster.status === "RESOLVED"
                     ? "RESOLVED"
                     : tierForScore(hoveredCluster.priority_score)}
                 </span>
-                <span className="text-[10px] text-gray-400">
+                <span className="text-[11px] font-semibold text-slate-500">
                   Priority {Math.round(hoveredCluster.priority_score)}/100
                 </span>
               </div>
-              <h4 className="font-semibold text-white truncate">{hoveredCluster.title}</h4>
-              <p className="mt-1 text-[11px] text-[#58a6ff]">
+              <h4 className="font-bold text-slate-900 line-clamp-2 leading-snug">{hoveredCluster.title}</h4>
+              <p className="mt-1 text-[11px] text-slate-500">
                 📍 {hoveredCluster.room_or_zone || `Floor ${hoveredCluster.floor}`}
               </p>
-              <div className="mt-2 flex items-center justify-between text-[10px] text-gray-400 pt-1.5 border-t border-[#30363d]">
-                <span>{hoveredCluster.complaint_count} Report{hoveredCluster.complaint_count === 1 ? "" : "s"}</span>
-                <span className="text-[#34c759] font-medium">Click to inspect →</span>
+              <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500 pt-1.5 border-t border-slate-100 font-medium">
+                <span>{hoveredCluster.complaint_count} Consolidated Report{hoveredCluster.complaint_count === 1 ? "" : "s"}</span>
+                <span className="text-indigo-600 font-semibold">Inspect →</span>
               </div>
             </motion.div>
           )}
@@ -310,21 +298,21 @@ export const FloorPlanViewer: React.FC<FloorPlanViewerProps> = ({
       </div>
 
       {/* Footer Legend */}
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-[11px] text-gray-400">
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-slate-500">
         <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ff3b30]" />
-          <span>Emergency (SLA 2h)</span>
+          <span className="h-2.5 w-2.5 rounded-full bg-red-600" />
+          <span>Immediate (&le;2h)</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ffcc00]" />
-          <span>High (SLA 12h)</span>
+          <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+          <span>High Priority</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#ff9500]" />
-          <span>Medium</span>
+          <span className="h-2.5 w-2.5 rounded-full bg-indigo-600" />
+          <span>Standard</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#34c759]" />
+          <span className="h-2.5 w-2.5 rounded-full bg-emerald-600" />
           <span>Resolved</span>
         </div>
       </div>

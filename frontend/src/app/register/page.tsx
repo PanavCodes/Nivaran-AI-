@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { Eye, EyeOff, UserPlus } from "lucide-react";
 
 import { homeForRole, register, type Role } from "@/lib/auth";
-import { sound } from "@/lib/sound";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/layout/Navbar";
@@ -17,7 +16,7 @@ import { CampBotChat } from "@/components/chat/CampBotChat";
 const ROLES: { value: Role; label: string; desc: string }[] = [
   { value: "STUDENT", label: "Student", desc: "Report issues, track progress" },
   { value: "FACULTY", label: "Faculty", desc: "Department reports & escalations" },
-  { value: "TECHNICIAN", label: "Technician", desc: "Task Force queue & dual-proof closure" },
+  { value: "TECHNICIAN", label: "Technician", desc: "Task Force queue & photo verification" },
   { value: "ADMIN", label: "Administrator", desc: "Mission Control & dispatch" },
 ];
 
@@ -35,7 +34,6 @@ export default function Register() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    sound.playClick();
     setBusy(true);
     try {
       const user = await register({
@@ -45,8 +43,7 @@ export default function Register() {
         role: form.role,
         department: form.department || undefined,
       });
-      sound.playSuccess();
-      toast.success(`Account created — Welcome to Nivaran AI, ${user.full_name}!`);
+      toast.success(`Account created — Welcome, ${user.full_name}!`);
       router.push(homeForRole(user.role));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Registration failed");
@@ -56,38 +53,36 @@ export default function Register() {
   }
 
   const field =
-    "w-full rounded-lg border border-[#30363d] bg-[#0d1117] px-3.5 py-2.5 text-sm text-white outline-none transition focus:border-[#58a6ff]";
+    "w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs";
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <Navbar />
 
-      <main className="radar-canvas flex-1 flex items-center justify-center p-4 sm:p-6 relative">
-        <div className="radar-sweep opacity-30 pointer-events-none" />
-
+      <main className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="relative z-10 w-full max-w-md my-8"
+          transition={{ duration: 0.3 }}
+          className="w-full max-w-md my-8"
         >
-          <Card className="border-[#30363d] bg-[#161b22]/90 backdrop-blur-xl shadow-2xl">
+          <Card className="border border-slate-200 bg-white shadow-md rounded-2xl">
             <CardContent className="p-6 sm:p-8">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
                 <div>
-                  <h1 className="text-2xl font-bold text-white">Create Account</h1>
-                  <p className="mt-1 text-xs text-[#8b949e]">
-                    Join your campus problem intelligence network
+                  <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Create Account</h1>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Join the campus problem intelligence network
                   </p>
                 </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#58a6ff]/10 text-[#58a6ff] border border-[#58a6ff]/30">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
                   <UserPlus size={20} />
                 </div>
               </div>
 
               <form onSubmit={onSubmit} className="mt-6 space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-[#8b949e]">
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">
                     Full Name
                   </label>
                   <input
@@ -100,7 +95,7 @@ export default function Register() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-medium text-[#8b949e]">
+                  <label className="mb-1.5 block text-xs font-semibold text-slate-700">
                     University Email
                   </label>
                   <input
@@ -115,15 +110,15 @@ export default function Register() {
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="block text-xs font-medium text-[#8b949e]">
+                    <label className="block text-xs font-semibold text-slate-700">
                       Password
                     </label>
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="text-[11px] text-[#8b949e] hover:text-[#58a6ff] transition flex items-center gap-1"
+                      className="text-[11px] text-slate-500 hover:text-indigo-600 transition flex items-center gap-1 cursor-pointer"
                     >
-                      {showPassword ? <EyeOff size={12} /> : <Eye size={12} />}
+                      {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
                       <span>{showPassword ? "Hide" : "Show"}</span>
                     </button>
                   </div>
@@ -140,7 +135,7 @@ export default function Register() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-[#8b949e]">
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-700">
                       Role
                     </label>
                     <select
@@ -157,7 +152,7 @@ export default function Register() {
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-xs font-medium text-[#8b949e]">
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-700">
                       Department
                     </label>
                     <input
@@ -169,8 +164,8 @@ export default function Register() {
                   </div>
                 </div>
 
-                <div className="rounded-lg bg-[#0d1117] p-2.5 text-[11px] text-[#8b949e] border border-[#21262d]">
-                  <span className="text-white font-medium">Selected Role: </span>
+                <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600 border border-slate-200">
+                  <span className="text-slate-900 font-bold">Permissions: </span>
                   {ROLES.find((r) => r.value === form.role)?.desc}
                 </div>
 
@@ -179,9 +174,9 @@ export default function Register() {
                 </Button>
               </form>
 
-              <div className="mt-5 pt-4 border-t border-[#30363d] flex items-center justify-between text-xs text-[#8b949e]">
+              <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
                 <span>Already registered?</span>
-                <Link href="/login" className="font-semibold text-[#58a6ff] hover:underline">
+                <Link href="/login" className="font-semibold text-indigo-600 hover:underline">
                   Sign In →
                 </Link>
               </div>

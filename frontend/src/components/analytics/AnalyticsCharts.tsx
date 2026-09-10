@@ -25,14 +25,9 @@ interface Trends {
   categories: { category: string; count: number }[];
 }
 
-const ACCENT = "#58a6ff";
-const HIGH = "#ffcc00";
+const ACCENT = "#4f46e5";
+const SECONDARY = "#0284c7";
 
-/**
- * Campus-wide trend analytics — Recharts AreaChart (issue volume over the
- * last 14 days) and RadarChart (category breakdown), per BUILD.md §2.4 and
- * the abstract's "Analytics for identifying campus-wide trends".
- */
 export function AnalyticsCharts({ refreshToken }: { refreshToken?: number }) {
   const [trends, setTrends] = useState<Trends | null>(null);
   const [loading, setLoading] = useState(true);
@@ -65,39 +60,41 @@ export function AnalyticsCharts({ refreshToken }: { refreshToken?: number }) {
   }));
 
   return (
-    <div className="grid gap-px bg-[#21262d] md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-3">
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-[#0d1117] p-4 md:col-span-2"
+        className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs md:col-span-2"
       >
-        <h3 className="mb-2 flex items-center gap-1.5 text-xs font-medium text-[#8b949e]">
-          <Activity size={12} className="text-accent" /> Issue volume — last 14 days
+        <h3 className="mb-2 flex items-center gap-1.5 text-xs font-bold text-slate-800">
+          <Activity size={13} className="text-indigo-600" /> Incident Volume (Last 14 Days)
         </h3>
         <div className="h-40">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={trends.volume} margin={{ top: 4, right: 8, left: -22, bottom: 0 }}>
+            <AreaChart data={trends.volume} margin={{ top: 4, right: 8, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="volFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={ACCENT} stopOpacity={0.45} />
-                  <stop offset="100%" stopColor={ACCENT} stopOpacity={0.02} />
+                  <stop offset="0%" stopColor={ACCENT} stopOpacity={0.25} />
+                  <stop offset="100%" stopColor={ACCENT} stopOpacity={0.01} />
                 </linearGradient>
               </defs>
               <XAxis
                 dataKey="date"
-                tick={{ fill: "#8b949e", fontSize: 10 }}
+                tick={{ fill: "#64748b", fontSize: 10 }}
                 tickFormatter={(d: string) => d.slice(5)}
-                stroke="#21262d"
+                stroke="#e2e8f0"
               />
-              <YAxis tick={{ fill: "#8b949e", fontSize: 10 }} allowDecimals={false} stroke="#21262d" />
+              <YAxis tick={{ fill: "#64748b", fontSize: 10 }} allowDecimals={false} stroke="#e2e8f0" />
               <Tooltip
                 contentStyle={{
-                  background: "#161b22",
-                  border: "1px solid #21262d",
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
                   borderRadius: 8,
                   fontSize: 12,
+                  color: "#0f172a",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
                 }}
-                labelStyle={{ color: "#8b949e" }}
+                labelStyle={{ color: "#475569", fontWeight: 600 }}
               />
               <Area
                 type="monotone"
@@ -116,31 +113,33 @@ export function AnalyticsCharts({ refreshToken }: { refreshToken?: number }) {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.08 }}
-        className="bg-[#0d1117] p-4"
+        className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs"
       >
-        <h3 className="mb-2 flex items-center gap-1.5 text-xs font-medium text-[#8b949e]">
-          <PieChart size={12} className="text-high" /> Category breakdown
+        <h3 className="mb-2 flex items-center gap-1.5 text-xs font-bold text-slate-800">
+          <PieChart size={13} className="text-sky-600" /> Category Breakdown
         </h3>
         <div className="h-40">
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart data={radarData} outerRadius="75%">
-              <PolarGrid stroke="#21262d" />
-              <PolarAngleAxis dataKey="category" tick={{ fill: "#8b949e", fontSize: 9 }} />
-              <PolarRadiusAxis tick={{ fill: "#8b949e", fontSize: 9 }} axisLine={false} />
+              <PolarGrid stroke="#e2e8f0" />
+              <PolarAngleAxis dataKey="category" tick={{ fill: "#64748b", fontSize: 9, fontWeight: 500 }} />
+              <PolarRadiusAxis tick={{ fill: "#94a3b8", fontSize: 9 }} axisLine={false} />
               <Radar
                 name="Clusters"
                 dataKey="count"
-                stroke={HIGH}
-                fill={HIGH}
-                fillOpacity={0.25}
+                stroke={SECONDARY}
+                fill={SECONDARY}
+                fillOpacity={0.2}
                 strokeWidth={2}
               />
               <Tooltip
                 contentStyle={{
-                  background: "#161b22",
-                  border: "1px solid #21262d",
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
                   borderRadius: 8,
                   fontSize: 12,
+                  color: "#0f172a",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
                 }}
               />
             </RadarChart>

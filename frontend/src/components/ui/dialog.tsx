@@ -28,17 +28,17 @@ export function Dialog({ open, onClose, children, className }: DialogProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-xs" onClick={onClose} />
           <motion.div
-            className={cn("glass relative z-10 w-full max-w-lg rounded-2xl p-6 shadow-2xl", className)}
-            initial={{ scale: 0.94, y: 12, opacity: 0 }}
+            className={cn("relative z-10 w-full max-w-lg rounded-2xl bg-white border border-slate-200 p-6 shadow-xl text-slate-900", className)}
+            initial={{ scale: 0.96, y: 8, opacity: 0 }}
             animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.96, y: 8, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 320, damping: 28 }}
+            exit={{ scale: 0.98, y: 6, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 350, damping: 28 }}
           >
             <button
               onClick={onClose}
-              className="absolute right-4 top-4 rounded-md p-1 text-[#8b949e] transition hover:bg-white/5 hover:text-white"
+              className="absolute right-4 top-4 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
               aria-label="Close"
             >
               <X size={16} />

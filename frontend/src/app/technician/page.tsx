@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import {
-  AlertTriangle,
   Camera,
   CheckCircle2,
   ChevronRight,
@@ -17,7 +16,6 @@ import {
 } from "lucide-react";
 import { api, API_URL } from "@/lib/api";
 import { requireAuth, type SessionUser } from "@/lib/auth";
-import { sound } from "@/lib/sound";
 
 import { useWebSocket, type WsMessage } from "@/hooks/useWebSocket";
 import { Badge } from "@/components/ui/badge";
@@ -52,14 +50,12 @@ export default function TechnicianConsole() {
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [proofPreview, setProofPreview] = useState<string | null>(null);
   const [techNotes, setTechNotes] = useState("");
-  const [resolveResult, setResolveResult] = useState<ResolveResult | null>(null);
   const [deferTarget, setDeferTarget] = useState<Cluster | null>(null);
   const [deferReason, setDeferReason] = useState("Waiting for spare parts");
   const [deferOther, setDeferOther] = useState("");
   const [swipeHint, setSwipeHint] = useState<Record<string, "enroute" | "defer">>({});
   const [queueTab, setQueueTab] = useState<"ALL" | "EMERGENCY" | "IN_PROGRESS" | "MINE">("ALL");
   const proofRef = useRef<HTMLInputElement>(null);
-
 
   const DEFER_REASONS = [
     "Waiting for spare parts",
@@ -69,19 +65,16 @@ export default function TechnicianConsole() {
     "Re-scheduled — higher priority emergency",
   ];
 
-  /* ── Field status actions (§1.3 swipes) ── */
+  /* ── Field status actions ── */
   async function handleEnRoute(clusterId: string) {
-    sound.playClick();
     try {
       await api.post(`/api/v1/clusters/${clusterId}/status`, { status: "IN_PROGRESS" });
-      sound.playRadarPing();
-      toast.success("Marked En-Route — status is now In Progress");
+      toast.success("Marked En-Route — status updated to In Progress");
       fetchQueue();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "En-Route failed");
     }
   }
-
 
   async function handleDefer() {
     if (!deferTarget) return;
@@ -158,7 +151,7 @@ export default function TechnicianConsole() {
   const slaCountdown = (deadline: string | null) => {
     if (!deadline) return { text: "—", urgent: false, ms: 0 };
     const ms = new Date(deadline).getTime() - now;
-    if (ms <= 0) return { text: "BREACHED", urgent: true, ms: 0 };
+    if (ms <= 0) return { text: "Breached", urgent: true, ms: 0 };
     const h = Math.floor(ms / 3600000);
     const m = Math.floor((ms % 3600000) / 60000);
     const s = Math.floor((ms % 60000) / 1000);
@@ -179,7 +172,7 @@ export default function TechnicianConsole() {
     setProofPreview(URL.createObjectURL(f));
   }
 
-  /* ── Submit resolution (dual-proof close-out) ── */
+  /* ── Submit resolution ── */
   async function handleResolve(clusterId: string) {
     if (!proofFile) {
       toast.error("Capture or upload a proof photo first");
@@ -191,10 +184,8 @@ export default function TechnicianConsole() {
       fd.append("proof_image", proofFile);
       fd.append("technician_notes", techNotes);
       const res = await api.post<ResolveResult>(`/api/v1/clusters/${clusterId}/resolve`, fd);
-      setResolveResult(res);
       if (res.verified) {
-        sound.playSuccess();
-        toast.success("Issue resolved — Dual-Proof Verified ✓");
+        toast.success("Incident resolved — Dual-Proof Verified ✓");
       } else {
         toast.error("Verification failed: " + res.reasoning);
       }
@@ -221,32 +212,31 @@ export default function TechnicianConsole() {
 
   if (!user) return null;
 
-
   return (
-    <div className="min-h-screen bg-[#0d1117] flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <Navbar />
 
-      <main className="radar-canvas flex-1">
+      <main className="flex-1">
         {/* ── Subheader / Ticker ── */}
-        <div className="border-b border-[#21262d] bg-[#161b22]/70 px-4 py-2.5 md:px-6">
+        <div className="border-b border-slate-200 bg-white px-4 py-3 md:px-6 shadow-2xs">
           <div className="mx-auto max-w-5xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <div className="flex items-center gap-2 text-xs">
-              <Wrench size={14} className="text-amber-400" />
-              <span className="font-bold text-white">Task Force SLA Dispatch Terminal</span>
-              <span className="text-[#8b949e]">·</span>
-              <span className="text-[#8b949e]">{queue.length} active orders</span>
+              <Wrench size={15} className="text-amber-600" />
+              <span className="font-bold text-slate-900">Task Force Operations Terminal</span>
+              <span className="text-slate-300">·</span>
+              <span className="text-slate-500 font-semibold">{queue.length} active orders</span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-[#8b949e]">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              <span>{user.full_name}</span>
-              <span className="font-mono text-amber-400">({user.department || "Field Team"})</span>
+            <div className="flex items-center gap-2 text-xs text-slate-600">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              <span className="font-semibold">{user.full_name}</span>
+              <span className="font-medium text-slate-500">({user.department || "Field Team"})</span>
             </div>
           </div>
         </div>
 
         <div className="mx-auto max-w-5xl p-4 md:p-6">
           {/* Queue Filter Tabs */}
-          <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-1">
+          <div className="flex items-center gap-2 mb-5 overflow-x-auto pb-1">
             {[
               { id: "ALL", label: `All Orders (${queue.length})` },
               { id: "EMERGENCY", label: `Emergency (${queue.filter((c) => c.priority_score >= 75).length})` },
@@ -255,14 +245,11 @@ export default function TechnicianConsole() {
             ].map((t) => (
               <button
                 key={t.id}
-                onClick={() => {
-                  sound.playClick();
-                  setQueueTab(t.id as never);
-                }}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition shrink-0 ${
+                onClick={() => setQueueTab(t.id as never)}
+                className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition shrink-0 cursor-pointer ${
                   queueTab === t.id
-                    ? "bg-[#58a6ff] text-[#0d1117] shadow-sm"
-                    : "bg-[#161b22] text-[#8b949e] hover:text-white border border-[#30363d]"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 shadow-2xs"
                 }`}
               >
                 {t.label}
@@ -272,20 +259,20 @@ export default function TechnicianConsole() {
 
           {loading ? (
             <div className="flex h-64 items-center justify-center">
-              <Loader2 className="animate-spin text-accent" size={24} />
+              <Loader2 className="animate-spin text-indigo-600" size={24} />
             </div>
           ) : filteredQueue.length === 0 ? (
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="flex flex-col items-center justify-center py-20 text-center"
+              className="flex flex-col items-center justify-center py-20 text-center rounded-2xl border border-slate-200 bg-white p-8"
             >
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-resolved/10">
-                <CheckCircle2 size={32} className="text-resolved" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 mb-2">
+                <CheckCircle2 size={30} />
               </div>
-              <h2 className="mt-4 text-lg font-bold text-white">No work orders in this view</h2>
-              <p className="mt-1 text-sm text-[#8b949e]">
-                Switch filter tabs above or check back for newly reported campus issues.
+              <h2 className="mt-2 text-base font-bold text-slate-900">No active work orders</h2>
+              <p className="mt-1 text-xs text-slate-500 max-w-xs">
+                All assigned orders for this view have been resolved. Check other tabs or stand by.
               </p>
             </motion.div>
           ) : (
@@ -296,533 +283,475 @@ export default function TechnicianConsole() {
                 const emergency = tier === "EMERGENCY";
                 const hint = swipeHint[cluster.id];
 
-
-              return (
-                <motion.div
-                  key={cluster.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  drag="x"
-                  dragConstraints={{ left: 120, right: 120 }}
-                  dragElastic={0.55}
-                  onDragStart={() => setSwipeHint((h) => ({ ...h, [cluster.id]: undefined as never }))}
-                  onDrag={(_, info) =>
-                    setSwipeHint((h) => ({
-                      ...h,
-                      [cluster.id]: info.offset.x > 50 ? "enroute" : info.offset.x < -50 ? "defer" : undefined as never,
-                    }))
-                  }
-                  onDragEnd={(_, info) => {
-                    setSwipeHint((h) => ({ ...h, [cluster.id]: undefined as never }));
-                    if (info.offset.x > 90 && info.velocity.x > 200) handleEnRoute(cluster.id);
-                    else if (info.offset.x < -90 && info.velocity.x < -200) setDeferTarget(cluster);
-                  }}
-                  whileDrag={{ scale: 1.03, cursor: "grabbing" }}
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <Card
-                    className={`cursor-pointer transition hover:border-accent/40 ${
-                      emergency ? "border-emergency/40" : ""
-                    } ${hint === "enroute" ? "border-resolved/60" : ""} ${hint === "defer" ? "border-high/60" : ""}`}
-                    onClick={() => {
-                      if (hint) return; // ignore the click that ends a swipe
-                      fetchDetail(cluster.id);
-                      setResolveResult(null);
+                return (
+                  <motion.div
+                    key={cluster.id}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    drag="x"
+                    dragConstraints={{ left: 120, right: 120 }}
+                    dragElastic={0.5}
+                    onDragStart={() => setSwipeHint((h) => ({ ...h, [cluster.id]: undefined as never }))}
+                    onDrag={(_, info) =>
+                      setSwipeHint((h) => ({
+                        ...h,
+                        [cluster.id]: info.offset.x > 50 ? "enroute" : info.offset.x < -50 ? "defer" : undefined as never,
+                      }))
+                    }
+                    onDragEnd={(_, info) => {
+                      setSwipeHint((h) => ({ ...h, [cluster.id]: undefined as never }));
+                      if (info.offset.x > 90 && info.velocity.x > 200) handleEnRoute(cluster.id);
+                      else if (info.offset.x < -90 && info.velocity.x < -200) setDeferTarget(cluster);
                     }}
+                    whileDrag={{ scale: 1.02, cursor: "grabbing" }}
+                    transition={{ delay: i * 0.04 }}
                   >
-                    <CardContent className="p-4">
-                      {/* Swipe affordance row (§1.3: right = En-Route, left = defer) */}
-                      <div className="mb-1 flex items-center justify-between text-[9px] uppercase tracking-wide text-[#8b949e]/70">
-                        <span>⟵ swipe to defer</span>
-                        <span>swipe for En-Route ⟶</span>
-                      </div>
-
-                      {/* Tier + SLA row */}
-                      <div className="flex items-start justify-between">
-                        <Badge variant={tierVariant[tier as keyof typeof tierVariant] ?? "default"}>
-                          {tier}
-                        </Badge>
-                        <div
-                          className={`flex items-center gap-1 font-mono text-xs font-bold ${
-                            sla.urgent ? "flash-red" : "text-[#c9d1d9]"
-                          }`}
-                        >
-                          <Clock size={10} />
-                          {sla.text}
-                        </div>
-                      </div>
-
-                      {/* Title */}
-                      <h3 className="mt-3 text-sm font-bold text-white line-clamp-2">
-                        {cluster.title}
-                      </h3>
-
-                      {/* Meta */}
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-[#8b949e]">
-                        <span className="flex items-center gap-0.5 font-medium text-accent">
-                          <MapPin size={9} /> Floor {cluster.floor}
-                          {cluster.room_or_zone ? ` · ${cluster.room_or_zone}` : ""}
-                        </span>
-                        <span>·</span>
-                        <span>{CATEGORY_LABELS[cluster.category] ?? cluster.category}</span>
-                        <span>·</span>
-                        <span>{cluster.complaint_count} report(s)</span>
-                      </div>
-
-                      {/* Priority bar */}
-                      <div className="mt-3">
-                        <div className="flex items-center justify-between text-[10px] text-[#8b949e]">
-                          <span>Priority</span>
-                          <span className="font-mono text-white">{cluster.priority_score}</span>
-                        </div>
-                        <Progress
-                          value={cluster.priority_score}
-                          className="mt-1"
-                          barClassName={
-                            emergency ? "bg-emergency" : tier === "HIGH" ? "bg-high" : tier === "MEDIUM" ? "bg-medium" : "bg-resolved"
-                          }
-                        />
-                      </div>
-
-                      {/* CMMS Recommended Tools & Spare Parts Preview (Atlas CMMS) */}
-                      {cluster.work_order_checklist && (
-                        <div className="mt-3 rounded-lg border border-[#21262d] bg-[#0d1117]/70 p-2 text-[10px]">
-                          <div className="flex items-center justify-between text-[#8b949e] font-semibold mb-1">
-                            <span className="flex items-center gap-1 text-accent">
-                              <Wrench size={10} /> CMMS Tooling & Parts
-                            </span>
-                            <span className="font-mono text-[9px] text-[#8b949e]">
-                              Est: {cluster.work_order_checklist.estimated_hours}h
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {cluster.work_order_checklist.required_tools?.slice(0, 2).map((t, i) => (
-                              <span
-                                key={i}
-                                className="rounded bg-[#161b22] border border-[#30363d] px-1.5 py-0.5 text-white font-mono text-[9px]"
-                              >
-                                🔧 {t}
-                              </span>
-                            ))}
-                            {cluster.work_order_checklist.recommended_parts?.slice(0, 1).map((p, i) => (
-                              <span
-                                key={i}
-                                className="rounded bg-accent/10 border border-accent/30 px-1.5 py-0.5 text-accent font-medium font-mono text-[9px]"
-                              >
-                                📦 {p}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Status */}
-                      <div className="mt-3 flex items-center justify-between">
-                        <Badge variant="outline">{cluster.status}</Badge>
-                        <ChevronRight size={14} className="text-[#8b949e]" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ── Work Order Detail Modal ── */}
-      <AnimatePresence>
-        {active && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm md:items-center md:p-6"
-            onClick={() => setActive(null)}
-          >
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              onClick={(e) => e.stopPropagation()}
-              className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-[#21262d] bg-[#0d1117] md:rounded-2xl"
-            >
-              {/* Header */}
-              <div className="sticky top-0 z-10 flex items-start justify-between border-b border-[#21262d] bg-[#0d1117] p-5">
-                <div className="flex-1 pr-4">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={tierVariant[tierForScore(active.priority_score) as keyof typeof tierVariant] ?? "default"}>
-                      {tierForScore(active.priority_score)}
-                    </Badge>
-                    <Badge variant="outline">{active.status}</Badge>
-                  </div>
-                  <h2 className="mt-2 text-base font-bold text-white">{active.title}</h2>
-                  <p className="mt-0.5 text-xs text-[#8b949e]">
-                    {CATEGORY_LABELS[active.category] ?? active.category} · {active.assigned_department}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setActive(null)}
-                  className="rounded-md p-1.5 text-[#8b949e] hover:bg-white/5 hover:text-white"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="space-y-5 p-5">
-                {/* SLA Countdown */}
-                {(() => {
-                  const sla = slaCountdown(active.sla_deadline);
-                  return (
-                    <div
-                      className={`flex items-center justify-between rounded-xl border p-4 ${
-                        sla.urgent
-                          ? "border-emergency/40 bg-emergency/5"
-                          : "border-[#21262d] bg-[#161b22]"
-                      }`}
+                    <Card
+                      className={`cursor-pointer transition border border-slate-200 bg-white hover:border-slate-300 hover:shadow-md shadow-xs ${
+                        emergency ? "border-red-300" : ""
+                      } ${hint === "enroute" ? "border-emerald-500 bg-emerald-50/20" : ""} ${hint === "defer" ? "border-amber-500 bg-amber-50/20" : ""}`}
+                      onClick={() => {
+                        if (hint) return;
+                        fetchDetail(cluster.id);
+                      }}
                     >
-                      <span className="flex items-center gap-2 text-sm text-[#8b949e]">
-                        <Clock size={14} /> SLA Remaining
-                      </span>
-                      <span
-                        className={`font-mono text-lg font-bold ${
-                          sla.urgent ? "flash-red" : "text-white"
+                      <CardContent className="p-4 sm:p-5">
+                        {/* Swipe hint */}
+                        <div className="mb-2 flex items-center justify-between text-[10px] uppercase font-semibold text-slate-400">
+                          <span>⟵ swipe to defer</span>
+                          <span>swipe en route ⟶</span>
+                        </div>
+
+                        {/* Tier + SLA row */}
+                        <div className="flex items-start justify-between">
+                          <Badge variant={tierVariant[tier as keyof typeof tierVariant] ?? "default"}>
+                            {tier}
+                          </Badge>
+                          <span
+                            className={`flex items-center gap-1 font-semibold text-xs px-2 py-0.5 rounded-full ${
+                              sla.urgent
+                                ? "bg-red-50 text-red-700 border border-red-200"
+                                : "bg-slate-100 text-slate-700"
+                            }`}
+                          >
+                            <Clock size={11} />
+                            {sla.text}
+                          </span>
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="mt-3 text-sm font-bold text-slate-900 line-clamp-2 leading-snug">
+                          {cluster.title}
+                        </h3>
+
+                        {/* Meta */}
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-slate-500 font-medium">
+                          <span className="flex items-center gap-0.5 font-semibold text-indigo-700">
+                            <MapPin size={11} /> Floor {cluster.floor}
+                            {cluster.room_or_zone ? ` · ${cluster.room_or_zone}` : ""}
+                          </span>
+                          <span>·</span>
+                          <span>{CATEGORY_LABELS[cluster.category] ?? cluster.category}</span>
+                          <span>·</span>
+                          <span>{cluster.complaint_count} report(s)</span>
+                        </div>
+
+                        {/* Priority bar */}
+                        <div className="mt-3">
+                          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500">
+                            <span>Priority Urgency</span>
+                            <span className="font-bold text-slate-900">{cluster.priority_score} / 100</span>
+                          </div>
+                          <Progress
+                            value={cluster.priority_score}
+                            className="mt-1 h-1.5"
+                            barClassName={
+                              emergency ? "bg-red-600" : tier === "HIGH" ? "bg-amber-500" : "bg-indigo-600"
+                            }
+                          />
+                        </div>
+
+                        {/* Recommended Tools & Parts Preview */}
+                        {cluster.work_order_checklist && (
+                          <div className="mt-3 rounded-lg border border-slate-100 bg-slate-50 p-2.5 text-xs">
+                            <div className="flex items-center justify-between text-slate-600 font-semibold mb-1">
+                              <span className="flex items-center gap-1 text-indigo-700">
+                                <Wrench size={11} /> Tools & Parts
+                              </span>
+                              <span className="text-[10px] text-slate-500">
+                                Est: {cluster.work_order_checklist.estimated_hours}h
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {cluster.work_order_checklist.required_tools?.slice(0, 2).map((t, idx) => (
+                                <span
+                                  key={idx}
+                                  className="rounded bg-white border border-slate-200 px-1.5 py-0.5 text-slate-800 text-[10px] font-medium"
+                                >
+                                  🔧 {t}
+                                </span>
+                              ))}
+                              {cluster.work_order_checklist.recommended_parts?.slice(0, 1).map((p, idx) => (
+                                <span
+                                  key={idx}
+                                  className="rounded bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 text-indigo-700 text-[10px] font-medium"
+                                >
+                                  📦 {p}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Status */}
+                        <div className="mt-4 flex items-center justify-between pt-2 border-t border-slate-100">
+                          <Badge variant="outline" className="text-[10px]">
+                            {cluster.status}
+                          </Badge>
+                          <span className="text-xs font-semibold text-indigo-600 flex items-center gap-0.5">
+                            Open Details <ChevronRight size={13} />
+                          </span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* ── Work Order Detail Modal ── */}
+        <AnimatePresence>
+          {active && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 p-0 backdrop-blur-xs md:items-center md:p-6"
+              onClick={() => setActive(null)}
+            >
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 28, stiffness: 250 }}
+                onClick={(e) => e.stopPropagation()}
+                className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-slate-200 bg-white shadow-2xl md:rounded-2xl text-slate-900"
+              >
+                {/* Header */}
+                <div className="sticky top-0 z-10 flex items-start justify-between border-b border-slate-100 bg-white p-5">
+                  <div className="flex-1 pr-4">
+                    <div className="flex items-center gap-2">
+                      <Badge variant={tierVariant[tierForScore(active.priority_score) as keyof typeof tierVariant] ?? "default"}>
+                        {tierForScore(active.priority_score)}
+                      </Badge>
+                      <Badge variant="outline">{active.status}</Badge>
+                    </div>
+                    <h2 className="mt-2 text-lg font-bold text-slate-900 leading-snug">{active.title}</h2>
+                    <p className="mt-1 text-xs text-slate-500 font-medium">
+                      {CATEGORY_LABELS[active.category] ?? active.category} · {active.assigned_department}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setActive(null)}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+
+                <div className="space-y-5 p-5">
+                  {/* SLA Countdown */}
+                  {(() => {
+                    const sla = slaCountdown(active.sla_deadline);
+                    return (
+                      <div
+                        className={`flex items-center justify-between rounded-xl border p-4 ${
+                          sla.urgent
+                            ? "border-red-200 bg-red-50 text-red-800"
+                            : "border-slate-200 bg-slate-50 text-slate-800"
                         }`}
                       >
-                        {sla.text}
+                        <span className="flex items-center gap-2 text-xs font-semibold">
+                          <Clock size={14} /> SLA Remaining
+                        </span>
+                        <span className="font-mono text-sm font-bold">
+                          {sla.text}
+                        </span>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Floor Plan Location */}
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="mb-2 flex items-center justify-between text-xs">
+                      <span className="flex items-center gap-1.5 font-bold text-indigo-700">
+                        <MapPin size={14} /> Floor {active.floor}
+                        {active.room_or_zone ? ` · ${active.room_or_zone}` : ""}
+                      </span>
+                      <span className="text-[11px] font-mono text-slate-500">
+                        ({Math.round(active.x_coord)}, {Math.round(active.y_coord)})
                       </span>
                     </div>
-                  );
-                })()}
-
-                {/* Indoor Floor Plan Location */}
-                <div className="rounded-xl border border-[#21262d] bg-[#161b22] p-4">
-                  <div className="mb-2 flex items-center justify-between text-xs">
-                    <span className="flex items-center gap-1.5 font-medium text-accent">
-                      <MapPin size={13} /> Location: Floor {active.floor}
-                      {active.room_or_zone ? ` · ${active.room_or_zone}` : ""}
-                    </span>
-                    <span className="text-[10px] font-mono text-[#8b949e]">
-                      Canvas ({Math.round(active.x_coord)}, {Math.round(active.y_coord)})
-                    </span>
-                  </div>
-                  <div className="relative overflow-hidden rounded-lg border border-[#30363d] bg-[#0d1117]">
-                    <FloorPlanViewer
-                      floor={active.floor}
-                      theme="dark"
-                      interactive={false}
-                      activePin={{ x: active.x_coord, y: active.y_coord, room: active.room_or_zone }}
-                      className="h-44 w-full"
-                      showRoomLabels={true}
-                    />
-                  </div>
-                </div>
-
-                {/* AI Summary */}
-                {active.ai_summary && (
-                  <div className="rounded-xl border border-[#21262d] bg-[#161b22] p-4">
-                    <p className="text-xs font-medium text-accent">AI Summary</p>
-                    <p className="mt-1.5 text-sm leading-relaxed text-[#c9d1d9]">{active.ai_summary}</p>
-                  </div>
-                )}
-
-                {/* Before Image (from first complaint) */}
-                {(() => {
-                  const firstComplaint = active.complaints?.[0];
-                  if (!firstComplaint?.image_url) return null;
-                  const imgUrl = firstComplaint.image_url.startsWith("http")
-                    ? firstComplaint.image_url
-                    : `${API_URL}${firstComplaint.image_url}`;
-                  return (
-                    <div className="rounded-xl border border-[#21262d] bg-[#161b22] p-4">
-                      <p className="mb-2 text-xs font-medium text-[#8b949e]">Before (Original Report)</p>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={imgUrl}
-                        alt="Before damage"
-                        className="w-full rounded-lg object-cover"
+                    <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white">
+                      <FloorPlanViewer
+                        floor={active.floor}
+                        theme="light"
+                        interactive={false}
+                        activePin={{ x: active.x_coord, y: active.y_coord, room: active.room_or_zone }}
+                        className="h-44 w-full"
+                        showRoomLabels={true}
                       />
                     </div>
-                  );
-                })()}
+                  </div>
 
-                {/* CMMS Recommended Tools, Parts & Checklist (Atlas CMMS) */}
-                {active.work_order_checklist && (
-                  <div className="rounded-xl border border-[#21262d] bg-[#161b22] p-4 space-y-3">
-                    <div className="flex items-center justify-between border-b border-[#30363d] pb-2">
-                      <span className="text-xs font-semibold text-white flex items-center gap-1.5">
-                        <Wrench size={13} className="text-accent" /> CMMS Tooling & Spare Parts
-                      </span>
-                      <span className="text-[10px] text-[#8b949e] font-mono">
-                        Est: {active.work_order_checklist.estimated_hours}h
-                      </span>
+                  {/* AI Summary */}
+                  {active.ai_summary && (
+                    <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
+                      <p className="text-xs font-bold text-indigo-900 mb-1">Issue Analysis</p>
+                      <p className="text-xs leading-relaxed text-slate-700">{active.ai_summary}</p>
                     </div>
+                  )}
 
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-[#8b949e]">Required Field Tools</span>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {active.work_order_checklist.required_tools?.map((tool: string, i: number) => (
-                          <span key={i} className="rounded bg-[#0d1117] border border-[#30363d] px-2 py-0.5 text-[10px] text-white">
-                            🔧 {tool}
-                          </span>
-                        ))}
+                  {/* Before Image */}
+                  {(() => {
+                    const firstComplaint = active.complaints?.[0];
+                    if (!firstComplaint?.image_url) return null;
+                    const imgUrl = firstComplaint.image_url.startsWith("http")
+                      ? firstComplaint.image_url
+                      : `${API_URL}${firstComplaint.image_url}`;
+                    return (
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                        <p className="mb-2 text-xs font-bold text-slate-700">Original Incident Photo</p>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={imgUrl}
+                          alt="Before damage"
+                          className="w-full rounded-lg object-cover border border-slate-200 shadow-2xs"
+                        />
                       </div>
-                    </div>
+                    );
+                  })()}
 
-                    <div>
-                      <span className="text-[10px] uppercase font-bold text-[#8b949e]">Replacement Parts</span>
-                      <div className="mt-1 flex flex-wrap gap-1">
-                        {active.work_order_checklist.recommended_parts?.map((part: string, i: number) => (
-                          <span key={i} className="rounded bg-accent/10 border border-accent/30 px-2 py-0.5 text-[10px] text-accent font-medium">
-                            📦 {part}
-                          </span>
-                        ))}
+                  {/* CMMS Recommended Tools, Parts & Checklist */}
+                  {active.work_order_checklist && (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                        <span className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                          <Wrench size={14} className="text-indigo-600" /> CMMS Tooling & Spare Parts
+                        </span>
+                        <span className="text-xs text-slate-500 font-semibold">
+                          Est: {active.work_order_checklist.estimated_hours}h
+                        </span>
                       </div>
-                    </div>
 
-                    {active.work_order_checklist.safety_gear && active.work_order_checklist.safety_gear.length > 0 && (
                       <div>
-                        <span className="text-[10px] uppercase font-bold text-[#8b949e]">Mandatory Safety Gear</span>
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {active.work_order_checklist.safety_gear.map((gear: string, i: number) => (
-                            <span key={i} className="rounded bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] text-amber-300">
-                              🦺 {gear}
+                        <span className="text-[10px] uppercase font-bold text-slate-500">Required Tools</span>
+                        <div className="mt-1 flex flex-wrap gap-1.5">
+                          {active.work_order_checklist.required_tools?.map((tool: string, i: number) => (
+                            <span key={i} className="rounded-md bg-white border border-slate-200 px-2 py-0.5 text-xs text-slate-800 font-medium">
+                              🔧 {tool}
                             </span>
                           ))}
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
 
-                {/* Dual-Proof Close-Out */}
-                {active.status !== "RESOLVED" && active.status !== "CLOSED" && (
-                  <div className="rounded-xl border border-[#21262d] bg-[#161b22] p-4">
-                    <div className="mb-3 flex items-center gap-2">
-                      <Shield size={14} className="text-accent" />
-                      <p className="text-sm font-medium text-white">Dual-Proof Verification</p>
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-slate-500">Replacement Parts</span>
+                        <div className="mt-1 flex flex-wrap gap-1.5">
+                          {active.work_order_checklist.recommended_parts?.map((part: string, i: number) => (
+                            <span key={i} className="rounded-md bg-indigo-50 border border-indigo-200 px-2 py-0.5 text-xs text-indigo-700 font-medium">
+                              📦 {part}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
+                  )}
 
-                    {/* Draggable slider comparison if both before & after photos are available */}
-                    {proofPreview && active.complaints?.[0]?.image_url && (
-                      <div className="mb-4">
-                        <BeforeAfterImageSlider
-                          beforeUrl={
-                            active.complaints[0].image_url.startsWith("http")
-                              ? active.complaints[0].image_url
-                              : `${API_URL}${active.complaints[0].image_url}`
-                          }
-                          afterUrl={proofPreview}
-                          similarityScore={0.93}
-                          verified={true}
-                          reasoning="Comparing student report scene against technician camera proof."
+                  {/* Dual-Proof Close-Out */}
+                  {active.status !== "RESOLVED" && active.status !== "CLOSED" && (
+                    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+                      <div className="mb-3 flex items-center gap-2">
+                        <Shield size={16} className="text-emerald-600" />
+                        <p className="text-sm font-bold text-slate-900">Dual-Proof Verification Close-Out</p>
+                      </div>
+
+                      {/* Slider comparison */}
+                      {proofPreview && active.complaints?.[0]?.image_url && (
+                        <div className="mb-4">
+                          <BeforeAfterImageSlider
+                            beforeUrl={
+                              active.complaints[0].image_url.startsWith("http")
+                                ? active.complaints[0].image_url
+                                : `${API_URL}${active.complaints[0].image_url}`
+                            }
+                            afterUrl={proofPreview}
+                            similarityScore={0.93}
+                            verified={true}
+                            reasoning="Comparing original scene with technician closeout photograph."
+                          />
+                        </div>
+                      )}
+
+                      {/* Proof photo upload */}
+                      <div
+                        onClick={() => proofRef.current?.click()}
+                        className="flex min-h-[120px] cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50/50 transition hover:bg-slate-50"
+                      >
+                        {proofPreview ? (
+                          <div className="relative p-2">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={proofPreview} alt="After proof" className="max-h-40 rounded-lg border border-slate-200" />
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setProofFile(null);
+                                setProofPreview(null);
+                              }}
+                              className="absolute -right-1 -top-1 rounded-full bg-slate-900 p-1 text-white hover:bg-slate-800"
+                            >
+                              <X size={12} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="p-6 text-center">
+                            <Camera size={26} className="mx-auto text-indigo-600" />
+                            <p className="mt-2 text-xs font-semibold text-slate-800">
+                              Tap to capture or upload completion photo
+                            </p>
+                          </div>
+                        )}
+                        <input
+                          ref={proofRef}
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          hidden
+                          onChange={(e) => e.target.files?.[0] && handleProofSelect(e.target.files[0])}
                         />
                       </div>
-                    )}
 
-                    {/* Proof photo upload */}
-                    <div
-                      onClick={() => proofRef.current?.click()}
-                      className="flex min-h-[120px] cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-[#30363d] transition hover:border-accent/50"
-                    >
-                      {proofPreview ? (
-                        <div className="relative p-2">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={proofPreview} alt="After proof" className="max-h-40 rounded-lg" />
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setProofFile(null);
-                              setProofPreview(null);
-                            }}
-                            className="absolute -right-1 -top-1 rounded-full bg-emergency p-1 text-white"
-                          >
-                            <X size={10} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="p-6 text-center">
-                          <Camera size={28} className="mx-auto text-accent" />
-                          <p className="mt-2 text-sm text-[#c9d1d9]">
-                            Tap to capture or upload &quot;After&quot; photo
+                      {/* Technician notes */}
+                      <textarea
+                        rows={2}
+                        value={techNotes}
+                        onChange={(e) => setTechNotes(e.target.value)}
+                        placeholder="Technician completion notes (optional)…"
+                        className="mt-3 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 shadow-2xs"
+                      />
+
+                      {/* Resolve button */}
+                      <Button
+                        variant="success"
+                        disabled={resolving || !proofFile}
+                        onClick={() => handleResolve(active.id)}
+                        className="mt-3 w-full py-2.5 font-bold"
+                      >
+                        {resolving ? (
+                          <Loader2 className="animate-spin" size={16} />
+                        ) : (
+                          <CheckCircle2 size={16} />
+                        )}
+                        {resolving ? "Verifying…" : "Submit Proof & Mark Resolved"}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* All complaints */}
+                  <div>
+                    <h3 className="mb-2 text-xs font-bold text-slate-700">
+                      Reported Submissions ({active.complaints?.length ?? 0})
+                    </h3>
+                    <div className="space-y-2">
+                      {active.complaints?.map((c: Complaint) => (
+                        <div key={c.id} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                          <p className="text-xs font-bold text-slate-900">{c.title}</p>
+                          <p className="mt-0.5 line-clamp-2 text-xs text-slate-600">{c.description}</p>
+                          <p className="mt-1.5 text-[10px] text-slate-400 font-medium">
+                            {new Date(c.created_at).toLocaleString()}
                           </p>
                         </div>
-                      )}
-                      <input
-                        ref={proofRef}
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        hidden
-                        onChange={(e) => e.target.files?.[0] && handleProofSelect(e.target.files[0])}
-                      />
+                      ))}
                     </div>
-
-                    {/* Technician notes */}
-                    <textarea
-                      rows={2}
-                      value={techNotes}
-                      onChange={(e) => setTechNotes(e.target.value)}
-                      placeholder="Technician notes (optional)…"
-                      className="mt-3 w-full rounded-lg border border-[#30363d] bg-[#0d1117] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-[#8b949e] focus:border-accent"
-                    />
-
-                    {/* Resolve button */}
-                    <Button
-                      variant="success"
-                      disabled={resolving || !proofFile}
-                      onClick={() => handleResolve(active.id)}
-                      className="mt-3 w-full"
-                    >
-                      {resolving ? (
-                        <Loader2 className="animate-spin" size={16} />
-                      ) : (
-                        <CheckCircle2 size={15} />
-                      )}
-                      {resolving ? "Verifying…" : "Close Issue — Verify & Resolve"}
-                    </Button>
-                  </div>
-                )}
-
-                {/* All complaints */}
-                <div>
-                  <h3 className="mb-2 text-xs font-medium text-[#8b949e]">
-                    All Reports ({active.complaints?.length ?? 0})
-                  </h3>
-                  <div className="space-y-2">
-                    {active.complaints?.map((c: Complaint) => (
-                      <div key={c.id} className="rounded-lg border border-[#21262d] bg-[#0d1117] p-3">
-                        <p className="text-sm font-medium text-white">{c.title}</p>
-                        <p className="mt-0.5 line-clamp-2 text-xs text-[#8b949e]">{c.description}</p>
-                        <p className="mt-1.5 text-[10px] text-[#8b949e]">
-                          {new Date(c.created_at).toLocaleString()}
-                        </p>
-                      </div>
-                    ))}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
 
-      {/* ── Resolve Result Toast ── */}
-      <AnimatePresence>
-        {resolveResult && (
-          <motion.div
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-6 left-1/2 z-[60] w-[90vw] max-w-md -translate-x-1/2"
-          >
-            <div
-              className={`rounded-xl border p-4 ${
-                resolveResult.verified
-                  ? "border-resolved/40 bg-[#0d1117]"
-                  : "border-emergency/40 bg-[#0d1117]"
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                {resolveResult.verified ? (
-                  <CheckCircle2 className="shrink-0 text-resolved" size={24} />
-                ) : (
-                  <AlertTriangle className="shrink-0 text-emergency" size={24} />
-                )}
-                <div className="flex-1">
-                  <h4 className="text-sm font-bold text-white">
-                    {resolveResult.verified ? "Dual-Proof Verified ✓" : "Verification Failed"}
-                  </h4>
-                  {resolveResult.similarity_score != null && (
-                    <p className="mt-0.5 text-xs text-[#c9d1d9]">
-                      Scene similarity: {(resolveResult.similarity_score * 100).toFixed(0)}%
-                    </p>
-                  )}
-                  <p className="mt-1 text-xs text-[#8b949e]">{resolveResult.reasoning}</p>
-                </div>
-                <button
-                  onClick={() => setResolveResult(null)}
-                  className="rounded p-1 text-[#8b949e] hover:text-white"
-                >
-                  <X size={14} />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      {/* ── Defer Reason Picker (§1.3 swipe-left) ── */}
-      <Dialog open={!!deferTarget} onClose={() => setDeferTarget(null)}>
-        {deferTarget && (
-          <div>
-            <h3 className="text-base font-bold text-white">Defer work order</h3>
-            <p className="mt-1 text-xs text-[#8b949e]">
-              {deferTarget.title} — the reason is audit-logged and the cluster returns to OPEN.
-            </p>
-            <div className="mt-4 space-y-2">
-              {DEFER_REASONS.map((r) => (
+        {/* ── Defer Reason Picker ── */}
+        <Dialog open={!!deferTarget} onClose={() => setDeferTarget(null)}>
+          {deferTarget && (
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Defer Work Order</h3>
+              <p className="mt-1 text-xs text-slate-500">
+                {deferTarget.title} — reason will be logged in audit trail and status returned to Open.
+              </p>
+              <div className="mt-4 space-y-2">
+                {DEFER_REASONS.map((r) => (
+                  <label
+                    key={r}
+                    className={`flex cursor-pointer items-center gap-2.5 rounded-xl border p-3 text-xs font-medium transition ${
+                      deferReason === r
+                        ? "border-indigo-500 bg-indigo-50/70 text-indigo-900"
+                        : "border-slate-200 text-slate-700 hover:bg-slate-50"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="defer-reason"
+                      checked={deferReason === r}
+                      onChange={() => setDeferReason(r)}
+                      className="accent-indigo-600"
+                    />
+                    {r}
+                  </label>
+                ))}
                 <label
-                  key={r}
-                  className={`flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-sm transition ${
-                    deferReason === r
-                      ? "border-accent bg-accent/10 text-white"
-                      : "border-[#30363d] text-[#c9d1d9] hover:border-accent/40"
+                  className={`flex cursor-pointer items-center gap-2.5 rounded-xl border p-3 text-xs font-medium transition ${
+                    deferReason === "__other"
+                      ? "border-indigo-500 bg-indigo-50/70 text-indigo-900"
+                      : "border-slate-200 text-slate-700 hover:bg-slate-50"
                   }`}
                 >
                   <input
                     type="radio"
                     name="defer-reason"
-                    checked={deferReason === r}
-                    onChange={() => setDeferReason(r)}
-                    className="accent-[#58a6ff]"
+                    checked={deferReason === "__other"}
+                    onChange={() => setDeferReason("__other")}
+                    className="accent-indigo-600"
                   />
-                  {r}
+                  Other…
                 </label>
-              ))}
-              <label
-                className={`flex cursor-pointer items-center gap-2 rounded-lg border p-3 text-sm transition ${
-                  deferReason === "__other"
-                    ? "border-accent bg-accent/10 text-white"
-                    : "border-[#30363d] text-[#c9d1d9] hover:border-accent/40"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="defer-reason"
-                  checked={deferReason === "__other"}
-                  onChange={() => setDeferReason("__other")}
-                  className="accent-[#58a6ff]"
-                />
-                Other…
-              </label>
-              {deferReason === "__other" && (
-                <textarea
-                  autoFocus
-                  rows={2}
-                  value={deferOther}
-                  onChange={(e) => setDeferOther(e.target.value)}
-                  placeholder="Describe the reason…"
-                  className="w-full rounded-lg border border-[#30363d] bg-[#0d1117] px-3 py-2.5 text-sm text-white outline-none transition placeholder:text-[#8b949e] focus:border-accent"
-                />
-              )}
+                {deferReason === "__other" && (
+                  <textarea
+                    autoFocus
+                    rows={2}
+                    value={deferOther}
+                    onChange={(e) => setDeferOther(e.target.value)}
+                    placeholder="Specify the reason…"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500"
+                  />
+                )}
+              </div>
+              <div className="mt-5 flex gap-2.5">
+                <Button variant="outline" className="flex-1" onClick={() => setDeferTarget(null)}>
+                  Cancel
+                </Button>
+                <Button variant="danger" className="flex-1" onClick={handleDefer}>
+                  Defer Order
+                </Button>
+              </div>
             </div>
-            <div className="mt-4 flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={() => setDeferTarget(null)}>
-                Cancel
-              </Button>
-              <Button variant="danger" className="flex-1" onClick={handleDefer}>
-                Defer &amp; log reason
-              </Button>
-            </div>
-          </div>
-        )}
-      </Dialog>
+          )}
+        </Dialog>
 
-      {/* Floating CampBot AI Assistant (CampFeed) */}
-      <CampBotChat />
+        {/* Floating CampBot AI Assistant */}
+        <CampBotChat />
       </main>
     </div>
   );
 }
-

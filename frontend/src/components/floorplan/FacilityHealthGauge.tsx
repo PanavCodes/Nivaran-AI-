@@ -10,10 +10,6 @@ interface FacilityHealthGaugeProps {
   floorLabel?: string;
 }
 
-/**
- * Facility Health Gauge adapted from Civic-Fix (City Health Score) & Smart Campus Intelligence Hub.
- * Renders an animated circular health gauge with facility rating and risk levels.
- */
 export const FacilityHealthGauge: React.FC<FacilityHealthGaugeProps> = ({
   score,
   openIncidents,
@@ -23,24 +19,24 @@ export const FacilityHealthGauge: React.FC<FacilityHealthGaugeProps> = ({
   const clampedScore = Math.max(0, Math.min(100, Math.round(score)));
 
   let statusText = "Optimal";
-  let statusColor = "text-emerald-400";
-  let ringColor = "#34C759";
+  let statusColor = "text-emerald-700";
+  let ringColor = "#16a34a";
   let StatusIcon = CheckCircle;
 
   if (clampedScore < 50) {
     statusText = "Critical";
-    statusColor = "text-red-400";
-    ringColor = "#FF3B30";
+    statusColor = "text-red-700";
+    ringColor = "#dc2626";
     StatusIcon = ShieldAlert;
   } else if (clampedScore < 75) {
     statusText = "Degraded";
-    statusColor = "text-amber-400";
-    ringColor = "#FFCC00";
+    statusColor = "text-amber-800";
+    ringColor = "#d97706";
     StatusIcon = AlertTriangle;
   } else if (clampedScore < 90) {
     statusText = "Stable";
-    statusColor = "text-cyan-400";
-    ringColor = "#58A6FF";
+    statusColor = "text-indigo-700";
+    ringColor = "#4f46e5";
     StatusIcon = Activity;
   }
 
@@ -50,9 +46,9 @@ export const FacilityHealthGauge: React.FC<FacilityHealthGaugeProps> = ({
   const strokeDashoffset = circumference - (clampedScore / 100) * circumference;
 
   return (
-    <div className="flex items-center gap-4 rounded-xl border border-[#30363d] bg-gradient-to-r from-[#161b22] to-[#0d1117] p-3 shadow-lg">
+    <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-3.5 shadow-2xs">
       {/* Circular SVG Gauge */}
-      <div className="relative flex h-20 w-20 shrink-0 items-center justify-center">
+      <div className="relative flex h-18 w-18 shrink-0 items-center justify-center">
         <svg className="h-full w-full -rotate-90" viewBox="0 0 100 100">
           {/* Background track */}
           <circle
@@ -60,8 +56,8 @@ export const FacilityHealthGauge: React.FC<FacilityHealthGaugeProps> = ({
             cy="50"
             r={radius}
             fill="transparent"
-            stroke="#21262d"
-            strokeWidth="8"
+            stroke="#f1f5f9"
+            strokeWidth="7"
           />
           {/* Active progress ring */}
           <circle
@@ -70,18 +66,18 @@ export const FacilityHealthGauge: React.FC<FacilityHealthGaugeProps> = ({
             r={radius}
             fill="transparent"
             stroke={ringColor}
-            strokeWidth="8"
+            strokeWidth="7"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
-            className="transition-all duration-1000 ease-out"
+            className="transition-all duration-800 ease-out"
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <span className="text-lg font-extrabold text-white leading-none">
+          <span className="text-lg font-black text-slate-900 leading-none">
             {clampedScore}
           </span>
-          <span className="text-[9px] uppercase tracking-wider text-[#8b949e]">
+          <span className="text-[9px] uppercase font-bold text-slate-400">
             FHI
           </span>
         </div>
@@ -89,31 +85,31 @@ export const FacilityHealthGauge: React.FC<FacilityHealthGaugeProps> = ({
 
       {/* Metric details */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 text-xs text-[#8b949e]">
+        <div className="flex items-center gap-1.5 text-xs text-slate-500 font-semibold">
           <StatusIcon size={13} className={statusColor} />
           <span>Facility Health · {floorLabel}</span>
         </div>
         <div className="mt-0.5 flex items-baseline gap-2">
           <span className={`text-base font-bold ${statusColor}`}>
-            {statusText} Status
+            {statusText}
           </span>
-          <span className="text-[11px] text-[#8b949e]">
-            {clampedScore}% nominal
+          <span className="text-xs text-slate-400">
+            {clampedScore}% operational nominal
           </span>
         </div>
 
-        <div className="mt-2 flex items-center gap-3 text-[11px] text-[#c9d1d9]">
+        <div className="mt-1.5 flex items-center gap-3 text-xs text-slate-600 font-medium">
           <span className="flex items-center gap-1">
-            <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
+            <span className="inline-block h-2 w-2 rounded-full bg-amber-500" />
             {openIncidents} Open {openIncidents === 1 ? "Incident" : "Incidents"}
           </span>
           {emergencyCount > 0 ? (
-            <span className="flex items-center gap-1 font-semibold text-red-400 animate-pulse">
-              <span className="inline-block h-2 w-2 rounded-full bg-red-500" />
-              {emergencyCount} Urgent Flame
+            <span className="flex items-center gap-1 font-bold text-red-700">
+              <span className="inline-block h-2 w-2 rounded-full bg-red-600" />
+              {emergencyCount} Urgent Priority
             </span>
           ) : (
-            <span className="text-[#8b949e]">Zero Breaches</span>
+            <span className="text-emerald-700">Zero Critical Incidents</span>
           )}
         </div>
       </div>

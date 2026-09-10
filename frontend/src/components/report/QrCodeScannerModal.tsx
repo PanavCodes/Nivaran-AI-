@@ -33,50 +33,50 @@ export const QrCodeScannerModal: React.FC<QrCodeScannerModalProps> = ({
 
   return (
     <Dialog open={open} onClose={onClose}>
-      <div className="p-2 text-left">
-        <div className="flex items-center gap-2 border-b border-[#30363d] pb-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/15 text-accent">
+      <div className="p-1 text-left text-slate-900">
+        <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
             <Scan size={20} />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white flex items-center gap-1.5">
-              Room Door QR Code Auto-Lookup
-              <Badge variant="accent" className="text-[9px]">SIPOR-MA</Badge>
+            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              Door QR Code Lookup
+              <Badge variant="accent" className="text-[10px] py-0">SIPOR-MA</Badge>
             </h3>
-            <p className="text-xs text-[#8b949e]">
-              Scan a classroom, lab, or zone door QR plaque to pinpoint exact indoor coordinates.
+            <p className="text-xs text-slate-500">
+              Scan or select a door QR code plaque to lock indoor floor coordinates.
             </p>
           </div>
         </div>
 
-        {/* Simulated Scanner Viewport */}
-        <div className="mt-4 relative overflow-hidden rounded-xl border border-accent/40 bg-gradient-to-b from-[#0d1117] to-[#161b22] p-5 text-center">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl border-2 border-dashed border-accent/60 bg-accent/5">
-            <QrCode size={40} className="text-accent animate-pulse" />
+        {/* Scanner Viewport */}
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-5 text-center">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border-2 border-dashed border-indigo-300 bg-white shadow-2xs mb-2">
+            <QrCode size={32} className="text-indigo-600" />
           </div>
-          <p className="mt-2 text-xs font-medium text-[#c9d1d9]">
-            Camera QR auto-reader active
+          <p className="text-xs font-bold text-slate-800">
+            Door Plaque Reader Active
           </p>
-          <p className="text-[10px] text-[#8b949e]">
-            Select any room door tag below to simulate a live QR scan on campus:
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            Select a room zone below to simulate scanning a door plaque:
           </p>
         </div>
 
         {/* Floor Selection Bar */}
         <div className="mt-4">
-          <span className="text-[10px] uppercase tracking-wide text-[#8b949e] font-semibold flex items-center gap-1">
-            <Building size={11} /> Filter Door Codes by Floor
+          <span className="text-[11px] uppercase tracking-wider text-slate-500 font-bold flex items-center gap-1">
+            <Building size={12} /> Select Floor Level
           </span>
-          <div className="mt-1.5 flex gap-1 overflow-x-auto pb-1.5 custom-scrollbar">
+          <div className="mt-1.5 flex gap-1.5 overflow-x-auto pb-1">
             {ORDERED_FLOOR_IDS.slice().reverse().map((fId) => (
               <button
                 key={fId}
                 type="button"
                 onClick={() => setSelectedFloorTab(fId)}
-                className={`shrink-0 rounded px-2.5 py-1 text-xs font-semibold transition ${
+                className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
                   selectedFloorTab === fId
-                    ? "bg-accent text-[#0d1117]"
-                    : "border border-[#30363d] bg-[#0d1117] text-[#8b949e] hover:text-white"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
                 }`}
               >
                 Floor {fId}
@@ -88,7 +88,7 @@ export const QrCodeScannerModal: React.FC<QrCodeScannerModalProps> = ({
         {/* Room QR Tags Grid */}
         <div className="mt-3 max-h-48 overflow-y-auto space-y-1.5 pr-1">
           {meta.rooms.length === 0 ? (
-            <div className="p-4 text-center text-xs text-[#8b949e]">
+            <div className="p-4 text-center text-xs text-slate-500">
               No designated room tags on Floor {selectedFloorTab}.
             </div>
           ) : (
@@ -97,15 +97,15 @@ export const QrCodeScannerModal: React.FC<QrCodeScannerModalProps> = ({
                 key={room.id}
                 type="button"
                 onClick={() => handleSelectRoom(room)}
-                className="w-full flex items-center justify-between rounded-lg border border-[#30363d] bg-[#0d1117] px-3 py-2 text-xs text-white transition hover:border-accent hover:bg-accent/10"
+                className="w-full flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-900 transition hover:border-indigo-300 hover:bg-indigo-50/50 cursor-pointer shadow-2xs"
               >
                 <div className="flex items-center gap-2">
-                  <QrCode size={14} className="text-accent" />
-                  <span className="font-semibold">{room.name}</span>
+                  <QrCode size={14} className="text-indigo-600" />
+                  <span className="font-semibold text-slate-800">{room.name}</span>
                 </div>
-                <div className="flex items-center gap-2 text-[10px] font-mono text-[#8b949e]">
-                  <span>Canvas ({room.x}, {room.y})</span>
-                  <Badge variant="outline" className="text-[9px]">Scan Door</Badge>
+                <div className="flex items-center gap-2 text-[11px] font-mono text-slate-500">
+                  <span>Coord ({room.x}, {room.y})</span>
+                  <Badge variant="outline" className="text-[9px] py-0">Select</Badge>
                 </div>
               </button>
             ))
@@ -114,7 +114,7 @@ export const QrCodeScannerModal: React.FC<QrCodeScannerModalProps> = ({
 
         <div className="mt-4 flex justify-end">
           <Button variant="ghost" onClick={onClose} className="text-xs">
-            Cancel
+            Close
           </Button>
         </div>
       </div>

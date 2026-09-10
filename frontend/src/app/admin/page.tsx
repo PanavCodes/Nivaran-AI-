@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { requireAuth, type SessionUser } from "@/lib/auth";
-import { sound } from "@/lib/sound";
 
 import { useWebSocket, type WsMessage } from "@/hooks/useWebSocket";
 import { AnalyticsCharts } from "@/components/analytics/AnalyticsCharts";
@@ -75,7 +74,7 @@ export default function AdminDashboard() {
   const [floorSummaries, setFloorSummaries] = useState<FloorSummaryItem[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [activeFloor, setActiveFloor] = useState<string>("1");
-  const [planTheme, setPlanTheme] = useState<"dark" | "light">("dark");
+  const [planTheme, setPlanTheme] = useState<"dark" | "light">("light");
   const [showRoomLabels, setShowRoomLabels] = useState(false);
   const [assigning, setAssigning] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -85,7 +84,6 @@ export default function AdminDashboard() {
   const [filterCategory, setFilterCategory] = useState<string>("ALL");
   const [filterTier, setFilterTier] = useState<string>("ALL");
   const [showMemo, setShowMemo] = useState(false);
-
 
   /* ── Auth gate ── */
   useEffect(() => {
@@ -134,7 +132,6 @@ export default function AdminDashboard() {
     try {
       const detail = await api.get<ClusterDetail>(`/api/v1/clusters/${id}`);
       setSelected(detail);
-      // Auto-switch to the cluster's floor if not already on it
       if (detail.floor) {
         setActiveFloor(detail.floor.toUpperCase());
       }
@@ -150,7 +147,7 @@ export default function AdminDashboard() {
     fetchTechnicians();
   }, [fetchClusters, fetchFloorSummaries, fetchAnalytics, fetchTechnicians]);
 
-  /* ── WebSocket real-time updates (§3.5) ── */
+  /* ── WebSocket real-time updates ── */
   const onEvent = useCallback(
     (msg: WsMessage) => {
       switch (msg.event) {
@@ -158,28 +155,22 @@ export default function AdminDashboard() {
         case "cluster.merged":
         case "cluster.escalated":
         case "cluster.reinforced":
-          if (msg.data && typeof msg.data.priority_score === "number" && msg.data.priority_score >= 75) {
-            sound.playUrgentAlert();
-          } else {
-            sound.playRadarPing();
-          }
           fetchClusters();
           fetchFloorSummaries();
           fetchAnalytics();
           if (selected && msg.data && msg.data.cluster_id === selected.id) {
             fetchDetail(selected.id);
           }
-          toast.info(`Live: ${msg.event.replace(".", " ")}`, { duration: 3000 });
+          toast.info(`Update: ${msg.event.replace(".", " ")}`);
           break;
         case "cluster.resolved":
-          sound.playSuccess();
           fetchClusters();
           fetchFloorSummaries();
           fetchAnalytics();
           if (selected && msg.data && msg.data.cluster_id === selected.id) {
             fetchDetail(selected.id);
           }
-          toast.success("Live: Incident cluster resolved & verified", { duration: 3000 });
+          toast.success("Incident cluster verified & closed");
           break;
         case "poll.refresh":
           fetchClusters();
@@ -190,7 +181,6 @@ export default function AdminDashboard() {
     },
     [fetchClusters, fetchFloorSummaries, fetchAnalytics, fetchDetail, selected]
   );
-
 
   useWebSocket("admin", onEvent, "/api/v1/clusters/active");
 
@@ -219,12 +209,12 @@ export default function AdminDashboard() {
   const slaRemaining = (deadline: string | null) => {
     if (!deadline) return null;
     const ms = new Date(deadline).getTime() - now;
-    if (ms <= 0) return { text: "BREACHED", urgent: true };
+    if (ms <= 0) return { text: "Breached", urgent: true };
     const h = Math.floor(ms / 3600000);
     const m = Math.floor((ms % 3600000) / 60000);
     const s = Math.floor((ms % 60000) / 1000);
     return {
-      text: h > 0 ? `${h}h ${m}m` : m > 0 ? `${m}m ${s}s` : `${s}s`,
+      text: h > 0 ? `${h}h ${m}m remaining` : m > 0 ? `${m}m ${s}s` : `${s}s`,
       urgent: ms < 30 * 60 * 1000,
     };
   };
@@ -262,7 +252,6 @@ export default function AdminDashboard() {
     return list;
   }, [clusters, activeFloor, filterCategory, filterTier, searchQuery]);
 
-
   const emergencyCountOnFloor = activeFloorClusters.filter((c) => c.priority_score >= 75).length;
   const fhiScore = Math.max(0, 100 - activeFloorClusters.length * 5 - emergencyCountOnFloor * 15);
 
@@ -273,69 +262,64 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#0d1117]">
+    <div className="flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-900">
       <Navbar />
 
-      {/* Top Emergency Hotspot Alert Banner if any critical incidents exist */}
+      {/* Top Urgent Alert Banner if any critical incidents exist */}
       {activeEmergencies.length > 0 && (
-        <div className="relative z-20 flex items-center justify-between border-b border-red-500/40 bg-red-500/15 px-4 py-2 text-xs text-red-200">
+        <div className="relative z-20 flex items-center justify-between border-b border-red-200 bg-red-50 px-4 py-2 text-xs text-red-800 font-medium">
           <div className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-500" />
-            </span>
-            <span className="font-bold uppercase tracking-wider text-red-400">Emergency Hotspot Alert:</span>
+            <span className="flex h-2 w-2 rounded-full bg-red-600" />
+            <span className="font-bold uppercase tracking-wider text-red-900">High-Priority Alert:</span>
             <span>
-              {activeEmergencies.length} critical incident(s) require immediate dispatch
+              {activeEmergencies.length} urgent incident(s) requiring immediate dispatch.
             </span>
           </div>
           <button
             onClick={() => {
               const emerg = activeEmergencies[0];
               if (emerg) {
-                sound.playRadarPing();
                 setActiveFloor(emerg.floor.toUpperCase());
                 fetchDetail(emerg.id);
               }
             }}
-            className="rounded bg-red-500 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-600 transition"
+            className="rounded-lg bg-red-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-red-700 transition cursor-pointer"
           >
-            Locate Hotspot →
+            Locate Incident →
           </button>
         </div>
       )}
 
       {/* ── Subheader Bar with Analytics Toggle & Memo ── */}
-      <div className="relative z-10 flex shrink-0 items-center justify-between border-b border-[#21262d] bg-[#161b22]/70 px-5 py-2">
-        <div className="flex items-center gap-2 text-xs text-[#8b949e]">
-          <Building size={14} className="text-[#58a6ff]" />
-          <span className="font-semibold text-white">Indoor Mission Control</span>
+      <div className="relative z-10 flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5 py-2.5">
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <Building size={15} className="text-indigo-600" />
+          <span className="font-bold text-slate-900">Mission Control</span>
           <span>·</span>
-          <span>10-Storey Facility Matrix</span>
+          <span>10-Storey Campus Operations Hub</span>
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant={showCharts ? "primary" : "outline"}
-            onClick={() => { sound.playClick(); setShowCharts((v) => !v); }}
-            className="text-xs h-7 py-0"
+            onClick={() => setShowCharts((v) => !v)}
+            className="text-xs h-8 py-0 font-semibold"
           >
             <BarChart3 size={13} /> Analytics Drawer
           </Button>
           <Button
             variant="outline"
-            onClick={() => { sound.playClick(); setShowMemo(true); }}
-            className="text-xs h-7 py-0 border-amber-500/40 text-amber-300 hover:bg-amber-500/10"
+            onClick={() => setShowMemo(true)}
+            className="text-xs h-8 py-0 font-semibold text-slate-700 hover:bg-slate-50"
           >
             <FileText size={13} /> Incident Memo
           </Button>
         </div>
       </div>
 
-
       {/* ── Main Content: Elevator Shaft + Floor Plan Canvas + Detail Panel ── */}
       <div className="flex flex-1 overflow-hidden">
         {/* ── 1. Elevator Vertical Floor Selector (Left Rail) ── */}
-        <div className="w-[110px] shrink-0 border-r border-[#21262d] bg-[#0d1117]/90 p-2">
+        <div className="w-[115px] shrink-0 border-r border-slate-200 bg-white p-2">
           <ElevatorFloorNavigator
             selectedFloor={activeFloor}
             onSelectFloor={(f) => setActiveFloor(f)}
@@ -344,100 +328,100 @@ export default function AdminDashboard() {
         </div>
 
         {/* ── 2. Center: Tactical Floor Plan Blueprint Workspace ── */}
-        <div className="relative flex flex-1 flex-col overflow-hidden bg-[#090d13]">
+        <div className="relative flex flex-1 flex-col overflow-hidden bg-slate-50">
           {/* Floor Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#21262d] bg-[#0d1117]/80 px-4 py-2 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 py-2.5 text-xs">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-white">Floor {activeFloor}</span>
-              <span className="text-[#8b949e]">· {activeFloorMeta.label}</span>
-              <Badge variant="outline" className="text-[10px]">
+              <span className="font-bold text-slate-900 text-sm">Floor {activeFloor}</span>
+              <span className="text-slate-500">· {activeFloorMeta.label}</span>
+              <Badge variant="outline" className="text-[10px] py-0">
                 {activeFloorClusters.length}{" "}
                 {activeFloorClusters.length === 1 ? "issue" : "issues"}
               </Badge>
             </div>
 
-            {/* AI Natural Language Filter Bar (AI Grievance / anshikaparikh) */}
-            <div className="flex items-center gap-1.5 rounded-lg border border-[#30363d] bg-[#161b22] px-2.5 py-1 text-xs">
-              <Search size={12} className="text-[#8b949e]" />
+            {/* AI Natural Language Filter Bar */}
+            <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs">
+              <Search size={13} className="text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="AI Filter: 'leak', 'lab 1', 'lights'…"
-                className="bg-transparent text-white text-[11px] outline-none w-32 sm:w-44 placeholder:text-[#8b949e]"
+                placeholder="Search: 'leak', 'lab', 'door'…"
+                className="bg-transparent text-slate-900 text-xs outline-none w-32 sm:w-48 placeholder:text-slate-400"
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery("")} className="text-[#8b949e] hover:text-white">
-                  <X size={11} />
+                <button onClick={() => setSearchQuery("")} className="text-slate-400 hover:text-slate-700 cursor-pointer">
+                  <X size={12} />
                 </button>
               )}
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Heatmap density toggle (Smart Campus Intelligence Hub) */}
+              {/* Heatmap toggle */}
               <button
                 onClick={() => setHeatmapMode((v) => !v)}
-                className={`flex items-center gap-1 rounded px-2 py-1 transition ${
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer ${
                   heatmapMode
-                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
-                    : "text-[#8b949e] hover:text-white"
+                    ? "bg-amber-100 text-amber-900 border border-amber-300"
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
-                <Flame size={12} />
-                <span className="text-[10px]">Heatmap</span>
+                <Flame size={13} />
+                <span>Heatmap</span>
               </button>
 
               <button
                 onClick={() => setShowRoomLabels((v) => !v)}
-                className={`flex items-center gap-1 rounded px-2 py-1 transition ${
-                  showRoomLabels ? "bg-accent/20 text-accent" : "text-[#8b949e] hover:text-white"
+                className={`flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold transition cursor-pointer ${
+                  showRoomLabels ? "bg-indigo-50 text-indigo-700 border border-indigo-200" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
-                <Eye size={12} />
-                <span className="text-[10px]">Labels</span>
+                <Eye size={13} />
+                <span>Labels</span>
               </button>
 
               <button
                 onClick={() => setPlanTheme(planTheme === "dark" ? "light" : "dark")}
-                className="flex items-center gap-1 rounded border border-[#30363d] bg-[#161b22] px-2 py-1 text-[10px] text-[#c9d1d9] hover:border-accent/40"
+                className="flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700 font-semibold hover:bg-slate-50 cursor-pointer shadow-2xs"
               >
-                {planTheme === "dark" ? <Sun size={12} /> : <Moon size={12} />}
+                {planTheme === "dark" ? <Sun size={13} /> : <Moon size={13} />}
                 <span>{planTheme === "dark" ? "Light" : "Dark"}</span>
               </button>
             </div>
           </div>
 
           {/* Category & Urgency Quick Filter Bar */}
-          <div className="flex items-center gap-2 overflow-x-auto border-b border-[#21262d] bg-[#0d1117]/60 px-4 py-1.5 text-xs">
-            <span className="text-[10px] uppercase font-semibold text-[#8b949e] shrink-0">Category:</span>
+          <div className="flex items-center gap-2 overflow-x-auto border-b border-slate-200 bg-white/70 px-4 py-2 text-xs">
+            <span className="text-[10px] uppercase font-bold text-slate-500 shrink-0">Category:</span>
             {["ALL", "IT_SUPPORT", "MAINTENANCE", "HOUSEKEEPING", "FACILITIES"].map((cat) => (
               <button
                 key={cat}
-                onClick={() => { sound.playClick(); setFilterCategory(cat); }}
-                className={`rounded px-2 py-0.5 text-[10px] font-medium transition shrink-0 ${
+                onClick={() => setFilterCategory(cat)}
+                className={`rounded-lg px-2.5 py-0.5 text-xs font-semibold transition shrink-0 cursor-pointer ${
                   filterCategory === cat
-                    ? "bg-[#58a6ff] text-[#0d1117] font-bold shadow-sm"
-                    : "bg-[#161b22] text-[#8b949e] hover:text-white border border-[#30363d]"
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
                 {cat === "ALL" ? "All" : CATEGORY_LABELS[cat] || cat}
               </button>
             ))}
 
-            <span className="text-[#30363d] mx-1">|</span>
+            <span className="text-slate-300 mx-1">|</span>
 
-            <span className="text-[10px] uppercase font-semibold text-[#8b949e] shrink-0">Urgency:</span>
+            <span className="text-[10px] uppercase font-bold text-slate-500 shrink-0">Urgency:</span>
             {["ALL", "EMERGENCY", "HIGH", "MEDIUM", "LOW"].map((tier) => (
               <button
                 key={tier}
-                onClick={() => { sound.playClick(); setFilterTier(tier); }}
-                className={`rounded px-2 py-0.5 text-[10px] font-medium transition shrink-0 ${
+                onClick={() => setFilterTier(tier)}
+                className={`rounded-lg px-2.5 py-0.5 text-xs font-semibold transition shrink-0 cursor-pointer ${
                   filterTier === tier
-                    ? tier === "EMERGENCY" ? "bg-red-500 text-white font-bold shadow-sm" :
-                      tier === "HIGH" ? "bg-amber-500 text-black font-bold shadow-sm" :
-                      tier === "MEDIUM" ? "bg-orange-500 text-white font-bold shadow-sm" :
-                      "bg-emerald-500 text-black font-bold shadow-sm"
-                    : "bg-[#161b22] text-[#8b949e] hover:text-white border border-[#30363d]"
+                    ? tier === "EMERGENCY" ? "bg-red-600 text-white shadow-xs font-bold" :
+                      tier === "HIGH" ? "bg-amber-600 text-white shadow-xs font-bold" :
+                      tier === "MEDIUM" ? "bg-orange-600 text-white shadow-xs font-bold" :
+                      "bg-emerald-600 text-white shadow-xs font-bold"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
                 {tier}
@@ -445,9 +429,8 @@ export default function AdminDashboard() {
             ))}
           </div>
 
-          {/* Facility Health Gauge (Civic-Fix & Smart Campus Intelligence Hub) */}
-          <div className="px-4 pt-2">
-
+          {/* Facility Health Gauge */}
+          <div className="px-4 pt-3">
             <FacilityHealthGauge
               score={fhiScore}
               openIncidents={activeFloorClusters.length}
@@ -457,10 +440,10 @@ export default function AdminDashboard() {
           </div>
 
           {/* Blueprint SVG Canvas Area */}
-          <div className="relative flex-1 overflow-hidden p-2">
+          <div className="relative flex-1 overflow-hidden p-3 flex items-center justify-center">
             {loading ? (
-              <div className="flex h-full items-center justify-center text-sm text-[#8b949e]">
-                Loading floor plans and clusters…
+              <div className="flex h-full items-center justify-center text-sm text-slate-500">
+                Loading campus layout and incidents…
               </div>
             ) : (
               <FloorPlanViewer
@@ -471,44 +454,44 @@ export default function AdminDashboard() {
                 onClusterSelect={(c) => fetchDetail(c.id)}
                 showRoomLabels={showRoomLabels}
                 heatmapMode={heatmapMode}
-                className="h-full w-full"
+                className="h-full w-full max-w-[500px]"
               />
             )}
           </div>
 
           {/* KPI Stat Bar (Below Canvas) */}
-          <div className="relative z-10 grid grid-cols-2 border-t border-[#21262d] bg-[#0d1117] sm:grid-cols-4">
+          <div className="relative z-10 grid grid-cols-2 border-t border-slate-200 bg-white sm:grid-cols-4 shadow-xs">
             {[
               {
                 label: "Building Open Issues",
                 value: analytics?.open_clusters ?? clusters.filter((c) => c.status !== "CLOSED").length,
                 icon: Layers,
-                color: "text-accent",
+                color: "text-indigo-600",
               },
               {
                 label: "Highest Risk Floor",
                 value: highestRiskFloor ? `Floor ${highestRiskFloor}` : "Stable",
                 icon: AlertTriangle,
-                color: highestRiskFloor ? "text-emergency" : "text-resolved",
+                color: highestRiskFloor ? "text-red-600" : "text-emerald-600",
               },
               {
                 label: "SLA Breach Rate",
                 value: analytics ? `${(analytics.sla_breach_rate * 100).toFixed(0)}%` : "0%",
                 icon: Clock,
-                color: analytics && analytics.sla_breach_rate > 0.1 ? "text-emergency" : "text-resolved",
+                color: analytics && analytics.sla_breach_rate > 0.1 ? "text-red-600" : "text-emerald-600",
               },
               {
                 label: "Top Category",
                 value: analytics ? CATEGORY_LABELS[analytics.top_category] ?? analytics.top_category : "—",
                 icon: BarChart3,
-                color: "text-[#c9d1d9]",
+                color: "text-slate-700",
               },
             ].map((kpi) => (
-              <div key={kpi.label} className="flex items-center gap-3 border-r border-[#21262d] px-4 py-2.5 last:border-r-0">
-                <kpi.icon size={16} className={kpi.color} />
+              <div key={kpi.label} className="flex items-center gap-3 border-r border-slate-200 px-4 py-3 last:border-r-0">
+                <kpi.icon size={17} className={kpi.color} />
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-bold text-white">{kpi.value}</div>
-                  <div className="truncate text-[9px] uppercase tracking-wide text-[#8b949e]">
+                  <div className="truncate text-sm font-bold text-slate-900">{kpi.value}</div>
+                  <div className="truncate text-[10px] uppercase font-bold tracking-wider text-slate-500">
                     {kpi.label}
                   </div>
                 </div>
@@ -523,12 +506,12 @@ export default function AdminDashboard() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 30 }}
-                className="absolute bottom-[50px] left-0 right-0 z-30 border-t border-[#21262d] bg-[#0d1117]/95 p-4 backdrop-blur-md"
+                className="absolute bottom-[54px] left-0 right-0 z-30 border-t border-slate-200 bg-white p-5 shadow-2xl"
               >
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-xs font-semibold text-white">Facility Intelligence Metrics</span>
-                  <button onClick={() => setShowCharts(false)} className="text-[#8b949e] hover:text-white">
-                    <X size={14} />
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-sm font-bold text-slate-900">Campus Facility Intelligence Analytics</span>
+                  <button onClick={() => setShowCharts(false)} className="text-slate-400 hover:text-slate-700 cursor-pointer">
+                    <X size={16} />
                   </button>
                 </div>
                 <AnalyticsCharts refreshToken={analytics?.open_clusters ?? 0} />
@@ -538,7 +521,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* ── 3. Right: Cluster Detail & Action Flyout ── */}
-        <aside className="flex w-[400px] shrink-0 flex-col overflow-hidden border-l border-[#21262d] bg-[#0d1117]/90">
+        <aside className="flex w-[400px] shrink-0 flex-col overflow-hidden border-l border-slate-200 bg-white">
           <AnimatePresence mode="wait">
             {selected ? (
               <motion.div
@@ -549,7 +532,7 @@ export default function AdminDashboard() {
                 className="flex flex-1 flex-col overflow-y-auto"
               >
                 {/* Header */}
-                <div className="sticky top-0 z-10 flex items-start justify-between border-b border-[#21262d] bg-[#0d1117] p-4">
+                <div className="sticky top-0 z-10 flex items-start justify-between border-b border-slate-200 bg-white p-5 shadow-2xs">
                   <div className="flex-1 pr-3">
                     <div className="flex items-center gap-2">
                       <Badge
@@ -563,10 +546,10 @@ export default function AdminDashboard() {
                       </Badge>
                       <Badge variant="outline">{statusLabels[selected.status] ?? selected.status}</Badge>
                     </div>
-                    <h2 className="mt-2 text-base font-bold text-white">{selected.title}</h2>
-                    <div className="mt-1 flex items-center gap-2 text-xs text-[#8b949e]">
-                      <span className="flex items-center gap-1 font-semibold text-accent">
-                        <MapPin size={11} /> Floor {selected.floor}
+                    <h2 className="mt-2 text-base font-bold text-slate-900 leading-snug">{selected.title}</h2>
+                    <div className="mt-1.5 flex items-center gap-2 text-xs text-slate-500 font-medium">
+                      <span className="flex items-center gap-1 font-semibold text-indigo-700">
+                        <MapPin size={12} /> Floor {selected.floor}
                         {selected.room_or_zone ? ` · ${selected.room_or_zone}` : ""}
                       </span>
                       <span>·</span>
@@ -575,31 +558,31 @@ export default function AdminDashboard() {
                   </div>
                   <button
                     onClick={() => setSelected(null)}
-                    className="rounded-md p-1 text-[#8b949e] hover:bg-white/5 hover:text-white"
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
                   >
                     <X size={16} />
                   </button>
                 </div>
 
-                <div className="flex-1 space-y-4 p-4">
+                <div className="flex-1 space-y-4 p-5">
                   {/* AI Summary */}
                   {selected.ai_summary && (
-                    <div className="rounded-lg border border-[#21262d] bg-[#161b22] p-3.5">
-                      <div className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-accent">
-                        <Activity size={12} /> Gemini Rollup Summary
+                    <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
+                      <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-indigo-800">
+                        <Activity size={13} className="text-indigo-600" /> Executive AI Summary
                       </div>
-                      <p className="text-xs leading-relaxed text-[#c9d1d9]">{selected.ai_summary}</p>
+                      <p className="text-xs leading-relaxed text-slate-700">{selected.ai_summary}</p>
                     </div>
                   )}
 
                   {/* Priority Radial Gauge */}
-                  <div className="flex items-center justify-center rounded-lg border border-[#21262d] bg-[#161b22] p-3">
+                  <div className="flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-4">
                     <PriorityGauge score={selected.priority_score} />
                   </div>
-                  <div className="flex items-center justify-between text-[10px] text-[#8b949e]">
-                    <span>Severity {selected.severity_score}/5</span>
-                    <span>Impact {selected.impact_score}/5</span>
-                    <span>{selected.complaint_count} report(s) merged</span>
+                  <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-1">
+                    <span>Severity: {selected.severity_score}/5</span>
+                    <span>Impact: {selected.impact_score}/5</span>
+                    <span className="font-semibold text-slate-800">{selected.complaint_count} reports merged</span>
                   </div>
 
                   {/* SLA Countdown */}
@@ -608,26 +591,22 @@ export default function AdminDashboard() {
                     if (!sla) return null;
                     return (
                       <div
-                        className={`rounded-lg border p-3 ${
+                        className={`rounded-xl border p-4 ${
                           sla.urgent
-                            ? "border-emergency/40 bg-emergency/5"
-                            : "border-[#21262d] bg-[#161b22]"
+                            ? "border-red-200 bg-red-50 text-red-800"
+                            : "border-slate-200 bg-slate-50 text-slate-800"
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-1.5 text-xs font-medium text-[#8b949e]">
-                            <Clock size={12} /> SLA Target
+                          <span className="flex items-center gap-1.5 text-xs font-bold">
+                            <Clock size={13} /> Target SLA Window
                           </span>
-                          <span
-                            className={`font-mono text-sm font-bold ${
-                              sla.urgent ? "flash-red" : "text-white"
-                            }`}
-                          >
+                          <span className="font-semibold text-xs">
                             {sla.text}
                           </span>
                         </div>
                         {selected.sla_deadline && (
-                          <p className="mt-1 text-[10px] text-[#8b949e]">
+                          <p className="mt-1 text-[11px] text-slate-500">
                             Deadline: {new Date(selected.sla_deadline).toLocaleString()}
                           </p>
                         )}
@@ -637,14 +616,14 @@ export default function AdminDashboard() {
 
                   {/* Assign Technician */}
                   {selected.status !== "RESOLVED" && selected.status !== "CLOSED" && (
-                    <div className="rounded-lg border border-[#21262d] bg-[#161b22] p-3">
-                      <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-[#8b949e]">
-                        <UserCheck size={12} /> Assign Field Technician
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="mb-2 flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                        <UserCheck size={14} className="text-indigo-600" /> Assign Field Technician
                       </div>
                       <div className="flex gap-2">
                         <select
                           id="tech-select"
-                          className="flex-1 rounded-lg border border-[#30363d] bg-[#0d1117] px-2.5 py-1.5 text-xs text-white outline-none focus:border-accent"
+                          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-indigo-500 shadow-2xs"
                         >
                           {technicians.length === 0 && (
                             <option value="">No technicians available</option>
@@ -656,7 +635,7 @@ export default function AdminDashboard() {
                           ))}
                         </select>
                         <Button
-                          className="px-3 py-1 text-xs"
+                          className="px-3.5 py-1 text-xs"
                           disabled={assigning || technicians.length === 0}
                           onClick={() => {
                             const sel = document.getElementById("tech-select") as HTMLSelectElement;
@@ -669,40 +648,40 @@ export default function AdminDashboard() {
                     </div>
                   )}
 
-                  {/* Official University Incident Memo Button (Civic-Fix) */}
+                  {/* Incident Memo Button */}
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => setShowMemo(true)}
-                    className="w-full border-accent/40 text-accent hover:bg-accent/10 flex items-center justify-center gap-1.5 text-xs h-8"
+                    className="w-full flex items-center justify-center gap-1.5 text-xs h-9 font-semibold"
                   >
-                    <FileText size={13} /> Generate University Incident Memo
+                    <FileText size={14} className="text-indigo-600" /> Generate Official Incident Memo
                   </Button>
 
                   {/* Child Reports */}
                   <div>
-                    <h3 className="mb-2 flex items-center gap-1.5 text-xs font-medium text-[#8b949e]">
-                      <Layers size={12} /> Child Reports ({selected.complaints?.length ?? 0})
+                    <h3 className="mb-2.5 flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                      <Layers size={13} className="text-indigo-600" /> Merged Submissions ({selected.complaints?.length ?? 0})
                     </h3>
-                    <div className="space-y-2">
+                    <div className="space-y-2.5">
                       {selected.complaints?.map((c: Complaint) => (
                         <div
                           key={c.id}
-                          className="rounded-lg border border-[#21262d] bg-[#0d1117] p-2.5"
+                          className="rounded-xl border border-slate-200 bg-slate-50 p-3"
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-medium text-white">{c.title}</p>
-                              <p className="mt-0.5 line-clamp-2 text-[11px] text-[#8b949e]">
+                              <p className="truncate text-xs font-bold text-slate-900">{c.title}</p>
+                              <p className="mt-0.5 line-clamp-2 text-xs text-slate-600">
                                 {c.description}
                               </p>
-                              <div className="mt-1 flex items-center gap-1 text-[10px] text-accent">
-                                <MapPin size={9} /> Floor {c.floor}
+                              <div className="mt-1.5 flex items-center gap-1 text-[11px] text-indigo-700 font-semibold">
+                                <MapPin size={10} /> Floor {c.floor}
                                 {c.room_or_zone ? ` · ${c.room_or_zone}` : ""}
                               </div>
                             </div>
                             <Badge variant="outline" className="text-[10px]">
-                              {c.severity}/5
+                              Sev {c.severity}/5
                             </Badge>
                           </div>
                           {c.image_url && (
@@ -714,10 +693,10 @@ export default function AdminDashboard() {
                                   : `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}${c.image_url}`
                               }
                               alt="Report attachment"
-                              className="mt-2 max-h-24 rounded-md object-cover"
+                              className="mt-2.5 max-h-24 rounded-lg object-cover border border-slate-200"
                             />
                           )}
-                          <p className="mt-1.5 text-[9px] text-[#8b949e]">
+                          <p className="mt-2 text-[10px] text-slate-400">
                             {new Date(c.created_at).toLocaleString()}
                           </p>
                         </div>
@@ -734,16 +713,15 @@ export default function AdminDashboard() {
                 exit={{ opacity: 0 }}
                 className="flex flex-1 flex-col items-center justify-center p-8 text-center"
               >
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#161b22]">
-                  <Building size={22} className="text-[#8b949e]" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 mb-3">
+                  <Building size={22} />
                 </div>
-                <h3 className="mt-3 text-sm font-semibold text-white">Select an Issue Pin</h3>
-                <p className="mt-1 text-xs text-[#8b949e]">
-                  Click any pulsating cluster pin on Floor {activeFloor} or switch floors via the
-                  elevator on the left.
+                <h3 className="text-sm font-bold text-slate-900">Select an Incident Pin</h3>
+                <p className="mt-1.5 text-xs text-slate-500 leading-relaxed max-w-xs">
+                  Click on any incident marker on Floor {activeFloor} or switch building levels on the elevator panel to inspect details and dispatch staff.
                 </p>
-                <p className="mt-3 text-[11px] text-[#8b949e]/60">
-                  {clusters.length} total cluster(s) across 10 floors
+                <p className="mt-4 text-xs font-semibold text-slate-400">
+                  {clusters.length} active issue cluster(s) across 10 floors
                 </p>
               </motion.div>
             )}
@@ -751,16 +729,15 @@ export default function AdminDashboard() {
         </aside>
       </div>
 
-      {/* Incident Memo Modal (Civic-Fix LetterGenerator) */}
+      {/* Incident Memo Modal */}
       <IncidentMemoModal
         cluster={selected}
         open={showMemo}
         onClose={() => setShowMemo(false)}
       />
 
-      {/* Floating CampBot AI Assistant (CampFeed) */}
+      {/* Floating CampBot AI Assistant */}
       <CampBotChat />
     </div>
   );
 }
-

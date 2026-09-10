@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nivaran AI — Campus Problem Intelligence",
+  title: "Nivaran AI — Campus Operations & Incident Resolution",
   description:
-    "Turning scattered campus complaints into actionable, prioritized, transparent resolution.",
+    "Turning scattered campus complaints into prioritized, transparent resolution across 10 floors.",
 };
 
 export default function RootLayout({
@@ -25,17 +25,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+    <html lang="en">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 text-slate-900 selection:bg-indigo-500/15 selection:text-indigo-900`}>
         {children}
         <Toaster
-          theme="dark"
+          theme="light"
           position="top-right"
           toastOptions={{
             style: {
-              background: "rgba(22,27,34,0.9)",
-              border: "1px solid rgba(240,246,252,0.08)",
-              color: "#e6edf3",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              color: "#0f172a",
+              boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)",
             },
           }}
         />

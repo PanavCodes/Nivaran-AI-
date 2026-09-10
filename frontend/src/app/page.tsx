@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  Radar,
+  Layers,
   ShieldCheck,
   Zap,
   ArrowRight,
@@ -14,12 +13,11 @@ import {
   Wrench,
   CheckCircle2,
   Sparkles,
-  Layers,
   Activity,
   ChevronRight,
+  MapPin,
 } from "lucide-react";
 import { quickLoginAs } from "@/lib/auth";
-import { sound } from "@/lib/sound";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/layout/Navbar";
 import { CampBotChat } from "@/components/chat/CampBotChat";
@@ -27,7 +25,6 @@ import { FloorPlanViewer } from "@/components/floorplan/FloorPlanViewer";
 import { ORDERED_FLOOR_IDS } from "@/lib/campus_floors";
 import type { Cluster } from "@/lib/types";
 import { toast } from "sonner";
-
 
 // Sample mock active clusters for the homepage interactive preview showcase
 const SHOWCASE_CLUSTERS: Cluster[] = [
@@ -100,12 +97,10 @@ export default function Landing() {
   const [switching, setSwitching] = useState<string | null>(null);
 
   const handleLaunchRole = async (role: "ADMIN" | "TECHNICIAN" | "STUDENT", targetPath: string) => {
-
-    sound.playClick();
     setSwitching(role);
     try {
       await quickLoginAs(role);
-      toast.success(`Logged in as Demo ${role}! Launching terminal…`, { icon: "⚡" });
+      toast.success(`Logged in as ${role}`);
       router.push(targetPath);
     } catch {
       router.push(targetPath);
@@ -115,69 +110,83 @@ export default function Landing() {
   };
 
   const METRICS = [
-    { label: "Indoor Floors", val: "10 Floors", sub: "LG, G, Floors 1 through 8", icon: Layers, color: "text-blue-400" },
-    { label: "Clustering Engine", val: "3-Stage", sub: "Floor isolation + Euclidean + Cosine", icon: Activity, color: "text-emerald-400" },
-    { label: "SLA Adherence", val: "98.4%", sub: "Automated escalation daemon", icon: Zap, color: "text-amber-400" },
-    { label: "Close-Out Proof", val: "100%", sub: "Dual-camera vision verification", icon: ShieldCheck, color: "text-purple-400" },
+    { label: "Indoor Floors", val: "10 Floors", sub: "LG, G, Floors 1 through 8", icon: Layers, color: "text-indigo-600" },
+    { label: "Clustering Engine", val: "3-Stage", sub: "Spatial + Euclidean + Semantic", icon: Activity, color: "text-emerald-600" },
+    { label: "SLA Adherence", val: "98.4%", sub: "Automated escalation routing", icon: Zap, color: "text-amber-600" },
+    { label: "Close-Out Proof", val: "100%", sub: "Before & after photo verification", icon: ShieldCheck, color: "text-blue-600" },
   ];
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] flex flex-col selection:bg-[#58a6ff]/30">
-      {/* Unified Top Command Navigation */}
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
+      {/* Unified Top Navigation */}
       <Navbar />
 
-      <main className="radar-canvas flex-1 overflow-hidden relative">
-        <div className="radar-sweep opacity-30 pointer-events-none" />
-
+      <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative z-10 mx-auto max-w-6xl px-4 pt-12 pb-16 sm:px-6 sm:pt-16 lg:px-8 text-center">
+        <section className="subtle-mesh-bg border-b border-slate-200/80 pt-16 pb-20 px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex flex-col items-center"
+            transition={{ duration: 0.4 }}
+            className="mx-auto max-w-4xl flex flex-col items-center"
           >
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#58a6ff]/30 bg-[#58a6ff]/10 px-3 py-1 text-xs font-semibold text-[#58a6ff] mb-6 backdrop-blur-md">
-              <Sparkles size={13} className="text-[#58a6ff]" />
-              <span>Campusathon 2026 · PS5 Campus Problem Intelligence</span>
+            <div className="inline-flex items-center gap-2 rounded-full border border-indigo-200/90 bg-indigo-50/80 px-3.5 py-1 text-xs font-semibold text-indigo-700 mb-6 shadow-2xs">
+              <Sparkles size={13} className="text-indigo-600" />
+              <span>Campus Operations Intelligence</span>
             </div>
 
-            <h1 className="bg-gradient-to-b from-white via-[#f0f6fc] to-[#8b949e] bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-6xl md:text-7xl">
-              Nivaran AI
+            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-6xl max-w-3xl leading-[1.15]">
+              Campus problem resolution, unified and transparent.
             </h1>
 
-            <p className="mt-4 max-w-3xl text-base sm:text-xl text-[#8b949e] leading-relaxed">
-              Turning scattered campus complaints into prioritized, transparent resolution.
-              Spatio-semantic clustering collapses duplicate reports across{" "}
-              <span className="text-white font-medium">10 indoor floors</span> with real-time Gemini Vision intake and dual-proof verification.
+            <p className="mt-5 max-w-2xl text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
+              Spatio-semantic clustering collapses duplicate complaints across{" "}
+              <span className="text-slate-900 font-semibold">10 indoor floors</span> with automated priority dispatch, photo close-out proof, and real-time public transparency.
             </p>
 
+            {/* Direct CTA Buttons */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Link
+                href="/report"
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition"
+              >
+                Report an Issue
+                <ArrowRight size={16} />
+              </Link>
+              <Link
+                href="/transparency"
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
+              >
+                View Public Transparency
+              </Link>
+            </div>
+
             {/* 1-Click Fast-Track Judge & Demo Launchers */}
-            <div className="mt-10 w-full max-w-4xl">
-              <div className="text-xs uppercase tracking-widest text-[#8b949e] font-semibold mb-3 flex items-center justify-center gap-2">
-                <Zap size={13} className="text-amber-400" />
-                <span>One-Click Role Experience for Evaluators & Judges</span>
+            <div className="mt-14 w-full max-w-4xl text-left">
+              <div className="text-xs uppercase tracking-wider text-slate-600 font-bold mb-3 flex items-center gap-2">
+                <span>Evaluate by Persona</span>
+                <span className="text-slate-500 font-normal">· Instant one-click credentials</span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* Admin Launcher */}
                 <button
                   disabled={!!switching}
                   onClick={() => handleLaunchRole("ADMIN", "/admin")}
-                  className="group relative flex flex-col items-start rounded-xl border border-red-500/30 bg-red-500/5 p-4 text-left hover:border-red-500/60 hover:bg-red-500/10 transition-all duration-200 shadow-lg hover:shadow-red-500/10"
+                  className="group relative flex flex-col items-start rounded-xl border border-slate-200 bg-white p-5 text-left hover:border-indigo-400/80 hover:shadow-md transition-all duration-200 shadow-xs cursor-pointer"
                 >
-                  <div className="flex w-full items-center justify-between mb-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/20 text-red-400">
-                      <Building size={16} />
+                  <div className="flex w-full items-center justify-between mb-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-50 text-red-600 border border-red-100">
+                      <Building size={17} />
                     </div>
                     <Badge variant="emergency" className="text-[10px] py-0">Admin</Badge>
                   </div>
-                  <h3 className="font-bold text-white text-sm group-hover:text-red-300 transition flex items-center gap-1">
+                  <h3 className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition flex items-center gap-1">
                     Mission Control
-                    <ArrowRight size={14} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition" />
+                    <ArrowRight size={14} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition text-indigo-600" />
                   </h3>
-                  <p className="mt-1 text-xs text-[#8b949e]">
-                    10-floor elevator navigator, pulsing SVG blueprint pins, and SLA dispatch.
+                  <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
+                    10-floor elevator dispatch, cluster consolidation, and SLA escalation dashboard.
                   </p>
                 </button>
 
@@ -185,20 +194,20 @@ export default function Landing() {
                 <button
                   disabled={!!switching}
                   onClick={() => handleLaunchRole("TECHNICIAN", "/technician")}
-                  className="group relative flex flex-col items-start rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 text-left hover:border-amber-500/60 hover:bg-amber-500/10 transition-all duration-200 shadow-lg hover:shadow-amber-500/10"
+                  className="group relative flex flex-col items-start rounded-xl border border-slate-200 bg-white p-5 text-left hover:border-indigo-400/80 hover:shadow-md transition-all duration-200 shadow-xs cursor-pointer"
                 >
-                  <div className="flex w-full items-center justify-between mb-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/20 text-amber-400">
-                      <Wrench size={16} />
+                  <div className="flex w-full items-center justify-between mb-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-700 border border-amber-100">
+                      <Wrench size={17} />
                     </div>
                     <Badge variant="high" className="text-[10px] py-0">Field Tech</Badge>
                   </div>
-                  <h3 className="font-bold text-white text-sm group-hover:text-amber-300 transition flex items-center gap-1">
+                  <h3 className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition flex items-center gap-1">
                     Task Force Terminal
-                    <ArrowRight size={14} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition" />
+                    <ArrowRight size={14} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition text-indigo-600" />
                   </h3>
-                  <p className="mt-1 text-xs text-[#8b949e]">
-                    SLA urgency queue, swipe en-route, and dual-camera before/after photo closeout.
+                  <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
+                    Urgent SLA task queue, en-route status toggles, and before/after verification photos.
                   </p>
                 </button>
 
@@ -206,20 +215,20 @@ export default function Landing() {
                 <button
                   disabled={!!switching}
                   onClick={() => handleLaunchRole("STUDENT", "/report")}
-                  className="group relative flex flex-col items-start rounded-xl border border-[#58a6ff]/30 bg-[#58a6ff]/5 p-4 text-left hover:border-[#58a6ff]/60 hover:bg-[#58a6ff]/10 transition-all duration-200 shadow-lg hover:shadow-[#58a6ff]/10"
+                  className="group relative flex flex-col items-start rounded-xl border border-slate-200 bg-white p-5 text-left hover:border-indigo-400/80 hover:shadow-md transition-all duration-200 shadow-xs cursor-pointer"
                 >
-                  <div className="flex w-full items-center justify-between mb-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#58a6ff]/20 text-[#58a6ff]">
-                      <Radar size={16} />
+                  <div className="flex w-full items-center justify-between mb-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100">
+                      <MapPin size={17} />
                     </div>
                     <Badge variant="accent" className="text-[10px] py-0">Student</Badge>
                   </div>
-                  <h3 className="font-bold text-white text-sm group-hover:text-[#58a6ff] transition flex items-center gap-1">
-                    Radar Intake Portal
-                    <ArrowRight size={14} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition" />
+                  <h3 className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition flex items-center gap-1">
+                    Intake Portal
+                    <ArrowRight size={14} className="opacity-0 -translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition text-indigo-600" />
                   </h3>
-                  <p className="mt-1 text-xs text-[#8b949e]">
-                    Drag-and-drop vision intake, door QR code scan, and interactive floor plan pinpoint.
+                  <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
+                    Floor plan pin placement, door QR code scan, and duplicate issue reinforcement.
                   </p>
                 </button>
               </div>
@@ -227,38 +236,38 @@ export default function Landing() {
           </motion.div>
         </section>
 
-        {/* Live Telemetry KPI Metrics Bar */}
-        <section className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 mb-16">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {/* Telemetry KPI Metrics Bar */}
+        <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {METRICS.map((m, idx) => (
               <div
                 key={idx}
-                className="rounded-xl border border-[#30363d] bg-[#161b22]/70 p-4 backdrop-blur-md transition hover:border-[#58a6ff]/40"
+                className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs transition hover:border-slate-300"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs uppercase font-semibold text-[#8b949e]">{m.label}</span>
-                  <m.icon size={16} className={m.color} />
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{m.label}</span>
+                  <m.icon size={17} className={m.color} />
                 </div>
-                <div className="mt-2 text-2xl font-black text-white">{m.val}</div>
-                <div className="mt-0.5 text-[11px] text-[#8b949e]">{m.sub}</div>
+                <div className="mt-2.5 text-2xl font-black text-slate-900 tracking-tight">{m.val}</div>
+                <div className="mt-1 text-xs text-slate-600">{m.sub}</div>
               </div>
             ))}
           </div>
         </section>
 
         {/* Interactive 10-Floor Blueprint Showcase Section */}
-        <section className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 mb-20">
-          <div className="rounded-2xl border border-[#30363d] bg-[#161b22]/80 p-6 backdrop-blur-xl shadow-2xl">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#30363d] pb-5 mb-6">
+        <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-16">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
               <div>
-                <div className="inline-flex items-center gap-1.5 rounded bg-emerald-500/10 px-2 py-0.5 text-[10px] font-bold text-emerald-400 border border-emerald-500/30 uppercase tracking-wider mb-1">
-                  <Activity size={12} /> Live Interactive Blueprint
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700 border border-emerald-200/70 mb-1.5">
+                  <Activity size={12} /> Live Spatial Blueprint
                 </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-white">
-                  10-Floor Indoor Spatial Intelligence
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                  10-Floor Campus Operations Layout
                 </h2>
-                <p className="text-xs sm:text-sm text-[#8b949e] mt-1">
-                  Click across building floors to explore real-time coordinate clusters, emergency beacons, and room zones.
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                  Select a floor level to view active incident clusters, zone locations, and SLA assignments.
                 </p>
               </div>
 
@@ -268,15 +277,14 @@ export default function Landing() {
                   <button
                     key={fId}
                     onClick={() => {
-                      sound.playRadarPing();
                       setDemoFloor(fId);
                       const match = SHOWCASE_CLUSTERS.find((c) => c.floor.toUpperCase() === fId.toUpperCase());
                       setInspectingCluster(match || null);
                     }}
-                    className={`h-8 w-8 sm:h-9 sm:w-9 rounded-lg text-xs font-bold transition flex items-center justify-center shrink-0 ${
+                    className={`h-9 w-9 rounded-lg text-xs font-bold transition flex items-center justify-center shrink-0 cursor-pointer ${
                       demoFloor.toUpperCase() === fId.toUpperCase()
-                        ? "bg-[#58a6ff] text-[#0d1117] shadow-lg shadow-[#58a6ff]/30 font-extrabold scale-105"
-                        : "bg-[#0d1117] text-[#8b949e] border border-[#30363d] hover:text-white hover:border-[#58a6ff]/40"
+                        ? "bg-indigo-600 text-white shadow-xs scale-105"
+                        : "bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200/80"
                     }`}
                   >
                     {fId}
@@ -286,96 +294,94 @@ export default function Landing() {
             </div>
 
             {/* Split Showcase Layout: Blueprint on Left, Live Telemetry on Right */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-              {/* Floor Plan Viewer (7 cols) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              {/* Floor Plan Viewer */}
               <div className="lg:col-span-7 flex justify-center">
                 <FloorPlanViewer
                   floor={demoFloor}
-                  theme="dark"
+                  theme="light"
                   clusters={SHOWCASE_CLUSTERS}
                   selectedClusterId={inspectingCluster?.id}
                   showRoomLabels={true}
                   heatmapMode={false}
                   onClusterSelect={(c) => {
-                    sound.playClick();
                     setInspectingCluster(c);
                   }}
-                  className="w-full max-w-[380px]"
+                  className="w-full max-w-[400px]"
                 />
               </div>
 
-              {/* Cluster Detail Telemetry Card (5 cols) */}
+              {/* Cluster Detail Telemetry Card */}
               <div className="lg:col-span-5 flex flex-col justify-center space-y-4">
-                <div className="rounded-xl border border-[#30363d] bg-[#0d1117] p-5 shadow-xl">
-                  <div className="flex items-center justify-between text-xs text-[#8b949e] border-b border-[#21262d] pb-3 mb-3">
-                    <span className="font-mono">FLOOR {demoFloor} INCIDENT DISPATCH</span>
-                    <span className="text-emerald-400 font-semibold">Active Vector Feed</span>
+                <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-5 shadow-2xs">
+                  <div className="flex items-center justify-between text-xs text-slate-500 border-b border-slate-200/80 pb-3 mb-3 font-semibold">
+                    <span>FLOOR {demoFloor} INCIDENTS</span>
+                    <span className="text-emerald-700">Live Status Feed</span>
                   </div>
 
                   {inspectingCluster ? (
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="rounded bg-red-500/20 text-red-400 border border-red-500/30 px-2 py-0.5 text-[10px] font-bold uppercase">
+                        <span className="rounded-full bg-red-50 text-red-700 border border-red-200 px-2.5 py-0.5 text-[10px] font-bold uppercase">
                           Priority {Math.round(inspectingCluster.priority_score)}/100
                         </span>
-                        <span className="rounded bg-[#58a6ff]/20 text-[#58a6ff] border border-[#58a6ff]/30 px-2 py-0.5 text-[10px] font-bold">
+                        <span className="rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200 px-2.5 py-0.5 text-[10px] font-bold">
                           {inspectingCluster.category}
                         </span>
                       </div>
 
-                      <h3 className="text-base font-bold text-white">{inspectingCluster.title}</h3>
-                      <p className="mt-1 text-xs text-[#8b949e] leading-relaxed">
+                      <h3 className="text-base font-bold text-slate-900 leading-snug">{inspectingCluster.title}</h3>
+                      <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
                         {inspectingCluster.ai_summary}
                       </p>
 
-                      <div className="mt-4 pt-3 border-t border-[#21262d] grid grid-cols-2 gap-2 text-xs">
+                      <div className="mt-4 pt-3 border-t border-slate-200/80 grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <span className="text-[#8b949e] text-[10px] block">Location</span>
-                          <span className="text-white font-medium">
+                          <span className="text-slate-600 text-[10px] block font-medium">Location</span>
+                          <span className="text-slate-900 font-semibold">
                             {inspectingCluster.room_or_zone || `Floor ${inspectingCluster.floor}`}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[#8b949e] text-[10px] block">Duplicate Reports</span>
-                          <span className="text-white font-medium">
-                            {inspectingCluster.complaint_count} Consolidated
+                          <span className="text-slate-600 text-[10px] block font-medium">Consolidated Reports</span>
+                          <span className="text-slate-900 font-semibold">
+                            {inspectingCluster.complaint_count} Reports Merged
                           </span>
                         </div>
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-[#21262d] flex items-center justify-between">
-                        <span className="text-[11px] text-[#8b949e]">Spatio-Semantic Radius: &le;35 units</span>
+                      <div className="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between">
+                        <span className="text-[11px] text-slate-600 font-medium">Spatial Radius: &le;35 units</span>
                         <Link
                           href="/admin"
-                          onClick={() => sound.playClick()}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#58a6ff] hover:underline"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800"
                         >
-                          Open in Mission Control <ChevronRight size={14} />
+                          View in Mission Control <ChevronRight size={14} />
                         </Link>
                       </div>
                     </div>
                   ) : (
                     <div className="py-8 text-center">
-                      <CheckCircle2 size={32} className="mx-auto text-emerald-400 mb-2" />
-                      <h4 className="font-bold text-white text-sm">No Active Hotspots on Floor {demoFloor}</h4>
-                      <p className="mt-1 text-xs text-[#8b949e]">
-                        All facilities operating normally. Switch to Floor 1 or 3 to inspect active incidents.
+                      <CheckCircle2 size={32} className="mx-auto text-emerald-600 mb-2" />
+                      <h4 className="font-bold text-slate-900 text-sm">No Active Incidents on Floor {demoFloor}</h4>
+                      <p className="mt-1 text-xs text-slate-500">
+                        All facilities operating smoothly. Select Floor 1 or 3 to inspect active items.
                       </p>
                     </div>
                   )}
                 </div>
 
-                <div className="flex flex-wrap gap-2 text-xs text-[#8b949e]">
+                <div className="flex flex-wrap gap-3 text-xs text-slate-600 font-medium">
                   <span className="flex items-center gap-1">
-                    <CheckCircle2 size={12} className="text-emerald-400" /> Floor Isolation Filter
+                    <CheckCircle2 size={13} className="text-emerald-600" /> Floor Isolation Filter
                   </span>
                   <span>·</span>
                   <span className="flex items-center gap-1">
-                    <CheckCircle2 size={12} className="text-emerald-400" /> 2D Canvas Euclidean
+                    <CheckCircle2 size={13} className="text-emerald-600" /> 2D Canvas Euclidean
                   </span>
                   <span>·</span>
                   <span className="flex items-center gap-1">
-                    <CheckCircle2 size={12} className="text-emerald-400" /> 384-Dim MiniLM
+                    <CheckCircle2 size={13} className="text-emerald-600" /> MiniLM Semantic Embedding
                   </span>
                 </div>
               </div>
@@ -384,24 +390,23 @@ export default function Landing() {
         </section>
 
         {/* Public Transparency Banner Callout */}
-        <section className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 mb-16">
-          <div className="rounded-2xl border border-emerald-500/30 bg-gradient-to-r from-emerald-500/10 via-[#161b22] to-[#161b22] p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xl">
-            <div className="space-y-1 text-center sm:text-left">
-              <span className="text-xs uppercase font-bold text-emerald-400 tracking-wider flex items-center gap-1.5 justify-center sm:justify-start">
-                <CheckCircle2 size={14} /> Verified Redressal Proof-of-Work
+        <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-20">
+          <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/50 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xs">
+            <div className="space-y-1.5 text-center sm:text-left">
+              <span className="text-xs uppercase font-bold text-emerald-700 tracking-wider flex items-center gap-1.5 justify-center sm:justify-start">
+                <CheckCircle2 size={15} /> Verified Resolution Proof
               </span>
-              <h3 className="text-xl sm:text-2xl font-bold text-white">
+              <h3 className="text-xl sm:text-2xl font-bold text-slate-900">
                 Public Transparency & Resolution Wall
               </h3>
-              <p className="text-xs sm:text-sm text-[#8b949e] max-w-xl">
-                Every completed campus repair undergoes dual-camera structural verification before resolution.
-                Explore before/after photos and campus-wide resolution time SLAs.
+              <p className="text-xs sm:text-sm text-slate-600 max-w-xl leading-relaxed">
+                Every completed campus repair requires before and after photo verification before closing.
+                Review verified fixes, turnaround times, and campus-wide resolution metrics.
               </p>
             </div>
             <Link
               href="/transparency"
-              onClick={() => sound.playClick()}
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-6 py-3 text-xs sm:text-sm font-bold text-[#0d1117] shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 transition shrink-0"
+              className="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-xs hover:bg-emerald-700 transition shrink-0"
             >
               Explore Transparency Wall
               <ArrowRight size={16} />

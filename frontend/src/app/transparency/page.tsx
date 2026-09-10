@@ -16,7 +16,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/layout/Navbar";
-import { sound } from "@/lib/sound";
 import { BeforeAfterImageSlider } from "@/components/technician/BeforeAfterImageSlider";
 import { ORDERED_FLOOR_IDS } from "@/lib/campus_floors";
 import { CampBotChat } from "@/components/chat/CampBotChat";
@@ -37,7 +36,6 @@ interface ResolvedIssueItem {
   impactDesc: string;
 }
 
-// Sample verified resolved showcase items adapted from smart-civic-issue-reporter
 const SAMPLE_RESOLVED: ResolvedIssueItem[] = [
   {
     id: "cl-res-01",
@@ -87,10 +85,10 @@ const SAMPLE_RESOLVED: ResolvedIssueItem[] = [
 ];
 
 const DEPARTMENT_LEADERBOARD = [
-  { dept: "IT Infrastructure", resolved: 22, onTimeRate: "100%", avgHours: "2.4h", color: "text-blue-400" },
-  { dept: "HVAC & Plumbing", resolved: 18, onTimeRate: "97.5%", avgHours: "4.2h", color: "text-amber-400" },
-  { dept: "Electrical & Power", resolved: 14, onTimeRate: "98.1%", avgHours: "3.1h", color: "text-yellow-400" },
-  { dept: "Structural & Glass", resolved: 11, onTimeRate: "95.0%", avgHours: "5.8h", color: "text-emerald-400" },
+  { dept: "IT Infrastructure", resolved: 22, onTimeRate: "100%", avgHours: "2.4h", color: "text-indigo-600" },
+  { dept: "HVAC & Plumbing", resolved: 18, onTimeRate: "97.5%", avgHours: "4.2h", color: "text-amber-600" },
+  { dept: "Electrical & Power", resolved: 14, onTimeRate: "98.1%", avgHours: "3.1h", color: "text-blue-600" },
+  { dept: "Structural & Glass", resolved: 11, onTimeRate: "95.0%", avgHours: "5.8h", color: "text-emerald-600" },
 ];
 
 export default function PublicTransparencyPage() {
@@ -105,38 +103,37 @@ export default function PublicTransparencyPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       <Navbar />
 
-      <main className="flex-1 p-4 md:p-8 text-[#c9d1d9] max-w-6xl mx-auto w-full">
+      <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[#30363d] pb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-6">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-emerald-400 font-semibold uppercase tracking-wider flex items-center gap-1">
-                <CheckCircle2 size={13} /> Public Audit & Redressal Wall
+              <span className="text-xs text-emerald-700 font-bold uppercase tracking-wider flex items-center gap-1">
+                <CheckCircle2 size={14} /> Public Transparency Wall
               </span>
-              <span className="text-xs text-[#8b949e]">·</span>
-              <Badge variant="accent" className="text-[10px]">
-                Dual-Proof Verified
+              <span className="text-xs text-slate-300">·</span>
+              <Badge variant="resolved" className="text-[10px] py-0 px-2">
+                Photo Verified
               </Badge>
             </div>
-            <h1 className="mt-2 text-2xl md:text-3xl font-extrabold text-white flex items-center gap-2">
-              Campus Transparency & Proof-of-Work
-              <CheckCircle2 size={24} className="text-emerald-400" />
+            <h1 className="mt-2 text-2xl md:text-3xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              Campus Redressal & Verified Proof
             </h1>
-            <p className="mt-1 text-xs md:text-sm text-[#8b949e]">
-              Public record showcasing dual-camera verified repairs, before/after structural similarity, and institutional SLAs across all 10 floors.
+            <p className="mt-1 text-xs md:text-sm text-slate-500 max-w-2xl leading-relaxed">
+              Open public audit of resolved campus maintenance tasks, verified with before and after photo comparisons across all 10 floors.
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Link href="/report" onClick={() => sound.playClick()}>
+          <div className="flex items-center gap-2.5">
+            <Link href="/report">
               <Button size="sm">
                 Report an Issue
               </Button>
             </Link>
-            <Link href="/admin" onClick={() => sound.playClick()}>
+            <Link href="/admin">
               <Button variant="outline" size="sm">
                 Mission Control
               </Button>
@@ -144,197 +141,194 @@ export default function PublicTransparencyPage() {
           </div>
         </div>
 
+        {/* KPI Stats Header Bar */}
+        <section className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+            <span className="text-[11px] uppercase font-bold text-slate-500 tracking-wider flex items-center gap-1">
+              <CheckCircle2 size={13} className="text-emerald-600" /> Resolved This Month
+            </span>
+            <div className="mt-2 text-2xl font-black text-slate-900">48 Issues</div>
+            <span className="text-xs text-emerald-700 font-medium">100% Photo Verified</span>
+          </div>
 
-      {/* KPI Stats Header Bar */}
-      <section className="mx-auto max-w-6xl mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="rounded-xl border border-[#30363d] bg-[#161b22] p-4">
-          <span className="text-[10px] uppercase font-semibold text-[#8b949e] tracking-wider flex items-center gap-1">
-            <CheckCircle2 size={13} className="text-emerald-400" /> Resolved This Month
-          </span>
-          <div className="mt-1 text-2xl font-black text-white">48 Issues</div>
-          <span className="text-[11px] text-emerald-400">100% Dual-Proof Verified</span>
-        </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+            <span className="text-[11px] uppercase font-bold text-slate-500 tracking-wider flex items-center gap-1">
+              <Clock size={13} className="text-indigo-600" /> Mean Resolution Time
+            </span>
+            <div className="mt-2 text-2xl font-black text-slate-900">4.8 Hours</div>
+            <span className="text-xs text-slate-500">Within target SLA</span>
+          </div>
 
-        <div className="rounded-xl border border-[#30363d] bg-[#161b22] p-4">
-          <span className="text-[10px] uppercase font-semibold text-[#8b949e] tracking-wider flex items-center gap-1">
-            <Clock size={13} className="text-cyan-400" /> Mean Redressal Time
-          </span>
-          <div className="mt-1 text-2xl font-black text-white">4.8 Hours</div>
-          <span className="text-[11px] text-[#8b949e]">Well within SLA targets</span>
-        </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+            <span className="text-[11px] uppercase font-bold text-slate-500 tracking-wider flex items-center gap-1">
+              <Sparkles size={13} className="text-amber-600" /> Visual Verification
+            </span>
+            <div className="mt-2 text-2xl font-black text-slate-900">93.8%</div>
+            <span className="text-xs text-slate-500">Avg structural similarity</span>
+          </div>
 
-        <div className="rounded-xl border border-[#30363d] bg-[#161b22] p-4">
-          <span className="text-[10px] uppercase font-semibold text-[#8b949e] tracking-wider flex items-center gap-1">
-            <Sparkles size={13} className="text-amber-400" /> AI Visual Match
-          </span>
-          <div className="mt-1 text-2xl font-black text-white">93.8%</div>
-          <span className="text-[11px] text-[#8b949e]">Structural similarity avg</span>
-        </div>
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs">
+            <span className="text-[11px] uppercase font-bold text-slate-500 tracking-wider flex items-center gap-1">
+              <Award size={13} className="text-blue-600" /> Active Technicians
+            </span>
+            <div className="mt-2 text-2xl font-black text-slate-900">12 Staff</div>
+            <span className="text-xs text-slate-500">Round-the-clock shift</span>
+          </div>
+        </section>
 
-        <div className="rounded-xl border border-[#30363d] bg-[#161b22] p-4">
-          <span className="text-[10px] uppercase font-semibold text-[#8b949e] tracking-wider flex items-center gap-1">
-            <Award size={13} className="text-purple-400" /> Active Tech Force
-          </span>
-          <div className="mt-1 text-2xl font-black text-white">12 Field Staff</div>
-          <span className="text-[11px] text-[#8b949e]">Round-the-clock coverage</span>
-        </div>
-      </section>
-
-      {/* Department Performance SLA Leaderboard */}
-      <section className="mx-auto max-w-6xl mt-4 rounded-xl border border-[#30363d] bg-[#161b22]/50 p-4">
-        <div className="flex items-center justify-between border-b border-[#21262d] pb-2 mb-3">
-          <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-            <Award size={14} className="text-amber-400" />
-            Institutional Department SLA Redressal Leaderboard
-          </span>
-          <span className="text-[10px] text-[#8b949e]">Rolling 30-Day Audit</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          {DEPARTMENT_LEADERBOARD.map((d) => (
-            <div key={d.dept} className="rounded-lg border border-[#21262d] bg-[#0d1117] p-3">
-              <div className="text-xs font-semibold text-white">{d.dept}</div>
-              <div className="mt-2 flex items-baseline justify-between">
-                <span className={`text-lg font-black ${d.color}`}>{d.onTimeRate}</span>
-                <span className="text-[11px] text-[#8b949e] font-mono">{d.avgHours} avg</span>
+        {/* Department Performance SLA Leaderboard */}
+        <section className="mt-4 rounded-xl border border-slate-200 bg-white p-5 shadow-xs">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <span className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <Award size={15} className="text-amber-500" />
+              Department SLA Performance
+            </span>
+            <span className="text-xs text-slate-500 font-medium">Rolling 30-Day Window</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+            {DEPARTMENT_LEADERBOARD.map((d) => (
+              <div key={d.dept} className="rounded-xl border border-slate-100 bg-slate-50/80 p-3.5">
+                <div className="text-xs font-bold text-slate-900">{d.dept}</div>
+                <div className="mt-2 flex items-baseline justify-between">
+                  <span className={`text-xl font-black ${d.color}`}>{d.onTimeRate}</span>
+                  <span className="text-xs text-slate-500 font-semibold">{d.avgHours} avg</span>
+                </div>
+                <div className="mt-1 text-[11px] text-slate-500">{d.resolved} verified fixes</div>
               </div>
-              <div className="mt-1 text-[10px] text-[#8b949e]">{d.resolved} verified resolutions</div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
 
-      {/* Filter Controls */}
-      <section className="mx-auto max-w-6xl mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#21262d] bg-[#161b22]/70 p-3">
-
-        {/* Floor Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto custom-scrollbar">
-          <span className="text-xs text-[#8b949e] mr-1 flex items-center gap-1">
-            <Building size={13} /> Floor:
-          </span>
-          <button
-            onClick={() => setSelectedFloor("ALL")}
-            className={`rounded px-2.5 py-1 text-xs font-semibold transition ${
-              selectedFloor === "ALL"
-                ? "bg-accent text-[#0d1117]"
-                : "border border-[#30363d] bg-[#0d1117] text-[#8b949e] hover:text-white"
-            }`}
-          >
-            All Floors
-          </button>
-          {ORDERED_FLOOR_IDS.map((fId) => (
+        {/* Filter Controls */}
+        <section className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-xs">
+          {/* Floor Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            <span className="text-xs font-semibold text-slate-500 mr-1 flex items-center gap-1">
+              <Building size={14} /> Floor:
+            </span>
             <button
-              key={fId}
-              onClick={() => setSelectedFloor(fId)}
-              className={`rounded px-2 py-1 text-xs font-semibold transition ${
-                selectedFloor === fId
-                  ? "bg-accent text-[#0d1117]"
-                  : "border border-[#30363d] bg-[#0d1117] text-[#8b949e] hover:text-white"
+              onClick={() => setSelectedFloor("ALL")}
+              className={`rounded-lg px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
+                selectedFloor === "ALL"
+                  ? "bg-indigo-600 text-white shadow-xs"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
-              Floor {fId}
+              All Floors
             </button>
-          ))}
-        </div>
-
-        {/* Category Selector */}
-        <div className="flex items-center gap-2">
-          <Filter size={13} className="text-[#8b949e]" />
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="rounded-lg border border-[#30363d] bg-[#0d1117] px-3 py-1.5 text-xs text-white outline-none"
-          >
-            <option value="ALL">All Categories</option>
-            <option value="MAINTENANCE">Maintenance</option>
-            <option value="IT_SUPPORT">IT Support</option>
-            <option value="FACILITIES">Facilities</option>
-            <option value="HOUSEKEEPING">Housekeeping</option>
-          </select>
-        </div>
-      </section>
-
-      {/* Verified Work Orders Showcase Grid */}
-      <section className="mx-auto max-w-6xl mt-6 space-y-6">
-        {filteredIssues.length === 0 ? (
-          <div className="rounded-2xl border border-[#30363d] bg-[#161b22] p-12 text-center">
-            <Layers size={32} className="mx-auto text-[#8b949e]/50" />
-            <p className="mt-3 text-sm text-[#8b949e]">
-              No resolved reports match the selected filters.
-            </p>
+            {ORDERED_FLOOR_IDS.map((fId) => (
+              <button
+                key={fId}
+                onClick={() => setSelectedFloor(fId)}
+                className={`rounded-lg px-2.5 py-1 text-xs font-bold transition cursor-pointer ${
+                  selectedFloor === fId
+                    ? "bg-indigo-600 text-white shadow-xs"
+                    : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                }`}
+              >
+                {fId}
+              </button>
+            ))}
           </div>
-        ) : (
-          filteredIssues.map((item) => (
-            <Card key={item.id} className="overflow-hidden border border-[#30363d] bg-[#161b22]">
-              <CardContent className="p-5 md:p-6 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-6 items-center">
-                {/* Left: Interactive Draggable Before / After Comparison Slider */}
-                <div>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-xs font-semibold text-[#8b949e] uppercase tracking-wide flex items-center gap-1.5">
-                      <Sparkles size={12} className="text-accent" /> Drag Divider to Compare Scene
-                    </span>
-                    <span className="text-xs font-mono text-emerald-400 font-bold">
-                      {Math.round(item.similarityScore * 100)}% Match
-                    </span>
-                  </div>
-                  <BeforeAfterImageSlider
-                    beforeUrl={item.beforeUrl}
-                    afterUrl={item.afterUrl}
-                    similarityScore={item.similarityScore}
-                    verified={true}
-                    reasoning="Visual geometry and fixture alignment confirmed by Gemini Vision."
-                  />
-                </div>
 
-                {/* Right: Resolution Specifications & Technician Attribution */}
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="resolved" className="text-xs">
-                      Resolved & Closed
-                    </Badge>
-                    <Badge variant="outline" className="text-xs">
-                      Floor {item.floor}
-                    </Badge>
-                    <Badge variant="accent" className="text-xs">
-                      {item.room_or_zone}
-                    </Badge>
-                  </div>
+          {/* Category Selector */}
+          <div className="flex items-center gap-2">
+            <Filter size={14} className="text-slate-400" />
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-800 font-medium outline-none focus:border-indigo-500 shadow-2xs"
+            >
+              <option value="ALL">All Categories</option>
+              <option value="MAINTENANCE">Maintenance</option>
+              <option value="IT_SUPPORT">IT Support</option>
+              <option value="FACILITIES">Facilities</option>
+              <option value="HOUSEKEEPING">Housekeeping</option>
+            </select>
+          </div>
+        </section>
 
-                  <h3 className="text-lg font-bold text-white leading-snug">
-                    {item.title}
-                  </h3>
-
-                  <p className="text-xs text-[#8b949e] leading-relaxed">
-                    {item.impactDesc}
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-2 text-xs border-y border-[#21262d] py-3 text-[#c9d1d9]">
-                    <div>
-                      <span className="text-[#8b949e] block text-[10px] uppercase">Resolution Time</span>
-                      <strong className="text-white font-mono">{item.durationHours} Hours</strong>
+        {/* Verified Work Orders Showcase Grid */}
+        <section className="mt-6 space-y-5">
+          {filteredIssues.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-xs">
+              <Layers size={32} className="mx-auto text-slate-400" />
+              <p className="mt-3 text-sm text-slate-500">
+                No resolved incidents match the selected filter criteria.
+              </p>
+            </div>
+          ) : (
+            filteredIssues.map((item) => (
+              <Card key={item.id} className="overflow-hidden border border-slate-200 bg-white shadow-xs">
+                <CardContent className="p-5 md:p-6 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-6 items-center">
+                  {/* Left: Interactive Draggable Before / After Comparison Slider */}
+                  <div>
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide flex items-center gap-1.5">
+                        <Sparkles size={13} className="text-indigo-600" /> Drag to inspect before / after
+                      </span>
+                      <span className="text-xs font-bold text-emerald-700 font-mono bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        {Math.round(item.similarityScore * 100)}% Verified Match
+                      </span>
                     </div>
-                    <div>
-                      <span className="text-[#8b949e] block text-[10px] uppercase">Service Lead</span>
-                      <strong className="text-white">{item.technicianName}</strong>
+                    <BeforeAfterImageSlider
+                      beforeUrl={item.beforeUrl}
+                      afterUrl={item.afterUrl}
+                      similarityScore={item.similarityScore}
+                      verified={true}
+                      reasoning="Visual geometry and structural alignment verified."
+                    />
+                  </div>
+
+                  {/* Right: Resolution Specifications & Technician Attribution */}
+                  <div className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="resolved" className="text-xs">
+                        Resolved & Verified
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Floor {item.floor}
+                      </Badge>
+                      <Badge variant="accent" className="text-xs">
+                        {item.room_or_zone}
+                      </Badge>
+                    </div>
+
+                    <h3 className="text-lg font-bold text-slate-900 leading-snug">
+                      {item.title}
+                    </h3>
+
+                    <p className="text-xs text-slate-600 leading-relaxed">
+                      {item.impactDesc}
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs border-y border-slate-100 py-3 text-slate-700">
+                      <div>
+                        <span className="text-slate-500 block text-[10px] uppercase font-bold">Turnaround Time</span>
+                        <strong className="text-slate-900 font-mono text-sm">{item.durationHours} Hours</strong>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[10px] uppercase font-bold">Technician Lead</span>
+                        <strong className="text-slate-900">{item.technicianName}</strong>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span>Reported: {item.reportedAt}</span>
+                      <span className="text-emerald-700 flex items-center gap-1 font-semibold">
+                        <CheckCircle2 size={14} /> Quality Verified
+                      </span>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </section>
 
-                  <div className="flex items-center justify-between text-[11px] text-[#8b949e]">
-                    <span>Reported: {item.reportedAt}</span>
-                    <span className="text-emerald-400 flex items-center gap-1 font-semibold">
-                      <CheckCircle2 size={13} /> Institutional Quality Seal
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </section>
-
-      {/* Floating CampBot AI */}
-      <CampBotChat />
+        {/* Floating CampBot AI */}
+        <CampBotChat />
       </main>
     </div>
   );
 }
-
