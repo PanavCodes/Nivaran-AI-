@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useCallback } from "react";
+import Image from "next/image";
 import { CheckCircle2, AlertCircle } from "lucide-react";
 
 interface BeforeAfterImageSliderProps {
@@ -59,11 +60,13 @@ export const BeforeAfterImageSlider: React.FC<BeforeAfterImageSliderProps> = ({
         className="relative aspect-[16/10] w-full select-none overflow-hidden rounded-xl border border-[#30363d] bg-black shadow-xl"
       >
         {/* 'After' Image (Base layer - full width) */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src={afterUrl}
           alt="After: technician resolution"
-          className="absolute inset-0 h-full w-full object-cover pointer-events-none"
+          fill
+          unoptimized={afterUrl.startsWith("blob:") || afterUrl.startsWith("data:")}
+          className="object-cover pointer-events-none"
+          sizes="(max-width: 768px) 100vw, 600px"
         />
 
         {/* 'After' Badge */}
@@ -76,15 +79,21 @@ export const BeforeAfterImageSlider: React.FC<BeforeAfterImageSliderProps> = ({
           className="absolute inset-0 overflow-hidden pointer-events-none"
           style={{ width: `${sliderPos}%` }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={beforeUrl}
-            alt="Before: student report"
-            className="absolute inset-0 h-full max-w-none object-cover"
+          <div
+            className="relative h-full"
             style={{
               width: containerRef.current ? `${containerRef.current.clientWidth}px` : "100%",
             }}
-          />
+          >
+            <Image
+              src={beforeUrl}
+              alt="Before: student report"
+              fill
+              unoptimized={beforeUrl.startsWith("blob:") || beforeUrl.startsWith("data:")}
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, 600px"
+            />
+          </div>
         </div>
 
         {/* 'Before' Badge */}

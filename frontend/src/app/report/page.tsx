@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -17,7 +18,8 @@ import {
   Search,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { requireAuth } from "@/lib/auth";
+import { useRoleGuard } from "@/hooks/useRoleGuard";
+import { AccessDeniedBarrier } from "@/components/auth/AccessDeniedBarrier";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -136,9 +138,17 @@ export default function ReportPortal() {
     }
   };
 
-  useEffect(() => {
-    requireAuth();
-  }, []);
+  const {
+    user: authUser,
+    isAuthorized,
+    isLoading: authLoading,
+    destinationPath,
+    destinationLabel,
+  } = useRoleGuard({
+    allowedRoles: ["STUDENT", "FACULTY"],
+    portalName: "Student Grievance Intake",
+    customMessage: "Maintenance Crew and Admin accounts cannot access the Student Grievance Intake. Please return to your designated portal.",
+  });
 
   // ── "Nearby Active Clusters on Current Floor" ──
   const refreshNearby = useCallback(
@@ -155,8 +165,8 @@ export default function ReportPortal() {
           `/api/v1/clusters/nearby?${queryParams.toString()}`
         );
         setNearby(data);
-      } catch {
-        /* silent */
+      } catch (err) {
+        console.debug("[Report] Failed to load nearby clusters:", err);
       }
     },
     [floor, coords.x, coords.y]
@@ -227,8 +237,8 @@ export default function ReportPortal() {
       if (detected.floor || detected.room) {
         setAiDetected(detected);
       }
-    } catch {
-      // Manual input fallback
+    } catch (err) {
+      console.warn("[Report] AI media analysis fallback to manual input:", err);
     } finally {
       setAnalyzing(false);
     }
@@ -297,6 +307,36 @@ export default function ReportPortal() {
 
   const field =
     "w-full rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 shadow-2xs";
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3 p-6 text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+            <p className="text-sm font-medium text-slate-600">Verifying student authorization...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized || !authUser) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar />
+        <AccessDeniedBarrier
+          portalName="Student Grievance Intake"
+          allowedRoles={["STUDENT", "FACULTY"]}
+          userRole={authUser?.role}
+          homePath={destinationPath}
+          homeLabel={destinationLabel}
+          customMessage="Maintenance Crew and Administrator accounts are restricted from the Student Grievance Intake. Please return to your designated workspace."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
@@ -427,8 +467,14 @@ export default function ReportPortal() {
                 >
                   {preview ? (
                     <div className="relative">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={preview} alt="Attachment preview" className="max-h-44 rounded-lg shadow-sm border border-slate-200" />
+                      <Image
+                        src={preview}
+                        alt="Attachment preview"
+                        width={300}
+                        height={180}
+                        unoptimized
+                        className="max-h-44 w-auto rounded-lg shadow-sm border border-slate-200 object-contain"
+                      />
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
@@ -686,7 +732,7 @@ export default function ReportPortal() {
                           activePin={{ x: coords.x, y: coords.y, room: roomOrZone }}
                           onPinSelect={handlePinSelect}
                           className="h-[340px] w-full"
-                          showRoomLabels={true}
+                          showRoomLabels={false}
                         />
                       </div>
                     </div>

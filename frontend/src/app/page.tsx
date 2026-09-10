@@ -10,6 +10,7 @@ import { FloorPlanViewer } from "@/components/floorplan/FloorPlanViewer";
 import { ORDERED_FLOOR_IDS } from "@/lib/campus_floors";
 import type { Cluster } from "@/lib/types";
 import { toast } from "sonner";
+import { LogIn, Sparkles, GraduationCap, Wrench, ShieldCheck } from "lucide-react";
 
 // Sample active clusters for campus layout demonstration
 const SHOWCASE_CLUSTERS: Cluster[] = [
@@ -24,8 +25,8 @@ const SHOWCASE_CLUSTERS: Cluster[] = [
     impact_score: 5,
     complaint_count: 4,
     floor: "1",
-    x_coord: 175,
-    y_coord: 230,
+    x_coord: 40,
+    y_coord: 196,
     room_or_zone: "Room 102 (Server Room)",
     sla_deadline: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
     assigned_technician_id: null,
@@ -44,8 +45,8 @@ const SHOWCASE_CLUSTERS: Cluster[] = [
     impact_score: 4,
     complaint_count: 3,
     floor: "3",
-    x_coord: 210,
-    y_coord: 180,
+    x_coord: 225,
+    y_coord: 490,
     room_or_zone: "Hardware Lab 1",
     sla_deadline: new Date(Date.now() + 5 * 3600 * 1000).toISOString(),
     assigned_technician_id: "tech-1",
@@ -65,7 +66,7 @@ const SHOWCASE_CLUSTERS: Cluster[] = [
     complaint_count: 2,
     floor: "G",
     x_coord: 180,
-    y_coord: 480,
+    y_coord: 440,
     room_or_zone: "Main Entrance Foyer",
     sla_deadline: null,
     assigned_technician_id: "tech-2",
@@ -85,8 +86,8 @@ export default function HomePage() {
   const handleLaunchRole = async (role: "ADMIN" | "TECHNICIAN" | "STUDENT", targetPath: string) => {
     setSwitching(role);
     try {
-      await quickLoginAs(role);
-      toast.success(`Active role set to ${role}`);
+      const u = await quickLoginAs(role);
+      toast.success(`Active role set to ${role} (${u.full_name})`);
       router.push(targetPath);
     } catch {
       router.push(targetPath);
@@ -94,6 +95,7 @@ export default function HomePage() {
       setSwitching(null);
     }
   };
+
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,33 +113,78 @@ export default function HomePage() {
           <div className="mx-auto max-w-6xl">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               <div className="lg:col-span-8 space-y-4">
+                <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 border border-indigo-200/80 px-3 py-1 text-xs font-semibold text-indigo-700">
+                  <span className="h-2 w-2 rounded-full bg-indigo-600 animate-pulse" />
+                  Campusathon 2026 · PS5: Campus Problem Intelligence
+                </div>
+
                 <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-                  Campus Facilities & Maintenance
+                  Campus Facilities & Maintenance Intelligence
                 </h1>
                 <p className="text-sm sm:text-base text-slate-600 max-w-2xl leading-relaxed">
-                  Report facility problems, track repair orders across 10 campus floors in real time, and review photo-verified resolution logs.
+                  Indoor spatio-semantic grievance redressal across 10 campus floors. Automated duplicate clustering, SLA-bounded escalation, and dual-proof photo verification.
                 </p>
 
-                {/* Primary Action Buttons — Clean Typography, No Decorative Icons */}
+                {/* Primary Action & Role Login Buttons */}
                 <div className="pt-2 flex flex-wrap items-center gap-3">
                   <Link
+                    href="/login"
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-indigo-700 transition shadow-xs cursor-pointer"
+                  >
+                    <LogIn size={15} />
+                    Sign In / Enter Portal →
+                  </Link>
+
+                  <Link
                     href="/report"
-                    className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 transition"
+                    className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 transition shadow-xs"
                   >
                     Report an issue
                   </Link>
-                  <Link
-                    href="/tracker"
-                    className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
-                  >
-                    Track an issue
-                  </Link>
+
                   <Link
                     href="/transparency"
-                    className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition shadow-2xs"
                   >
                     Public audit log
                   </Link>
+                </div>
+
+                {/* 1-Click Fast-Track Demo Buttons for Judges */}
+                <div className="pt-2">
+                  <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-2 text-indigo-950 font-bold">
+                      <Sparkles size={14} className="text-indigo-600 shrink-0" />
+                      <span>1-Click Demo Login:</span>
+                      <span className="text-[11px] text-slate-500 font-normal hidden sm:inline">Instant role access</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <button
+                        disabled={!!switching}
+                        onClick={() => handleLaunchRole("STUDENT", "/report")}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-indigo-200 text-indigo-700 font-bold hover:bg-indigo-50 transition shadow-2xs cursor-pointer"
+                      >
+                        <GraduationCap size={13} />
+                        <span>{switching === "STUDENT" ? "Logging in…" : "🎓 Demo Student"}</span>
+                      </button>
+                      <button
+                        disabled={!!switching}
+                        onClick={() => handleLaunchRole("TECHNICIAN", "/technician")}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-amber-200 text-amber-700 font-bold hover:bg-amber-50 transition shadow-2xs cursor-pointer"
+                      >
+                        <Wrench size={13} />
+                        <span>{switching === "TECHNICIAN" ? "Logging in…" : "🔧 Demo Technician"}</span>
+                      </button>
+                      <button
+                        disabled={!!switching}
+                        onClick={() => handleLaunchRole("ADMIN", "/admin")}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-red-200 text-red-700 font-bold hover:bg-red-50 transition shadow-2xs cursor-pointer"
+                      >
+                        <ShieldCheck size={13} />
+                        <span>{switching === "ADMIN" ? "Logging in…" : "🛡️ Demo Admin"}</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -201,69 +248,108 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Student & Staff Portal */}
-            <div className="rounded-lg border border-slate-200 bg-white p-5 flex flex-col justify-between">
+            <div className="rounded-xl border border-slate-200 bg-white p-5 flex flex-col justify-between shadow-2xs hover:border-indigo-300 transition">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-900">Students & Staff</span>
-                  <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="h-4 w-4 text-indigo-600" />
+                    <span className="text-sm font-bold text-slate-900">Student & Faculty</span>
+                  </div>
+                  <span className="rounded bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
                     Reporter
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Submit maintenance requests with photo attachment, set location pins on floor blueprints, or confirm duplicate issues nearby.
+                <p className="text-xs text-slate-600 leading-relaxed min-h-[44px]">
+                  Submit maintenance requests with photo AI detection, set blueprint pins, or vote to reinforce nearby issues.
                 </p>
               </div>
-              <button
-                disabled={!!switching}
-                onClick={() => handleLaunchRole("STUDENT", "/report")}
-                className="mt-4 w-full rounded-md border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 transition cursor-pointer"
-              >
-                {switching === "STUDENT" ? "Signing in…" : "Open report portal"}
-              </button>
-            </div>
 
-            {/* Facility Dispatchers */}
-            <div className="rounded-lg border border-slate-200 bg-white p-5 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-900">Facility Dispatchers</span>
-                  <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
-                    Admin
-                  </span>
-                </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Consolidated multi-floor overview, spatial duplicate clustering, technician dispatch assignments, and university memorandums.
-                </p>
+              <div className="mt-5 space-y-2">
+                <button
+                  disabled={!!switching}
+                  onClick={() => handleLaunchRole("STUDENT", "/report")}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 py-2 text-xs font-bold text-white hover:bg-indigo-700 transition shadow-xs cursor-pointer"
+                >
+                  <Sparkles size={13} />
+                  <span>{switching === "STUDENT" ? "Authenticating…" : "1-Click Demo Student"}</span>
+                </button>
+                <Link
+                  href="/login"
+                  className="w-full inline-flex items-center justify-center rounded-md border border-slate-200 bg-white py-1.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Sign in with credentials →
+                </Link>
               </div>
-              <button
-                disabled={!!switching}
-                onClick={() => handleLaunchRole("ADMIN", "/admin")}
-                className="mt-4 w-full rounded-md border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 transition cursor-pointer"
-              >
-                {switching === "ADMIN" ? "Signing in…" : "Open dispatch console"}
-              </button>
             </div>
 
             {/* Maintenance Crews */}
-            <div className="rounded-lg border border-slate-200 bg-white p-5 flex flex-col justify-between">
+            <div className="rounded-xl border border-slate-200 bg-white p-5 flex flex-col justify-between shadow-2xs hover:border-amber-300 transition">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-900">Maintenance Crews</span>
-                  <span className="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
+                  <div className="flex items-center gap-2">
+                    <Wrench className="h-4 w-4 text-amber-600" />
+                    <span className="text-sm font-bold text-slate-900">Field Maintenance</span>
+                  </div>
+                  <span className="rounded bg-amber-50 border border-amber-200/80 px-2 py-0.5 text-[10px] font-bold text-amber-700">
                     Technician
                   </span>
                 </div>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  Prioritized task queue, one-click en-route status updates, deferral logging, and camera verification proof upload.
+                <p className="text-xs text-slate-600 leading-relaxed min-h-[44px]">
+                  Urgency-sorted task queue, one-click en-route status updates, deferral logging, and camera verification proof upload.
                 </p>
               </div>
-              <button
-                disabled={!!switching}
-                onClick={() => handleLaunchRole("TECHNICIAN", "/technician")}
-                className="mt-4 w-full rounded-md border border-slate-200 bg-white py-2 text-xs font-semibold text-slate-800 hover:bg-slate-50 transition cursor-pointer"
-              >
-                {switching === "TECHNICIAN" ? "Signing in…" : "Open technician queue"}
-              </button>
+
+              <div className="mt-5 space-y-2">
+                <button
+                  disabled={!!switching}
+                  onClick={() => handleLaunchRole("TECHNICIAN", "/technician")}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-amber-600 py-2 text-xs font-bold text-white hover:bg-amber-700 transition shadow-xs cursor-pointer"
+                >
+                  <Sparkles size={13} />
+                  <span>{switching === "TECHNICIAN" ? "Authenticating…" : "1-Click Demo Technician"}</span>
+                </button>
+                <Link
+                  href="/login"
+                  className="w-full inline-flex items-center justify-center rounded-md border border-slate-200 bg-white py-1.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Sign in with credentials →
+                </Link>
+              </div>
+            </div>
+
+            {/* Facility Dispatchers */}
+            <div className="rounded-xl border border-slate-200 bg-white p-5 flex flex-col justify-between shadow-2xs hover:border-red-300 transition">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-4 w-4 text-red-600" />
+                    <span className="text-sm font-bold text-slate-900">Facility Dispatchers</span>
+                  </div>
+                  <span className="rounded bg-red-50 border border-red-200/80 px-2 py-0.5 text-[10px] font-bold text-red-700">
+                    Admin
+                  </span>
+                </div>
+                <p className="text-xs text-slate-600 leading-relaxed min-h-[44px]">
+                  Multi-floor oversight, indoor duplicate clustering, technician dispatching, and official university incident memos.
+                </p>
+              </div>
+
+              <div className="mt-5 space-y-2">
+                <button
+                  disabled={!!switching}
+                  onClick={() => handleLaunchRole("ADMIN", "/admin")}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 py-2 text-xs font-bold text-white hover:bg-slate-800 transition shadow-xs cursor-pointer"
+                >
+                  <Sparkles size={13} />
+                  <span>{switching === "ADMIN" ? "Authenticating…" : "1-Click Demo Administrator"}</span>
+                </button>
+                <Link
+                  href="/login"
+                  className="w-full inline-flex items-center justify-center rounded-md border border-slate-200 bg-white py-1.5 text-[11px] font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Sign in with credentials →
+                </Link>
+              </div>
             </div>
           </div>
         </section>
@@ -313,7 +399,7 @@ export default function HomePage() {
                   theme="light"
                   clusters={SHOWCASE_CLUSTERS}
                   selectedClusterId={inspectingCluster?.id}
-                  showRoomLabels={true}
+                  showRoomLabels={false}
                   heatmapMode={false}
                   onClusterSelect={(c) => {
                     setInspectingCluster(c);
@@ -384,6 +470,82 @@ export default function HomePage() {
                   <p>• Floor isolation prevents inter-floor signal contamination.</p>
                   <p>• Spatial 2D coordinates map within 35 units to detect nearby duplicates.</p>
                   <p>• Semantic embeddings confirm issue similarity before clustering.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* How Nivaran Works: The 3-Step AI Pipeline */}
+        <section className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 pb-12">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 sm:p-8 shadow-xs">
+            <div className="mb-6">
+              <span className="rounded-full bg-indigo-50 border border-indigo-200/80 px-2.5 py-0.5 text-[10px] font-bold text-indigo-700 uppercase tracking-wider">
+                System Workflow
+              </span>
+              <h2 className="mt-2 text-lg font-bold text-slate-900 tracking-tight">
+                How Nivaran Resolves Campus Issues
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                From noisy WhatsApp complaints to verified physical resolution in three automated stages.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Step 1 */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold text-xs">
+                      1
+                    </span>
+                    <span className="text-[10px] font-bold text-indigo-600 uppercase">Intake Engine</span>
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900">Multimodal Grievance Ingestion</h3>
+                  <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
+                    Students submit issues via photo OCR, door QR codes, or bilingual Telugu/Tanglish WhatsApp voice notes with automated indoor floor and room zone coordinates.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-200 text-[11px] text-slate-500 font-medium">
+                  ✓ Vector Blueprint Coordinates
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold text-xs">
+                      2
+                    </span>
+                    <span className="text-[10px] font-bold text-indigo-600 uppercase">Intelligence Layer</span>
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900">Indoor Spatio-Semantic Deduplication</h3>
+                  <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
+                    Gemini text-embedding-004 verifies cosine semantic similarity, while 2D Euclidean spatial proximity merges duplicate complaints within 35 units into unified work orders.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-200 text-[11px] text-slate-500 font-medium">
+                  ✓ Eliminates maintenance ticket spam
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold text-xs">
+                      3
+                    </span>
+                    <span className="text-[10px] font-bold text-indigo-600 uppercase">Verification</span>
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900">Dual-Proof Resolution Audit</h3>
+                  <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
+                    Technicians receive live urgency-sorted orders, countdown SLAs, and must upload mandatory after-repair photo proof before closing tickets in the public audit ledger.
+                  </p>
+                </div>
+                <div className="mt-4 pt-3 border-t border-slate-200 text-[11px] text-slate-500 font-medium">
+                  ✓ 100% Photographic accountability
                 </div>
               </div>
             </div>

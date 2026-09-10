@@ -94,3 +94,37 @@ class AuditOut(BaseModel):
     details: dict
     actor_id: str | None
     created_at: datetime
+
+
+class ResolvedIssueItem(BaseModel):
+    id: str
+    title: str
+    floor: str
+    room_or_zone: str
+    category: str
+    reportedAt: str
+    resolvedAt: str
+    durationHours: float
+    similarityScore: float
+    beforeUrl: str
+    afterUrl: str
+    technicianName: str
+    impactDesc: str
+
+
+class DepartmentLeaderboardItem(BaseModel):
+    dept: str
+    resolved: int
+    onTimeRate: str
+    avgHours: str
+    color: str
+
+
+class TransparencyResponse(BaseModel):
+    resolved_count: int
+    mean_resolution_hours: float
+    avg_similarity_score: float
+    active_technicians_count: int
+    department_leaderboard: list[DepartmentLeaderboardItem]
+    issues: list[ResolvedIssueItem]
+

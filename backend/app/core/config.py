@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
 
+    @property
+    def is_jwt_secret_insecure(self) -> bool:
+        return (
+            self.JWT_SECRET == "dev-only-secret-replace-with-64-char-random-string"
+            or len(self.JWT_SECRET) < 32
+        )
+
+
     # ── Frontend / CORS ───────────────────────────────────────────────────
     NEXT_PUBLIC_API_URL: str = "http://localhost:8000"
     ALLOWED_CORS_ORIGINS: str = '["http://localhost:3000"]'

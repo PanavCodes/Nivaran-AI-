@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   CheckCircle2,
@@ -12,7 +13,9 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { api, API_URL } from "@/lib/api";
-import { requireAuth, type SessionUser } from "@/lib/auth";
+
+import { useRoleGuard } from "@/hooks/useRoleGuard";
+import { AccessDeniedBarrier } from "@/components/auth/AccessDeniedBarrier";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -40,22 +43,28 @@ function stageIndex(status: string | undefined): number {
 }
 
 export default function TrackerPage() {
-  const [user, setUser] = useState<SessionUser | null>(null);
   const [reports, setReports] = useState<MyComplaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(Date.now());
   const [expandedBlueprint, setExpandedBlueprint] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    const u = requireAuth();
-    if (u) setUser(u);
-  }, []);
+  const {
+    user: authUser,
+    isAuthorized,
+    isLoading: authLoading,
+    destinationPath,
+    destinationLabel,
+  } = useRoleGuard({
+    allowedRoles: ["STUDENT", "FACULTY"],
+    portalName: "Student Incident Status Tracker",
+    customMessage: "Maintenance Crew and Admin accounts cannot access the Student Status Tracker. Please return to your designated portal.",
+  });
 
   const fetchReports = useCallback(async () => {
     try {
       setReports(await api.get<MyComplaint[]>("/api/v1/complaints/mine"));
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.error("[Tracker] Failed to load complaints:", err);
     } finally {
       setLoading(false);
     }
@@ -82,7 +91,35 @@ export default function TrackerPage() {
     };
   };
 
-  if (!user) return null;
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3 p-6 text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+            <p className="text-sm font-medium text-slate-600">Verifying student authorization...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized || !authUser) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar />
+        <AccessDeniedBarrier
+          portalName="Student Incident Status Tracker"
+          allowedRoles={["STUDENT", "FACULTY"]}
+          userRole={authUser?.role}
+          homePath={destinationPath}
+          homeLabel={destinationLabel}
+          customMessage="Maintenance Crew and Administrator accounts are restricted from the Student Status Tracker. Please return to your designated workspace."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
@@ -201,7 +238,7 @@ export default function TrackerPage() {
                           interactive={false}
                           activePin={{ x: r.x_coord, y: r.y_coord, room: r.room_or_zone }}
                           className="h-44 w-full"
-                          showRoomLabels={true}
+                          showRoomLabels={false}
                         />
                       </div>
                     )}
@@ -269,12 +306,16 @@ export default function TrackerPage() {
                       {r.image_url && (
                         <div>
                           <p className="mb-1 text-[10px] uppercase font-bold text-slate-500">Original Photo</p>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={r.image_url.startsWith("http") ? r.image_url : `${API_URL}${r.image_url}`}
-                            alt="Reported issue"
-                            className="h-28 rounded-xl object-cover border border-slate-200 shadow-2xs"
-                          />
+                          <div className="relative h-28 w-40 overflow-hidden rounded-xl border border-slate-200 shadow-2xs">
+                            <Image
+                              src={r.image_url.startsWith("http") ? r.image_url : `${API_URL}${r.image_url}`}
+                              alt="Reported issue"
+                              fill
+                              unoptimized
+                              className="object-cover"
+                              sizes="160px"
+                            />
+                          </div>
                         </div>
                       )}
                       {proofUrl && (
@@ -282,12 +323,16 @@ export default function TrackerPage() {
                           <p className="mb-1 flex items-center gap-1 text-[10px] uppercase font-bold text-emerald-700">
                             <ShieldCheck size={12} /> Resolution Proof
                           </p>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={proofUrl}
-                            alt="Resolution proof"
-                            className="h-28 rounded-xl object-cover border border-emerald-200 shadow-2xs"
-                          />
+                          <div className="relative h-28 w-40 overflow-hidden rounded-xl border border-emerald-200 shadow-2xs">
+                            <Image
+                              src={proofUrl}
+                              alt="Resolution proof"
+                              fill
+                              unoptimized
+                              className="object-cover"
+                              sizes="160px"
+                            />
+                          </div>
                         </div>
                       )}
                     </div>

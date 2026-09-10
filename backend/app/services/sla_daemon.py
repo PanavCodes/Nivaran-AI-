@@ -29,6 +29,10 @@ def _tick() -> None:
         ).scalars().all()
 
         for cluster in open_clusters:
+            # Save the old deadline before recomputing, so breach detection uses
+            # the original SLA window — not the freshly recalculated one.
+            old_deadline = cluster.sla_deadline
+
             score, tier, deadline = compute_priority(
                 cluster.severity_score,
                 cluster.complaint_count,
@@ -38,7 +42,7 @@ def _tick() -> None:
             cluster.priority_score = score
             cluster.sla_deadline = deadline
 
-            breached = cluster.sla_deadline is not None and now > cluster.sla_deadline
+            breached = old_deadline is not None and now > old_deadline
             if breached:
                 last = (
                     db.query(SlaEscalation)

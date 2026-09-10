@@ -26,14 +26,6 @@ interface NavItem {
   badge?: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { label: "Report an Issue", href: "/report" },
-  { label: "Dispatch Console", href: "/admin" },
-  { label: "Work Orders", href: "/technician" },
-  { label: "Status Tracker", href: "/tracker" },
-  { label: "Public Audit", href: "/transparency" },
-];
-
 export const Navbar: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
@@ -76,6 +68,40 @@ export const Navbar: React.FC = () => {
     }
   };
 
+  const currentNavItems: NavItem[] = React.useMemo(() => {
+    if (!user) {
+      return [
+        { label: "Home", href: "/" },
+        { label: "Public Audit", href: "/transparency" },
+      ];
+    }
+    switch (user.role) {
+      case "STUDENT":
+        return [
+          { label: "Report an Issue", href: "/report" },
+          { label: "Status Tracker", href: "/tracker" },
+          { label: "Public Audit", href: "/transparency" },
+        ];
+      case "TECHNICIAN":
+        return [
+          { label: "Work Orders", href: "/technician" },
+          { label: "Public Audit", href: "/transparency" },
+        ];
+      case "ADMIN":
+        return [
+          { label: "Dispatch Console", href: "/admin" },
+          { label: "Public Audit", href: "/transparency" },
+        ];
+      case "FACULTY":
+      default:
+        return [
+          { label: "Report an Issue", href: "/report" },
+          { label: "Status Tracker", href: "/tracker" },
+          { label: "Public Audit", href: "/transparency" },
+        ];
+    }
+  }, [user]);
+
   const roleBadgeVariant: Record<Role, "emergency" | "high" | "accent" | "default"> = {
     ADMIN: "emergency",
     TECHNICIAN: "high",
@@ -99,9 +125,9 @@ export const Navbar: React.FC = () => {
             </div>
           </Link>
 
-          {/* Desktop Navigation Links — Clean Typography */}
+          {/* Desktop Navigation Links — Dynamic Role-Based */}
           <nav className="hidden md:flex items-center gap-1">
-            {NAV_ITEMS.map((item) => {
+            {currentNavItems.map((item) => {
               const active = pathname === item.href;
               return (
                 <Link
@@ -270,7 +296,7 @@ export const Navbar: React.FC = () => {
             exit={{ opacity: 0, height: 0 }}
             className="md:hidden border-t border-slate-200 bg-white px-4 py-3 space-y-1.5 shadow-sm"
           >
-            {NAV_ITEMS.map((item) => {
+            {currentNavItems.map((item) => {
               const active = pathname === item.href;
               return (
                 <Link

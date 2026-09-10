@@ -27,20 +27,20 @@ export const ElevatorFloorNavigator: React.FC<ElevatorFloorNavigatorProps> = ({
 
   return (
     <div
-      className={`flex flex-col rounded-xl border border-slate-200 bg-white p-3 shadow-xs ${className}`}
+      className={`flex flex-col rounded-xl border border-slate-200/80 bg-white p-2 shadow-2xs ${className}`}
     >
-      <div className="flex items-center gap-2 px-2 pb-3 border-b border-slate-100">
-        <Building2 className="h-4 w-4 text-indigo-600" />
-        <div>
-          <h3 className="text-xs font-bold tracking-wide uppercase text-slate-900">
+      <div className="flex items-center gap-2 px-1.5 pb-2.5 border-b border-slate-100">
+        <Building2 className="h-4 w-4 text-indigo-600 shrink-0" />
+        <div className="min-w-0">
+          <h3 className="text-xs font-bold tracking-wide uppercase text-slate-900 truncate">
             Floor Levels
           </h3>
-          <p className="text-[10px] text-slate-500">10-Floor Complex</p>
+          <p className="text-[10px] text-slate-500 truncate">10-Floor Complex</p>
         </div>
       </div>
 
       {/* Vertical Elevator Control Column */}
-      <div className="mt-2.5 flex flex-col gap-1.5 overflow-y-auto max-h-[520px] pr-1">
+      <div className="mt-2 flex flex-col gap-1 overflow-y-auto max-h-[calc(100vh-220px)] pr-0.5">
         {ORDERED_FLOOR_IDS.map((floorId) => {
           const meta = getFloorMeta(floorId);
           const isSelected = selectedFloor.toUpperCase() === floorId.toUpperCase();
@@ -54,16 +54,16 @@ export const ElevatorFloorNavigator: React.FC<ElevatorFloorNavigatorProps> = ({
               whileHover={{ x: 2 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => onSelectFloor(floorId)}
-              className={`group relative flex items-center justify-between rounded-lg px-2.5 py-2 text-left transition-all duration-150 border cursor-pointer ${
+              className={`group relative flex items-center justify-between rounded-lg px-2 py-1.5 text-left transition-all duration-150 border cursor-pointer ${
                 isSelected
-                  ? "border-indigo-200 bg-indigo-50/70 text-indigo-950 font-semibold shadow-2xs"
+                  ? "border-indigo-200 bg-indigo-50/80 text-indigo-950 font-semibold shadow-2xs"
                   : "border-transparent bg-white text-slate-700 hover:border-slate-200 hover:bg-slate-50"
               }`}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-w-0">
                 {/* Floor Badge Indicator */}
                 <span
-                  className={`flex h-6 w-6 items-center justify-center rounded text-xs font-mono font-bold transition-colors ${
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded text-xs font-mono font-bold transition-colors ${
                     isSelected
                       ? "bg-indigo-600 text-white"
                       : "bg-slate-100 text-slate-600 group-hover:bg-slate-200"
@@ -72,16 +72,16 @@ export const ElevatorFloorNavigator: React.FC<ElevatorFloorNavigatorProps> = ({
                   {meta.shortLabel}
                 </span>
 
-                <div className="flex flex-col">
-                  <span className="text-xs font-semibold leading-none">{meta.label}</span>
-                  <span className="text-[10px] text-slate-500 mt-0.5">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-semibold leading-tight truncate">{meta.label}</span>
+                  <span className="text-[10px] text-slate-500 leading-none mt-0.5 truncate">
                     {meta.rooms.length} zones
                   </span>
                 </div>
               </div>
 
               {/* Status and Active Incident Pill */}
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1 shrink-0 ml-1.5">
                 {emergencyCount > 0 && (
                   <span
                     title={`${emergencyCount} Immediate Priority SLA`}

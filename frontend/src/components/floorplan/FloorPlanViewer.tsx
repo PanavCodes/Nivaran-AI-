@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { Cluster, tierForScore } from "@/lib/types";
 import { findClosestRoom, getFloorMeta, RoomZone } from "@/lib/campus_floors";
@@ -110,19 +111,21 @@ export const FloorPlanViewer: React.FC<FloorPlanViewerProps> = ({
           className="h-full w-full object-contain pointer-events-none transition-opacity duration-300"
         />
 
-        {/* Room Zone Overlay Labels */}
+        {/* Room Zone Overlay Labels (Inspector Badge Mode) */}
         {showRoomLabels && (
-          <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0 pointer-events-none z-10">
             {floorMeta.rooms.map((r, idx) => (
               <div
                 key={idx}
-                className="absolute text-[8px] font-medium text-slate-500/90 -translate-x-1/2 -translate-y-1/2 select-none whitespace-nowrap"
+                className="absolute -translate-x-1/2 -translate-y-1/2 select-none whitespace-nowrap"
                 style={{
                   left: `${(r.x / 360) * 100}%`,
                   top: `${(r.y / 534) * 100}%`,
                 }}
               >
-                {r.name}
+                <span className="rounded bg-slate-900/80 px-1.5 py-0.5 text-[8px] font-semibold text-white shadow-xs border border-white/20 backdrop-blur-xs">
+                  {r.name}
+                </span>
               </div>
             ))}
           </div>

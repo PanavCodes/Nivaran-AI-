@@ -9,12 +9,17 @@ from loguru import logger
 from sqlalchemy import text
 
 from app.core.config import settings
+from app.db.init_db import init_db
 from app.routers import admin_routes, assistant_routes, auth_routes, cluster_routes, complaint_routes
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from app.db.init_db import init_db
+    if settings.is_jwt_secret_insecure:
+        logger.warning(
+            "SECURITY WARNING: Using default/weak JWT_SECRET! "
+            "Please configure a strong 64-char JWT_SECRET in .env for production."
+        )
 
     try:
         init_db()

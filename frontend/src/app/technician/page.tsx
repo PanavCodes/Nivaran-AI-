@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -14,7 +15,8 @@ import {
   X,
 } from "lucide-react";
 import { api, API_URL } from "@/lib/api";
-import { requireAuth, type SessionUser } from "@/lib/auth";
+import { type SessionUser } from "@/lib/auth";
+import { useRoleGuard } from "@/hooks/useRoleGuard";
 
 import { useWebSocket, type WsMessage } from "@/hooks/useWebSocket";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
+import { AccessDeniedBarrier } from "@/components/auth/AccessDeniedBarrier";
 import { Navbar } from "@/components/layout/Navbar";
 
 import { FloorPlanViewer } from "@/components/floorplan/FloorPlanViewer";
@@ -52,8 +55,8 @@ const FALLBACK_CLUSTERS: ClusterDetail[] = [
     impact_score: 5,
     complaint_count: 4,
     floor: "1",
-    x_coord: 175,
-    y_coord: 230,
+    x_coord: 40,
+    y_coord: 196,
     room_or_zone: "Room 102 (Server Room)",
     sla_deadline: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
     assigned_technician_id: null,
@@ -83,8 +86,8 @@ const FALLBACK_CLUSTERS: ClusterDetail[] = [
         severity: 4,
         image_url: null,
         floor: "1",
-        x_coord: 175,
-        y_coord: 230,
+        x_coord: 40,
+        y_coord: 196,
         room_or_zone: "Room 102 (Server Room)",
         cluster_id: "demo-c-1",
         created_at: new Date(Date.now() - 3600 * 1000).toISOString(),
@@ -94,7 +97,7 @@ const FALLBACK_CLUSTERS: ClusterDetail[] = [
   {
     id: "demo-c-2",
     title: "Loose High-Voltage Conduit Sparks",
-    ai_summary: "Exposed wire conduit near projector ceiling mount in Hardware Lab 1.",
+    ai_summary: "Exposed wire conduit near projector ceiling mount in Faculty Area 301.",
     category: "IT_SUPPORT",
     status: "IN_PROGRESS",
     priority_score: 76.0,
@@ -102,9 +105,9 @@ const FALLBACK_CLUSTERS: ClusterDetail[] = [
     impact_score: 4,
     complaint_count: 3,
     floor: "3",
-    x_coord: 210,
-    y_coord: 180,
-    room_or_zone: "Hardware Lab 1",
+    x_coord: 266,
+    y_coord: 45,
+    room_or_zone: "Faculty Area 301",
     sla_deadline: new Date(Date.now() + 5 * 3600 * 1000).toISOString(),
     assigned_technician_id: "tech-1",
     assigned_department: "IT_SUPPORT",
@@ -117,7 +120,7 @@ const FALLBACK_CLUSTERS: ClusterDetail[] = [
       required_tools: ["Digital Multimeter", "Wire Strippers", "Conduit Clamp"],
       recommended_parts: ["3-core Copper Wire 2.5sqmm", "Insulation Sleeve"],
       procedure: [
-        "De-energize circuit breaker for Lab 1 branch",
+        "De-energize circuit breaker for Faculty Area 301 branch",
         "Test for zero voltage using multimeter",
         "Re-seat and clamp loose conduit",
         "Verify grounding resistance",
@@ -127,15 +130,15 @@ const FALLBACK_CLUSTERS: ClusterDetail[] = [
       {
         id: "comp-2",
         user_id: "demo-user-2",
-        title: "Sparking wires near ceiling projector",
+        title: "Sparking wires near ceiling outlet",
         description: "Sparks observed during lecture; burning insulation smell.",
         category: "IT_SUPPORT",
         severity: 5,
         image_url: null,
         floor: "3",
-        x_coord: 210,
-        y_coord: 180,
-        room_or_zone: "Hardware Lab 1",
+        x_coord: 266,
+        y_coord: 45,
+        room_or_zone: "Faculty Area 301",
         cluster_id: "demo-c-2",
         created_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
       },
@@ -144,6 +147,18 @@ const FALLBACK_CLUSTERS: ClusterDetail[] = [
 ];
 
 export default function TechnicianConsole() {
+  const {
+    user: authUser,
+    isAuthorized,
+    isLoading: authLoading,
+    destinationPath,
+    destinationLabel,
+  } = useRoleGuard({
+    allowedRoles: ["TECHNICIAN"],
+    portalName: "Maintenance Terminal",
+    customMessage: "Student and Administrator accounts cannot access the Field Maintenance Terminal. Please use your designated portal.",
+  });
+
   const [user, setUser] = useState<SessionUser | null>(null);
   const [queue, setQueue] = useState<Cluster[]>([]);
   const [active, setActive] = useState<ClusterDetail | null>(null);
@@ -204,7 +219,8 @@ export default function TechnicianConsole() {
       await api.post(`/api/v1/clusters/${clusterId}/status`, { status: "IN_PROGRESS" });
       toast.success("Marked En-Route — status updated to In Progress");
       fetchQueue();
-    } catch {
+    } catch (err) {
+      console.debug("[Technician] handleEnRoute local fallback:", err);
       // Resilient local update if backend is offline
       setQueue((prev) =>
         prev.map((c) => (c.id === clusterId ? { ...c, status: "IN_PROGRESS" } : c))
@@ -226,7 +242,8 @@ export default function TechnicianConsole() {
       setDeferTarget(null);
       setDeferOther("");
       fetchQueue();
-    } catch {
+    } catch (err) {
+      console.debug("[Technician] handleDefer local fallback:", err);
       setQueue((prev) =>
         prev.map((c) => (c.id === deferTarget.id ? { ...c, status: "OPEN" } : c))
       );
@@ -236,11 +253,7 @@ export default function TechnicianConsole() {
     }
   }
 
-  /* ── Auth gate ── */
-  useEffect(() => {
-    const u = requireAuth();
-    if (u) setUser(u);
-  }, []);
+
 
   /* ── Fetch task queue ── */
   const fetchQueue = useCallback(async () => {
@@ -249,7 +262,8 @@ export default function TechnicianConsole() {
         "/api/v1/clusters/active?status=OPEN,ASSIGNED,IN_PROGRESS",
       );
       setQueue(data && data.length > 0 ? data : FALLBACK_CLUSTERS);
-    } catch {
+    } catch (err) {
+      console.warn("[Technician] fetchQueue fallback to local dataset:", err);
       setQueue(FALLBACK_CLUSTERS);
     } finally {
       setLoading(false);
@@ -259,7 +273,8 @@ export default function TechnicianConsole() {
   const fetchDetail = useCallback(async (id: string) => {
     try {
       setActive(await api.get<ClusterDetail>(`/api/v1/clusters/${id}`));
-    } catch {
+    } catch (err) {
+      console.warn("[Technician] fetchDetail fallback:", err);
       const match = FALLBACK_CLUSTERS.find((c) => c.id === id) || FALLBACK_CLUSTERS[0];
       setActive(match);
     }
@@ -337,7 +352,8 @@ export default function TechnicianConsole() {
       setProofFile(null);
       setProofPreview(null);
       setTechNotes("");
-    } catch {
+    } catch (err) {
+      console.warn("[Technician] Resolve API error, applying local resolution fallback:", err);
       toast.success("Incident resolved — Verified with photo proof ✓");
       setQueue((prev) => prev.filter((c) => c.id !== clusterId));
       setActive(null);
@@ -358,7 +374,39 @@ export default function TechnicianConsole() {
     });
   }, [queue, queueTab, user]);
 
-  if (!user) return null;
+  useEffect(() => {
+    if (authUser) setUser(authUser);
+  }, [authUser]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3 p-6 text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-amber-600 border-t-transparent" />
+            <p className="text-sm font-medium text-slate-600">Verifying technician authorization...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized || !authUser) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar />
+        <AccessDeniedBarrier
+          portalName="Maintenance Crew Terminal"
+          allowedRoles={["TECHNICIAN", "ADMIN"]}
+          userRole={authUser?.role}
+          homePath={destinationPath}
+          homeLabel={destinationLabel}
+          customMessage="Student accounts cannot access the Maintenance Crew Terminal. Please use the Student Portal to submit or track grievances."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
@@ -376,8 +424,8 @@ export default function TechnicianConsole() {
             </div>
             <div className="flex items-center gap-2 text-xs text-slate-600">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              <span className="font-semibold">{user.full_name}</span>
-              <span className="font-medium text-slate-500">({user.department || "Field Team"})</span>
+              <span className="font-semibold">{authUser.full_name}</span>
+              <span className="font-medium text-slate-500">({authUser.department || "Field Team"})</span>
             </div>
           </div>
         </div>
@@ -389,7 +437,7 @@ export default function TechnicianConsole() {
               { id: "ALL", label: `All Orders (${queue.length})` },
               { id: "EMERGENCY", label: `Emergency (${queue.filter((c) => c.priority_score >= 75).length})` },
               { id: "IN_PROGRESS", label: `En Route (${queue.filter((c) => c.status === "IN_PROGRESS").length})` },
-              { id: "MINE", label: `My Assigned (${queue.filter((c) => c.assigned_technician_id === user.id).length})` },
+              { id: "MINE", label: `My Assigned (${queue.filter((c) => c.assigned_technician_id === authUser.id).length})` },
             ].map((t) => (
               <button
                 key={t.id}
@@ -688,7 +736,7 @@ export default function TechnicianConsole() {
                         interactive={false}
                         activePin={{ x: active.x_coord, y: active.y_coord, room: active.room_or_zone }}
                         className="h-44 w-full"
-                        showRoomLabels={true}
+                        showRoomLabels={false}
                       />
                     </div>
                   </div>
@@ -711,12 +759,16 @@ export default function TechnicianConsole() {
                     return (
                       <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                         <p className="mb-2 text-xs font-bold text-slate-700">Original Incident Photo</p>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={imgUrl}
-                          alt="Before damage"
-                          className="w-full rounded-lg object-cover border border-slate-200 shadow-2xs"
-                        />
+                        <div className="relative h-48 w-full overflow-hidden rounded-lg border border-slate-200 shadow-2xs">
+                          <Image
+                            src={imgUrl}
+                            alt="Before damage"
+                            fill
+                            unoptimized
+                            className="object-cover"
+                            sizes="(max-width: 768px) 100vw, 400px"
+                          />
+                        </div>
                       </div>
                     );
                   })()}
@@ -789,8 +841,14 @@ export default function TechnicianConsole() {
                       >
                         {proofPreview ? (
                           <div className="relative p-2">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={proofPreview} alt="After proof" className="max-h-40 rounded-lg border border-slate-200" />
+                            <Image
+                              src={proofPreview}
+                              alt="After proof"
+                              width={320}
+                              height={160}
+                              unoptimized
+                              className="max-h-40 w-auto rounded-lg border border-slate-200 object-contain"
+                            />
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();

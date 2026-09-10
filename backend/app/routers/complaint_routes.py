@@ -14,6 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, get_db
+from app.core.rate_limit import RateLimiter
 from app.ai.gemini_intake import run_intake
 from app.db.models import Complaint, IssueCluster, User
 from app.schemas.complaint_schemas import (
@@ -28,8 +29,11 @@ from app.services.websocket_manager import manager
 
 router = APIRouter(prefix="/api/v1/complaints", tags=["Complaints"])
 
+complaint_limiter = RateLimiter(limit=5, window_seconds=60, key_prefix="complaints")
+
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
+
 
 
 @router.post("/analyze")
@@ -130,7 +134,7 @@ def my_complaints(
     return out
 
 
-@router.post("", response_model=ComplaintSubmissionResult)
+@router.post("", response_model=ComplaintSubmissionResult, dependencies=[Depends(complaint_limiter)])
 async def submit_complaint(
     title: str = Form(...),
     description: str = Form(...),

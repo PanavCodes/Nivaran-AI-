@@ -9,9 +9,12 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.deps import get_current_user_optional, get_db
+from app.core.rate_limit import RateLimiter
 from app.db.models import IssueCluster, User
 
 router = APIRouter(prefix="/api/v1/assistant", tags=["Assistant"])
+
+assistant_limiter = RateLimiter(limit=20, window_seconds=60, key_prefix="assistant")
 
 
 class AssistantChatRequest(BaseModel):
@@ -28,7 +31,7 @@ class AssistantChatResponse(BaseModel):
     chips: list[QuickChip] = []
 
 
-@router.post("/chat", response_model=AssistantChatResponse)
+@router.post("/chat", response_model=AssistantChatResponse, dependencies=[Depends(assistant_limiter)])
 def assistant_chat(
     body: AssistantChatRequest,
     user: User | None = Depends(get_current_user_optional),

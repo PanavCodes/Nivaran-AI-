@@ -109,6 +109,8 @@ export interface MyClusterSnapshot {
   complaint_count: number;
   sla_deadline: string | null;
   assigned_department: string;
+  floor: string;
+  room_or_zone: string | null;
 }
 
 export interface MyComplaint {

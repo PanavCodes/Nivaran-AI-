@@ -1,6 +1,7 @@
 "use client";
 
 import { api, clearToken, getToken, setToken } from "./api";
+export { getToken, setToken, clearToken };
 
 export type Role = "STUDENT" | "FACULTY" | "TECHNICIAN" | "ADMIN";
 
@@ -134,13 +135,33 @@ export function logout() {
   window.location.href = "/login";
 }
 
-export function requireAuth(): SessionUser | null {
+export function canAccessRoute(role: Role, pathname: string): boolean {
+  if (pathname.startsWith("/admin")) {
+    return role === "ADMIN" || role === "FACULTY";
+  }
+  if (pathname.startsWith("/technician")) {
+    return role === "TECHNICIAN" || role === "ADMIN";
+  }
+  if (pathname.startsWith("/report") || pathname.startsWith("/tracker")) {
+    return role === "STUDENT" || role === "FACULTY" || role === "ADMIN";
+  }
+  return true;
+}
+
+export function requireAuth(allowedRoles?: Role[]): SessionUser | null {
   const token = getToken();
   const user = getStoredUser();
   if (!token || !user) {
-    window.location.href = "/login";
+    if (typeof window !== "undefined") window.location.href = "/login";
+    return null;
+  }
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    if (typeof window !== "undefined") {
+      window.location.href = homeForRole(user.role);
+    }
     return null;
   }
   return user;
 }
+
 

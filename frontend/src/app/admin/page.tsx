@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { toast } from "sonner";
 import {
@@ -21,7 +22,9 @@ import {
   FileText,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { requireAuth, type SessionUser } from "@/lib/auth";
+import { AccessDeniedBarrier } from "@/components/auth/AccessDeniedBarrier";
+import { type SessionUser } from "@/lib/auth";
+import { useRoleGuard } from "@/hooks/useRoleGuard";
 
 import { useWebSocket, type WsMessage } from "@/hooks/useWebSocket";
 import { AnalyticsCharts } from "@/components/analytics/AnalyticsCharts";
@@ -34,7 +37,7 @@ import { ElevatorFloorNavigator } from "@/components/floorplan/ElevatorFloorNavi
 import { FacilityHealthGauge } from "@/components/floorplan/FacilityHealthGauge";
 import { IncidentMemoModal } from "@/components/admin/IncidentMemoModal";
 import { CampBotChat } from "@/components/chat/CampBotChat";
-import { getFloorMeta } from "@/lib/campus_floors";
+import { getFloorMeta, ORDERED_FLOOR_IDS } from "@/lib/campus_floors";
 
 import type {
   Analytics,
@@ -86,18 +89,29 @@ export default function AdminDashboard() {
   const [showMemo, setShowMemo] = useState(false);
 
   /* ── Auth gate ── */
+  const {
+    user: authUser,
+    isAuthorized,
+    isLoading: authLoading,
+    destinationPath,
+    destinationLabel,
+  } = useRoleGuard({
+    allowedRoles: ["ADMIN"],
+    portalName: "Administrator Mission Control",
+    customMessage: "Access Denied: Student and Maintenance Crew accounts cannot access Mission Control. Please return to your designated portal.",
+  });
+
   useEffect(() => {
-    const u = requireAuth();
-    if (u) setUser(u);
-  }, []);
+    if (authUser) setUser(authUser);
+  }, [authUser]);
 
   /* ── Data fetchers ── */
   const fetchClusters = useCallback(async () => {
     try {
       const data = await api.get<Cluster[]>("/api/v1/clusters/active");
       setClusters(data);
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.warn("[Admin] Failed to fetch active clusters:", err);
     } finally {
       setLoading(false);
     }
@@ -107,24 +121,24 @@ export default function AdminDashboard() {
     try {
       const data = await api.get<FloorSummaryItem[]>("/api/v1/clusters/floors/summary");
       setFloorSummaries(data);
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.warn("[Admin] Failed to fetch floor summaries:", err);
     }
   }, []);
 
   const fetchAnalytics = useCallback(async () => {
     try {
       setAnalytics(await api.get<Analytics>("/api/v1/admin/analytics"));
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.warn("[Admin] Failed to fetch analytics:", err);
     }
   }, []);
 
   const fetchTechnicians = useCallback(async () => {
     try {
       setTechnicians(await api.get<Technician[]>("/api/v1/clusters/technicians"));
-    } catch {
-      /* silent */
+    } catch (err) {
+      console.warn("[Admin] Failed to fetch technicians:", err);
     }
   }, []);
 
@@ -135,7 +149,8 @@ export default function AdminDashboard() {
       if (detail.floor) {
         setActiveFloor(detail.floor.toUpperCase());
       }
-    } catch {
+    } catch (err) {
+      console.error("[Admin] Failed to load cluster details:", err);
       toast.error("Failed to load cluster details");
     }
   }, []);
@@ -261,6 +276,216 @@ export default function AdminDashboard() {
     (c) => c.priority_score >= 75 && c.status !== "RESOLVED" && c.status !== "CLOSED"
   );
 
+  const renderDetailContent = (sel: ClusterDetail) => (
+    <div className="flex flex-1 flex-col overflow-y-auto">
+      {/* Header */}
+      <div className="sticky top-0 z-10 flex items-start justify-between border-b border-slate-200 bg-white p-5 shadow-2xs">
+        <div className="flex-1 pr-3">
+          <div className="flex items-center gap-2">
+            <Badge
+              variant={
+                tierVariant[
+                  tierForScore(sel.priority_score) as keyof typeof tierVariant
+                ] ?? "default"
+              }
+            >
+              {tierForScore(sel.priority_score)}
+            </Badge>
+            <Badge variant="outline">{statusLabels[sel.status] ?? sel.status}</Badge>
+          </div>
+          <h2 className="mt-2 text-base font-bold text-slate-900 leading-snug">{sel.title}</h2>
+          <div className="mt-1.5 flex items-center gap-2 text-xs text-slate-500 font-medium">
+            <span className="flex items-center gap-1 font-semibold text-indigo-700">
+              <MapPin size={12} /> Floor {sel.floor}
+              {sel.room_or_zone ? ` · ${sel.room_or_zone}` : ""}
+            </span>
+            <span>·</span>
+            <span>{CATEGORY_LABELS[sel.category] ?? sel.category}</span>
+          </div>
+        </div>
+        <button
+          onClick={() => setSelected(null)}
+          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      <div className="flex-1 space-y-4 p-5">
+        {/* AI Summary */}
+        {sel.ai_summary && (
+          <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
+            <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-indigo-800">
+              <Activity size={13} className="text-indigo-600" /> Executive AI Summary
+            </div>
+            <p className="text-xs leading-relaxed text-slate-700">{sel.ai_summary}</p>
+          </div>
+        )}
+
+        {/* Priority Radial Gauge */}
+        <div className="flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <PriorityGauge score={sel.priority_score} />
+        </div>
+        <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-1">
+          <span>Severity: {sel.severity_score}/5</span>
+          <span>Impact: {sel.impact_score}/5</span>
+          <span className="font-semibold text-slate-800">{sel.complaint_count} reports merged</span>
+        </div>
+
+        {/* SLA Countdown */}
+        {(() => {
+          const sla = slaRemaining(sel.sla_deadline);
+          if (!sla) return null;
+          return (
+            <div
+              className={`rounded-xl border p-4 ${
+                sla.urgent
+                  ? "border-red-200 bg-red-50 text-red-800"
+                  : "border-slate-200 bg-slate-50 text-slate-800"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-xs font-bold">
+                  <Clock size={13} /> Target SLA Window
+                </span>
+                <span className="font-semibold text-xs">{sla.text}</span>
+              </div>
+              {sel.sla_deadline && (
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Deadline: {new Date(sel.sla_deadline).toLocaleString()}
+                </p>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Assign Technician */}
+        {sel.status !== "RESOLVED" && sel.status !== "CLOSED" && (
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="mb-2 flex items-center gap-1.5 text-xs font-bold text-slate-800">
+              <UserCheck size={14} className="text-indigo-600" /> Assign Field Technician
+            </div>
+            <div className="flex gap-2">
+              <select
+                id="tech-select"
+                className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-indigo-500 shadow-2xs"
+              >
+                {technicians.length === 0 && (
+                  <option value="">No technicians available</option>
+                )}
+                {technicians.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.full_name} {t.department ? `(${t.department})` : ""}
+                  </option>
+                ))}
+              </select>
+              <Button
+                className="px-3.5 py-1 text-xs"
+                disabled={assigning || technicians.length === 0}
+                onClick={() => {
+                  const selEl = document.getElementById("tech-select") as HTMLSelectElement;
+                  if (selEl?.value) handleAssign(sel.id, selEl.value);
+                }}
+              >
+                {assigning ? "…" : "Assign"}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Incident Memo Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setShowMemo(true)}
+          className="w-full flex items-center justify-center gap-1.5 text-xs h-9 font-semibold"
+        >
+          <FileText size={14} className="text-indigo-600" /> Generate Official Incident Memo
+        </Button>
+
+        {/* Child Reports */}
+        <div>
+          <h3 className="mb-2.5 flex items-center gap-1.5 text-xs font-bold text-slate-800">
+            <Layers size={13} className="text-indigo-600" /> Merged Submissions ({sel.complaints?.length ?? 0})
+          </h3>
+          <div className="space-y-2.5">
+            {sel.complaints?.map((c: Complaint) => (
+              <div
+                key={c.id}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-xs font-bold text-slate-900">{c.title}</p>
+                    <p className="mt-0.5 line-clamp-2 text-xs text-slate-600">
+                      {c.description}
+                    </p>
+                    <div className="mt-1.5 flex items-center gap-1 text-[11px] text-indigo-700 font-semibold">
+                      <MapPin size={10} /> Floor {c.floor}
+                      {c.room_or_zone ? ` · ${c.room_or_zone}` : ""}
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-[10px]">
+                    Sev {c.severity}/5
+                  </Badge>
+                </div>
+                {c.image_url && (
+                  <div className="relative mt-2.5 h-24 w-40 overflow-hidden rounded-lg border border-slate-200">
+                    <Image
+                      src={
+                        c.image_url.startsWith("http")
+                          ? c.image_url
+                          : `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}${c.image_url}`
+                      }
+                      alt="Report attachment"
+                      fill
+                      unoptimized
+                      className="object-cover"
+                      sizes="160px"
+                    />
+                  </div>
+                )}
+                <p className="mt-2 text-[10px] text-slate-400">
+                  {new Date(c.created_at).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3 p-6 text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+            <p className="text-sm font-medium text-slate-600">Verifying administrator authorization...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized || !authUser) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar />
+        <AccessDeniedBarrier
+          portalName="Administrator Mission Control"
+          allowedRoles={["ADMIN", "FACULTY"]}
+          userRole={authUser?.role}
+          homePath={destinationPath}
+          homeLabel={destinationLabel}
+          customMessage="Student and Technician accounts cannot access Mission Control. Please return to your designated portal."
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-900">
       <Navbar />
@@ -316,9 +541,9 @@ export default function AdminDashboard() {
       </div>
 
       {/* ── Main Content: Elevator Shaft + Floor Plan Canvas + Detail Panel ── */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* ── 1. Elevator Vertical Floor Selector (Left Rail) ── */}
-        <div className="w-[115px] shrink-0 border-r border-slate-200 bg-white p-2">
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* ── 1. Elevator Vertical Floor Selector (Left Rail - Desktop) ── */}
+        <div className="hidden md:block w-[190px] shrink-0 border-r border-slate-200 bg-white p-2">
           <ElevatorFloorNavigator
             selectedFloor={activeFloor}
             onSelectFloor={(f) => setActiveFloor(f)}
@@ -327,7 +552,36 @@ export default function AdminDashboard() {
         </div>
 
         {/* ── 2. Center: Tactical Floor Plan Blueprint Workspace ── */}
-        <div className="relative flex flex-1 flex-col overflow-hidden bg-slate-50">
+        <div className="relative flex flex-1 flex-col overflow-hidden bg-slate-50 min-w-0">
+          {/* Floor Selector Bar (Mobile / Tablet only) */}
+          <div className="flex md:hidden items-center gap-1.5 overflow-x-auto border-b border-slate-200 bg-white px-3 py-1.5 text-xs shrink-0">
+            <span className="text-[10px] uppercase font-bold text-slate-500 shrink-0 flex items-center gap-1">
+              <Building size={12} /> Level:
+            </span>
+            {ORDERED_FLOOR_IDS.map((fId) => {
+              const summary = floorSummaries.find((s) => s.floor.toUpperCase() === fId.toUpperCase());
+              const count = summary?.open_count ?? 0;
+              const isSelected = activeFloor.toUpperCase() === fId.toUpperCase();
+              return (
+                <button
+                  key={fId}
+                  onClick={() => setActiveFloor(fId)}
+                  className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-bold transition shrink-0 cursor-pointer ${
+                    isSelected
+                      ? "bg-indigo-600 text-white shadow-xs"
+                      : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  }`}
+                >
+                  <span>F{fId}</span>
+                  {count > 0 && (
+                    <span className={`rounded-full px-1 text-[9px] ${isSelected ? "bg-white text-indigo-700" : "bg-indigo-100 text-indigo-700"}`}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
           {/* Floor Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 py-2.5 text-xs">
             <div className="flex items-center gap-2">
@@ -520,7 +774,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* ── 3. Right: Cluster Detail & Action Flyout ── */}
-        <aside className="flex w-[400px] shrink-0 flex-col overflow-hidden border-l border-slate-200 bg-white">
+        <aside className="hidden lg:flex w-[400px] shrink-0 flex-col overflow-hidden border-l border-slate-200 bg-white">
           <AnimatePresence mode="wait">
             {selected ? (
               <motion.div
@@ -528,181 +782,9 @@ export default function AdminDashboard() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="flex flex-1 flex-col overflow-y-auto"
+                className="flex flex-1 flex-col overflow-hidden"
               >
-                {/* Header */}
-                <div className="sticky top-0 z-10 flex items-start justify-between border-b border-slate-200 bg-white p-5 shadow-2xs">
-                  <div className="flex-1 pr-3">
-                    <div className="flex items-center gap-2">
-                      <Badge
-                        variant={
-                          tierVariant[
-                            tierForScore(selected.priority_score) as keyof typeof tierVariant
-                          ] ?? "default"
-                        }
-                      >
-                        {tierForScore(selected.priority_score)}
-                      </Badge>
-                      <Badge variant="outline">{statusLabels[selected.status] ?? selected.status}</Badge>
-                    </div>
-                    <h2 className="mt-2 text-base font-bold text-slate-900 leading-snug">{selected.title}</h2>
-                    <div className="mt-1.5 flex items-center gap-2 text-xs text-slate-500 font-medium">
-                      <span className="flex items-center gap-1 font-semibold text-indigo-700">
-                        <MapPin size={12} /> Floor {selected.floor}
-                        {selected.room_or_zone ? ` · ${selected.room_or_zone}` : ""}
-                      </span>
-                      <span>·</span>
-                      <span>{CATEGORY_LABELS[selected.category] ?? selected.category}</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setSelected(null)}
-                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-
-                <div className="flex-1 space-y-4 p-5">
-                  {/* AI Summary */}
-                  {selected.ai_summary && (
-                    <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
-                      <div className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-indigo-800">
-                        <Activity size={13} className="text-indigo-600" /> Executive AI Summary
-                      </div>
-                      <p className="text-xs leading-relaxed text-slate-700">{selected.ai_summary}</p>
-                    </div>
-                  )}
-
-                  {/* Priority Radial Gauge */}
-                  <div className="flex items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <PriorityGauge score={selected.priority_score} />
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-slate-500 font-medium px-1">
-                    <span>Severity: {selected.severity_score}/5</span>
-                    <span>Impact: {selected.impact_score}/5</span>
-                    <span className="font-semibold text-slate-800">{selected.complaint_count} reports merged</span>
-                  </div>
-
-                  {/* SLA Countdown */}
-                  {(() => {
-                    const sla = slaRemaining(selected.sla_deadline);
-                    if (!sla) return null;
-                    return (
-                      <div
-                        className={`rounded-xl border p-4 ${
-                          sla.urgent
-                            ? "border-red-200 bg-red-50 text-red-800"
-                            : "border-slate-200 bg-slate-50 text-slate-800"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="flex items-center gap-1.5 text-xs font-bold">
-                            <Clock size={13} /> Target SLA Window
-                          </span>
-                          <span className="font-semibold text-xs">
-                            {sla.text}
-                          </span>
-                        </div>
-                        {selected.sla_deadline && (
-                          <p className="mt-1 text-[11px] text-slate-500">
-                            Deadline: {new Date(selected.sla_deadline).toLocaleString()}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })()}
-
-                  {/* Assign Technician */}
-                  {selected.status !== "RESOLVED" && selected.status !== "CLOSED" && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="mb-2 flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                        <UserCheck size={14} className="text-indigo-600" /> Assign Field Technician
-                      </div>
-                      <div className="flex gap-2">
-                        <select
-                          id="tech-select"
-                          className="flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-900 outline-none focus:border-indigo-500 shadow-2xs"
-                        >
-                          {technicians.length === 0 && (
-                            <option value="">No technicians available</option>
-                          )}
-                          {technicians.map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.full_name} {t.department ? `(${t.department})` : ""}
-                            </option>
-                          ))}
-                        </select>
-                        <Button
-                          className="px-3.5 py-1 text-xs"
-                          disabled={assigning || technicians.length === 0}
-                          onClick={() => {
-                            const sel = document.getElementById("tech-select") as HTMLSelectElement;
-                            if (sel?.value) handleAssign(selected.id, sel.value);
-                          }}
-                        >
-                          {assigning ? "…" : "Assign"}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Incident Memo Button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowMemo(true)}
-                    className="w-full flex items-center justify-center gap-1.5 text-xs h-9 font-semibold"
-                  >
-                    <FileText size={14} className="text-indigo-600" /> Generate Official Incident Memo
-                  </Button>
-
-                  {/* Child Reports */}
-                  <div>
-                    <h3 className="mb-2.5 flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                      <Layers size={13} className="text-indigo-600" /> Merged Submissions ({selected.complaints?.length ?? 0})
-                    </h3>
-                    <div className="space-y-2.5">
-                      {selected.complaints?.map((c: Complaint) => (
-                        <div
-                          key={c.id}
-                          className="rounded-xl border border-slate-200 bg-slate-50 p-3"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-xs font-bold text-slate-900">{c.title}</p>
-                              <p className="mt-0.5 line-clamp-2 text-xs text-slate-600">
-                                {c.description}
-                              </p>
-                              <div className="mt-1.5 flex items-center gap-1 text-[11px] text-indigo-700 font-semibold">
-                                <MapPin size={10} /> Floor {c.floor}
-                                {c.room_or_zone ? ` · ${c.room_or_zone}` : ""}
-                              </div>
-                            </div>
-                            <Badge variant="outline" className="text-[10px]">
-                              Sev {c.severity}/5
-                            </Badge>
-                          </div>
-                          {c.image_url && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={
-                                c.image_url.startsWith("http")
-                                  ? c.image_url
-                                  : `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}${c.image_url}`
-                              }
-                              alt="Report attachment"
-                              className="mt-2.5 max-h-24 rounded-lg object-cover border border-slate-200"
-                            />
-                          )}
-                          <p className="mt-2 text-[10px] text-slate-400">
-                            {new Date(c.created_at).toLocaleString()}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                {renderDetailContent(selected)}
               </motion.div>
             ) : (
               <motion.div
@@ -726,6 +808,28 @@ export default function AdminDashboard() {
             )}
           </AnimatePresence>
         </aside>
+
+        {/* Mobile / Tablet Slide-over Drawer */}
+        <AnimatePresence>
+          {selected && (
+            <div
+              className="lg:hidden fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-xs"
+              onClick={() => setSelected(null)}
+            >
+              <motion.div
+                key={`mobile-${selected.id}`}
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 250 }}
+                onClick={(e) => e.stopPropagation()}
+                className="flex w-full max-w-md flex-col bg-white shadow-2xl h-full overflow-hidden"
+              >
+                {renderDetailContent(selected)}
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Incident Memo Modal */}
