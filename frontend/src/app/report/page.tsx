@@ -84,6 +84,36 @@ export default function ReportPortal() {
     toast.success(`Door QR Scanned: ${room} on Floor ${f}`);
   };
 
+  const [simulatedAudioNote, setSimulatedAudioNote] = useState<string | null>(null);
+
+  const handleSimulateWhatsAppAudio = (type: "cse_leak" | "sparks") => {
+    if (type === "cse_leak") {
+      setFloor("2");
+      const fMeta = getFloorMeta("2");
+      const room = fMeta.rooms.find((r) => r.name.toLowerCase().includes("cse") || r.name.includes("201")) || fMeta.rooms[0];
+      setRoomOrZone(room ? room.name : "CSE Department Corridor");
+      setCoords({ x: room ? room.x : 210, y: room ? room.y : 180 });
+      setTitle("Water pipe leaking outside CSE Lab foyer");
+      setDescription("WhatsApp student voice note: 'Anna, Floor 2 CSE Lab bayata water tap leak avtundi, floor antha water undi'. Continuous dripping with slip hazard near lab entrance.");
+      setCategory("MAINTENANCE");
+      setSeverity(3);
+      setSimulatedAudioNote("✓ WhatsApp Tanglish Audio Parsed → Auto-pinned to Floor 2 (CSE Lab Foyer), Category: Maintenance");
+      toast.success("Parsed WhatsApp Tanglish audio: Floor 2 CSE Lab pinned!");
+    } else {
+      setFloor("3");
+      const fMeta = getFloorMeta("3");
+      const room = fMeta.rooms.find((r) => r.name.toLowerCase().includes("hardware") || r.name.includes("301")) || fMeta.rooms[0];
+      setRoomOrZone(room ? room.name : "Hardware Lab 1");
+      setCoords({ x: room ? room.x : 210, y: room ? room.y : 180 });
+      setTitle("Switchboard sparks and overheating in Hardware Lab");
+      setDescription("WhatsApp student voice note: '3వ అంతస్తు హార్డ్‌వేర్ ల్యాబ్‌లో స్విచ్‌బోర్డు నుంచి స్పార్క్స్ వస్తున్నాయి, వైర్లు వేడెక్కాయి'. Immediate electrical fire risk near student workbenches.");
+      setCategory("IT_SUPPORT");
+      setSeverity(5);
+      setSimulatedAudioNote("✓ Telugu Audio Recognized → Auto-pinned to Floor 3 (Hardware Lab 1), Emergency Level: 5/5");
+      toast.success("Parsed Telugu audio grievance: Floor 3 Hardware Lab pinned!");
+    }
+  };
+
   const handleVoiceTranscript = (text: string) => {
     setDescription((prev) => (prev ? prev + " " + text : text));
     if (!title) {
@@ -298,6 +328,81 @@ export default function ReportPortal() {
                       Scan door QR
                     </Button>
                   </div>
+                </div>
+
+                {/* ── WhatsApp Voice & Citizen Grievance Simulation (Telugu / Tanglish) ── */}
+                <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/40 p-3.5 sm:p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-md bg-emerald-600 text-white font-bold text-[11px]">
+                        WA
+                      </span>
+                      <div>
+                        <span className="text-xs font-bold text-slate-900">
+                          WhatsApp Audio & Prajavani Grievance Parser
+                        </span>
+                        <span className="text-[10px] text-emerald-800 font-medium block">
+                          Zero-app student voice notes (Telugu / Tanglish speech extraction)
+                        </span>
+                      </div>
+                    </div>
+                    <span className="rounded bg-emerald-100 border border-emerald-200 px-2 py-0.5 text-[10px] font-semibold text-emerald-800 shrink-0">
+                      Bilingual Spatial Parser
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-600 mb-2.5">
+                    Students send voice notes on campus WhatsApp groups. Click a sample audio grievance to see Nivaran extract the floor, room, and blueprint pin:
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSimulateWhatsAppAudio("cse_leak")}
+                      className="flex flex-col items-start rounded-lg border border-emerald-300/80 bg-white p-2.5 text-left hover:border-emerald-500 hover:shadow-xs transition cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between w-full text-[11px] font-bold text-emerald-800 mb-1">
+                        <span>Sample 1: CSE Lab Water Leak</span>
+                        <span className="text-[10px] bg-emerald-50 px-1 rounded border border-emerald-200">Tanglish 🔊</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 italic">
+                        &ldquo;Anna, Floor 2 CSE Lab bayata water tap leak avtundi, floor antha water undi&rdquo;
+                      </p>
+                      <span className="mt-1 text-[10px] font-semibold text-indigo-700">
+                        → Auto-pins: Floor 2 · CSE Lab Foyer · Level 3
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleSimulateWhatsAppAudio("sparks")}
+                      className="flex flex-col items-start rounded-lg border border-red-200 bg-white p-2.5 text-left hover:border-red-400 hover:shadow-xs transition cursor-pointer"
+                    >
+                      <div className="flex items-center justify-between w-full text-[11px] font-bold text-red-800 mb-1">
+                        <span>Sample 2: Hardware Lab Sparks</span>
+                        <span className="text-[10px] bg-red-50 px-1 rounded border border-red-200">Telugu 🔊</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 italic">
+                        &ldquo;3వ అంతస్తు హార్డ్‌వేర్ ల్యాబ్‌లో స్విచ్‌బోర్డు నుంచి స్పార్క్స్ వస్తున్నాయి, వైర్లు వేడెక్కాయి&rdquo;
+                      </p>
+                      <span className="mt-1 text-[10px] font-semibold text-red-700">
+                        → Auto-pins: Floor 3 · Hardware Lab · Level 5 Emergency
+                      </span>
+                    </button>
+                  </div>
+
+                  {simulatedAudioNote && (
+                    <div className="mt-2.5 rounded-lg border border-emerald-300 bg-white p-2 text-xs text-emerald-950 font-medium flex items-center justify-between">
+                      <span>{simulatedAudioNote}</span>
+                      <button
+                        type="button"
+                        onClick={() => setSimulatedAudioNote(null)}
+                        className="text-slate-400 hover:text-slate-600 text-[10px] font-bold px-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Drag-and-drop zone */}
