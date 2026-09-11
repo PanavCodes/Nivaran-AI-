@@ -29,10 +29,11 @@ def get_engine():
         # Normalise to the installed psycopg3 driver: SQLAlchemy otherwise
         # defaults to the psycopg2 dialect, which is not in requirements.
         # Supabase/session-pooler URLs ("postgresql+psycopg2://", "postgres://")
-        # all route to "+psycopg" here.
         if url.startswith("postgres://"):
             url = "postgresql://" + url[len("postgres://"):]
-        if url.startswith("postgresql://"):
+        if url.startswith("postgresql+psycopg2://"):
+            url = "postgresql+psycopg://" + url[len("postgresql+psycopg2://"):]
+        elif url.startswith("postgresql://"):
             url = "postgresql+psycopg://" + url[len("postgresql://"):]
         _engine = create_engine(
             url,
@@ -40,6 +41,7 @@ def get_engine():
             pool_size=5,
             max_overflow=5,
             future=True,
+            connect_args={"connect_timeout": 3},
         )
         event.listen(_engine, "connect", _register_pgvector)
     return _engine

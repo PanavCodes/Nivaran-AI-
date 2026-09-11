@@ -113,11 +113,8 @@ export default function PublicTransparencyPage() {
   const [selectedFloor, setSelectedFloor] = useState<string>("ALL");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [data, setData] = useState<TransparencyResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
   React.useEffect(() => {
     async function fetchResolved() {
-      setLoading(true);
       try {
         const queryParams = new URLSearchParams();
         if (selectedFloor !== "ALL") queryParams.set("floor", selectedFloor);
@@ -129,8 +126,6 @@ export default function PublicTransparencyPage() {
         }
       } catch (err) {
         console.warn("[Transparency] Live API fetch fallback to static dataset:", err);
-      } finally {
-        setLoading(false);
       }
     }
     fetchResolved();

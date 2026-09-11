@@ -2,8 +2,11 @@
 Provides real-time conversational Q&A over campus facilities, active clusters, and maintenance status.
 """
 import re
-from fastapi import APIRouter, Depends
+import urllib.parse
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel
+import httpx
+from loguru import logger
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
 
@@ -137,3 +140,25 @@ Provide a concise, helpful, and friendly answer (2-4 sentences max). If relevant
             QuickChip(label="Scan Door QR", query="Tell me about door QR codes"),
         ]
     )
+
+
+@router.get("/tts")
+async def text_to_speech(text: str, lang: str = "te"):
+    """Server-side TTS proxy delivering authentic, high-quality Telugu/indic speech audio."""
+    if not text or not text.strip():
+        raise HTTPException(status_code=400, detail="Text required")
+    # Take first 200 characters for natural concise sentence audio snippet
+    clean_text = text.strip()[:200]
+    encoded = urllib.parse.quote(clean_text)
+    url = f"https://translate.google.com/translate_tts?ie=UTF-8&tl={lang}&client=tw-ob&q={encoded}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            resp = await client.get(url, headers=headers)
+            if resp.status_code == 200:
+                return Response(content=resp.content, media_type="audio/mpeg")
+    except Exception as exc:
+        logger.warning(f"TTS fetch failed: {exc}")
+    raise HTTPException(status_code=502, detail="TTS service unavailable")

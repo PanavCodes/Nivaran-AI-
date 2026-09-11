@@ -29,18 +29,22 @@ def _tick() -> None:
         ).scalars().all()
 
         for cluster in open_clusters:
-            # Save the old deadline before recomputing, so breach detection uses
-            # the original SLA window — not the freshly recalculated one.
             old_deadline = cluster.sla_deadline
+            if old_deadline is not None and old_deadline.tzinfo is None:
+                old_deadline = old_deadline.replace(tzinfo=timezone.utc)
 
-            score, tier, deadline = compute_priority(
+            score, tier, calculated_deadline = compute_priority(
                 cluster.severity_score,
                 cluster.complaint_count,
                 cluster.impact_score,
                 cluster.first_reported_at,
             )
             cluster.priority_score = score
-            cluster.sla_deadline = deadline
+            # Only update deadline if none exists or if upgraded to a tighter deadline
+            if cluster.sla_deadline is None:
+                cluster.sla_deadline = calculated_deadline
+            elif calculated_deadline < (old_deadline or calculated_deadline):
+                cluster.sla_deadline = calculated_deadline
 
             breached = old_deadline is not None and now > old_deadline
             if breached:
@@ -52,8 +56,12 @@ def _tick() -> None:
                 )
                 next_level = (last.escalation_level + 1) if last else 1
                 # Re-notify at most every 60 minutes per level
-                if last and last.next_check_at.replace(tzinfo=timezone.utc) > now:
-                    continue
+                if last:
+                    last_next = last.next_check_at
+                    if last_next.tzinfo is None:
+                        last_next = last_next.replace(tzinfo=timezone.utc)
+                    if last_next > now:
+                        continue
                 db.add(
                     SlaEscalation(
                         cluster_id=cluster.id,
@@ -75,7 +83,7 @@ def _tick() -> None:
                     {
                         "cluster_id": str(cluster.id),
                         "sla_tier": tier,
-                        "deadline": deadline.isoformat(),
+                        "deadline": cluster.sla_deadline.isoformat() if cluster.sla_deadline else calculated_deadline.isoformat(),
                         "escalation_level": next_level,
                     }
                 )

@@ -20,6 +20,7 @@ import {
 import { api } from "@/lib/api";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
 import { AccessDeniedBarrier } from "@/components/auth/AccessDeniedBarrier";
+import { playTeluguSpeech, stopTeluguAudio } from "@/lib/teluguAudio";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -87,8 +88,16 @@ export default function ReportPortal() {
   };
 
   const [simulatedAudioNote, setSimulatedAudioNote] = useState<string | null>(null);
+  const [playingAudioType, setPlayingAudioType] = useState<string | null>(null);
 
   const handleSimulateWhatsAppAudio = (type: "cse_leak" | "sparks") => {
+    if (playingAudioType === type) {
+      stopTeluguAudio();
+      setPlayingAudioType(null);
+      return;
+    }
+    stopTeluguAudio();
+
     if (type === "cse_leak") {
       setFloor("2");
       const fMeta = getFloorMeta("2");
@@ -100,7 +109,12 @@ export default function ReportPortal() {
       setCategory("MAINTENANCE");
       setSeverity(3);
       setSimulatedAudioNote("✓ WhatsApp Tanglish Audio Parsed → Auto-pinned to Floor 2 (CSE Lab Foyer), Category: Maintenance");
-      toast.success("Parsed WhatsApp Tanglish audio: Floor 2 CSE Lab pinned!");
+      toast.success("ప్లే అవుతోంది: CSE Lab Tanglish Audio (Playing)...");
+      setPlayingAudioType("cse_leak");
+      playTeluguSpeech("cse_leak", {
+        onEnd: () => setPlayingAudioType(null),
+        onError: () => setPlayingAudioType(null),
+      });
     } else {
       setFloor("3");
       const fMeta = getFloorMeta("3");
@@ -112,7 +126,12 @@ export default function ReportPortal() {
       setCategory("IT_SUPPORT");
       setSeverity(5);
       setSimulatedAudioNote("✓ Telugu Audio Recognized → Auto-pinned to Floor 3 (Hardware Lab 1), Emergency Level: 5/5");
-      toast.success("Parsed Telugu audio grievance: Floor 3 Hardware Lab pinned!");
+      toast.success("తెలుగు ఆడియో ప్లే అవుతోంది (Playing Telugu Voice Note)...");
+      setPlayingAudioType("sparks");
+      playTeluguSpeech("sparks", {
+        onEnd: () => setPlayingAudioType(null),
+        onError: () => setPlayingAudioType(null),
+      });
     }
   };
 
@@ -403,7 +422,9 @@ export default function ReportPortal() {
                     >
                       <div className="flex items-center justify-between w-full text-[11px] font-bold text-emerald-800 mb-1">
                         <span>Sample 1: CSE Lab Water Leak</span>
-                        <span className="text-[10px] bg-emerald-50 px-1 rounded border border-emerald-200">Tanglish 🔊</span>
+                        <span className="text-[10px] bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 font-bold">
+                          {playingAudioType === "cse_leak" ? "ఆపండి ⏹" : "Tanglish 🔊"}
+                        </span>
                       </div>
                       <p className="text-[11px] text-slate-600 italic">
                         &ldquo;Anna, Floor 2 CSE Lab bayata water tap leak avtundi, floor antha water undi&rdquo;
@@ -420,7 +441,9 @@ export default function ReportPortal() {
                     >
                       <div className="flex items-center justify-between w-full text-[11px] font-bold text-red-800 mb-1">
                         <span>Sample 2: Hardware Lab Sparks</span>
-                        <span className="text-[10px] bg-red-50 px-1 rounded border border-red-200">Telugu 🔊</span>
+                        <span className="text-[10px] bg-red-50 px-1.5 py-0.5 rounded border border-red-200 font-bold">
+                          {playingAudioType === "sparks" ? "ఆపండి ⏹" : "Telugu 🔊"}
+                        </span>
                       </div>
                       <p className="text-[11px] text-slate-600 italic">
                         &ldquo;3వ అంతస్తు హార్డ్‌వేర్ ల్యాబ్‌లో స్విచ్‌బోర్డు నుంచి స్పార్క్స్ వస్తున్నాయి, వైర్లు వేడెక్కాయి&rdquo;

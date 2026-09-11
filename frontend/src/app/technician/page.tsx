@@ -17,6 +17,7 @@ import {
 import { api, API_URL } from "@/lib/api";
 import { type SessionUser } from "@/lib/auth";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
+import { playTeluguSpeech, stopTeluguAudio } from "@/lib/teluguAudio";
 
 import { useWebSocket, type WsMessage } from "@/hooks/useWebSocket";
 import { Badge } from "@/components/ui/badge";
@@ -190,27 +191,19 @@ export default function TechnicianConsole() {
   };
 
   const handlePlayTelugu = (cluster: { id: string; title: string; floor: string; room_or_zone?: string | null; category: string; priority_score: number }) => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      toast.info("Speech synthesis not supported in this browser");
-      return;
-    }
     if (playingTeluguId === cluster.id) {
-      window.speechSynthesis.cancel();
+      stopTeluguAudio();
       setPlayingTeluguId(null);
       return;
     }
-    window.speechSynthesis.cancel();
+    stopTeluguAudio();
     const text = getTeluguText(cluster);
-    const utterance = new SpeechSynthesisUtterance(text);
-    const voices = window.speechSynthesis.getVoices();
-    const teVoice = voices.find((v) => v.lang.includes("te")) || voices.find((v) => v.lang.includes("IN"));
-    if (teVoice) utterance.voice = teVoice;
-    utterance.rate = 0.92;
-    utterance.onend = () => setPlayingTeluguId(null);
-    utterance.onerror = () => setPlayingTeluguId(null);
     setPlayingTeluguId(cluster.id);
-    window.speechSynthesis.speak(utterance);
-    toast.success("తెలుగు ఆడియో ప్లే అవుతోంది (Playing Telugu Audio)...", { duration: 2500 });
+    toast.success("తెలుగు ఆడియో ప్లే అవుతోంది (Playing Telugu Audio)...", { duration: 3000 });
+    playTeluguSpeech(text, {
+      onEnd: () => setPlayingTeluguId(null),
+      onError: () => setPlayingTeluguId(null),
+    });
   };
 
   /* ── Field status actions ── */

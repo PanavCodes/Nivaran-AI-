@@ -32,7 +32,6 @@ export function useWebSocket(
     let ws: WebSocket | null = null;
     let pingTimer: ReturnType<typeof setInterval> | null = null;
     let consecutiveFailures = 0;
-    let currentPollInterval = pollIntervalMs;
 
     const stopPolling = () => {
       if (pollTimer) {
@@ -57,10 +56,9 @@ export function useWebSocket(
 
           const data = await api.get<unknown>(pollPath);
           consecutiveFailures = 0;
-          currentPollInterval = pollIntervalMs;
           eventRef.current({ event: "poll.refresh", data: data as Record<string, unknown> });
           scheduleNextPoll(pollIntervalMs);
-        } catch (err) {
+        } catch {
           consecutiveFailures++;
           // Exponential backoff up to 60s when backend is unreachable
           const nextInterval = Math.min(pollIntervalMs * Math.pow(1.5, consecutiveFailures), 60000);

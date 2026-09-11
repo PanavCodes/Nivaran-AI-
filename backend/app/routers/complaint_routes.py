@@ -31,8 +31,8 @@ router = APIRouter(prefix="/api/v1/complaints", tags=["Complaints"])
 
 complaint_limiter = RateLimiter(limit=5, window_seconds=60, key_prefix="complaints")
 
-UPLOAD_DIR = Path("uploads")
-UPLOAD_DIR.mkdir(exist_ok=True)
+UPLOAD_DIR = Path(__file__).resolve().parents[2] / "uploads"
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 
 

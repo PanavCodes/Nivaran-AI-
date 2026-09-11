@@ -18,19 +18,19 @@ def log_action(
     details: dict | None = None,
 ) -> None:
     try:
-        db.add(
-            AuditLog(
-                cluster_id=cluster_id,
-                complaint_id=complaint_id,
-                actor_id=actor_id,
-                action_taken=action_taken,
-                details=details or {},
+        with db.begin_nested():
+            db.add(
+                AuditLog(
+                    cluster_id=cluster_id,
+                    complaint_id=complaint_id,
+                    actor_id=actor_id,
+                    action_taken=action_taken,
+                    details=details or {},
+                )
             )
-        )
-        db.flush()
+            db.flush()
     except Exception as exc:  # audit must never interrupt main operations
         logger.warning(f"Audit log write failed: {exc}")
-        db.rollback()
 
 
 def get_cluster_logs(db: Session, cluster_id: uuid.UUID) -> list[AuditLog]:

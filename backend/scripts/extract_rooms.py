@@ -6,12 +6,15 @@ import re
 floors = ['lg', 'g', '1', '2', '3', '4', '5', '6', '7', '8']
 result = {}
 
-base_dir = r"c:\important files\main files\projects\Nirvan.ai\floor_plans"
+from pathlib import Path
+
+repo_root = Path(__file__).resolve().parents[2]
+base_dir = repo_root / "frontend" / "public" / "floor_plans"
 for f in floors:
-    path = os.path.join(base_dir, f"floor_{f}_dark.svg")
-    if not os.path.exists(path):
+    path = base_dir / f"floor_{f}_dark.svg"
+    if not path.exists():
         continue
-    tree = ET.parse(path)
+    tree = ET.parse(str(path))
     root = tree.getroot()
     rooms = []
     seen = set()
@@ -43,7 +46,7 @@ for f in floors:
 for f, rms in result.items():
     print(f"Floor {f}: {len(rms)} rooms found: {[r['name'] for r in rms[:4]]}")
 
-out_path = os.path.join("app", "core", "campus_floors.json")
-with open(out_path, "w", encoding="utf-8") as out:
+out_path = repo_root / "backend" / "app" / "core" / "campus_floors.json"
+with open(str(out_path), "w", encoding="utf-8") as out:
     json.dump(result, out, indent=2)
 print(f"Saved {len(result)} floors to {out_path}")

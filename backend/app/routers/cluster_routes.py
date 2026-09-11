@@ -486,8 +486,8 @@ async def resolve_cluster(
     before_bytes = None
     if before_url:
         from pathlib import Path
-
-        p = Path(before_url.lstrip("/"))
+        upload_dir = Path(__file__).resolve().parents[2] / "uploads"
+        p = upload_dir / Path(before_url).name
         if p.exists():
             before_bytes = p.read_bytes()
 
@@ -504,9 +504,11 @@ async def resolve_cluster(
     # Persist the proof image
     from pathlib import Path
 
+    upload_dir = Path(__file__).resolve().parents[2] / "uploads"
+    upload_dir.mkdir(parents=True, exist_ok=True)
     ext = Path(proof_image.filename or "proof.jpg").suffix.lower() or ".jpg"
     proof_name = f"proof_{uuid.uuid4().hex}{ext}"
-    (Path("uploads") / proof_name).write_bytes(proof_bytes)
+    (upload_dir / proof_name).write_bytes(proof_bytes)
 
     cluster.status = "RESOLVED"
     if first_complaint:
