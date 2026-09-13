@@ -47,14 +47,14 @@ export const Navbar: React.FC = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleQuickSwitch = async (role: "ADMIN" | "TECHNICIAN" | "STUDENT" | "FACULTY") => {
+  const handleQuickSwitch = async (role: "ADMIN" | "TECHNICIAN" | "STUDENT") => {
     setSwitching(true);
     try {
       const u = await quickLoginAs(role);
       setUser(u);
       setPersonaMenuOpen(false);
       toast.success(`Switched role to ${u.full_name} (${role})`);
-      if (role === "ADMIN" || role === "FACULTY") {
+      if (role === "ADMIN") {
         router.push("/admin");
       } else if (role === "TECHNICIAN") {
         router.push("/technician");
@@ -72,6 +72,8 @@ export const Navbar: React.FC = () => {
     if (!user) {
       return [
         { label: "Home", href: "/" },
+        { label: "Report an Issue", href: "/report" },
+        { label: "Status Tracker", href: "/tracker" },
         { label: "Public Audit", href: "/transparency" },
       ];
     }
@@ -88,13 +90,9 @@ export const Navbar: React.FC = () => {
           { label: "Public Audit", href: "/transparency" },
         ];
       case "ADMIN":
-        return [
-          { label: "Dispatch Console", href: "/admin" },
-          { label: "Public Audit", href: "/transparency" },
-        ];
-      case "FACULTY":
       default:
         return [
+          { label: "Dispatch Console", href: "/admin" },
           { label: "Report an Issue", href: "/report" },
           { label: "Status Tracker", href: "/tracker" },
           { label: "Public Audit", href: "/transparency" },
@@ -102,11 +100,10 @@ export const Navbar: React.FC = () => {
     }
   }, [user]);
 
-  const roleBadgeVariant: Record<Role, "emergency" | "high" | "accent" | "default"> = {
+  const roleBadgeVariant: Record<Role, "emergency" | "high" | "accent"> = {
     ADMIN: "emergency",
     TECHNICIAN: "high",
     STUDENT: "accent",
-    FACULTY: "default",
   };
 
   return (
@@ -133,7 +130,16 @@ export const Navbar: React.FC = () => {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`relative rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                    if (pathname === item.href) {
+                      e.preventDefault();
+                      return;
+                    }
+                    e.preventDefault();
+                    router.push(item.href);
+                  }}
+                  className={`relative rounded-md px-3 py-1.5 text-xs font-medium transition cursor-pointer ${
                     active
                       ? "text-slate-900 bg-slate-100 font-semibold"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
@@ -141,10 +147,7 @@ export const Navbar: React.FC = () => {
                 >
                   <span>{item.label}</span>
                   {active && (
-                    <motion.span
-                      layoutId="activeNavIndicator"
-                      className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-slate-900"
-                    />
+                    <span className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full bg-slate-900" />
                   )}
                 </Link>
               );
@@ -247,18 +250,6 @@ export const Navbar: React.FC = () => {
                       </div>
                       <Badge variant="accent" className="text-[9px] py-0 px-1">Student</Badge>
                     </button>
-
-                    <button
-                      disabled={switching}
-                      onClick={() => handleQuickSwitch("FACULTY")}
-                      className="w-full flex items-center justify-between rounded-lg px-2.5 py-1.5 text-xs text-left text-slate-800 hover:bg-slate-50 transition cursor-pointer"
-                    >
-                      <div>
-                        <p className="font-semibold text-slate-900">Faculty Member</p>
-                        <p className="text-[10px] text-slate-500">Department Overview</p>
-                      </div>
-                      <Badge variant="default" className="text-[9px] py-0 px-1">Faculty</Badge>
-                    </button>
                   </div>
 
                   {user && (
@@ -302,8 +293,17 @@ export const Navbar: React.FC = () => {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center justify-between rounded-md px-3 py-2 text-xs font-medium ${
+                  onClick={(e) => {
+                    setMobileMenuOpen(false);
+                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                    if (pathname === item.href) {
+                      e.preventDefault();
+                      return;
+                    }
+                    e.preventDefault();
+                    router.push(item.href);
+                  }}
+                  className={`flex items-center justify-between rounded-md px-3 py-2 text-xs font-medium cursor-pointer ${
                     active ? "bg-slate-100 text-slate-900 font-semibold" : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                   }`}
                 >

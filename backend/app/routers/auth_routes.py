@@ -12,7 +12,7 @@ from app.schemas.auth_schemas import Token, UserCreate, UserLogin, UserOut
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Auth"])
 
-VALID_ROLES = {"STUDENT", "FACULTY", "TECHNICIAN", "ADMIN"}
+VALID_ROLES = {"STUDENT", "TECHNICIAN", "ADMIN"}
 
 
 @router.post("/register", response_model=Token, status_code=status.HTTP_201_CREATED)

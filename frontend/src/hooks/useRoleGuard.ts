@@ -24,11 +24,15 @@ export function useRoleGuard({
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Serialize allowedRoles to avoid infinite loop from array literal reference changes
+  const rolesKey = allowedRoles.slice().sort().join(",");
+
   useEffect(() => {
     const token = getToken();
     const storedUser = getStoredUser();
 
     if (!token || !storedUser) {
+      setUser(null);
       setIsAuthorized(false);
       setIsLoading(false);
       toast.error(`Please sign in to access the ${portalName}`);
@@ -36,9 +40,10 @@ export function useRoleGuard({
       return;
     }
 
-    setUser(storedUser);
+    setUser((prev) => (prev?.id === storedUser.id && prev?.role === storedUser.role ? prev : storedUser));
 
-    if (allowedRoles.includes(storedUser.role)) {
+    const rolesList = rolesKey ? (rolesKey.split(",") as Role[]) : [];
+    if (rolesList.includes(storedUser.role)) {
       setIsAuthorized(true);
       setIsLoading(false);
     } else {
@@ -57,11 +62,11 @@ export function useRoleGuard({
         router.replace(destination);
       }
     }
-  }, [allowedRoles, portalName, customMessage, redirectToHomeOnFail, router]);
+  }, [rolesKey, portalName, customMessage, redirectToHomeOnFail, router]);
 
   const destinationPath = user ? homeForRole(user.role) : "/login";
   const destinationLabel = user
-    ? user.role === "STUDENT" || user.role === "FACULTY"
+    ? user.role === "STUDENT"
       ? "Return to Student Portal"
       : user.role === "TECHNICIAN"
       ? "Return to Work Orders"

@@ -82,7 +82,9 @@ export const BeforeAfterImageSlider: React.FC<BeforeAfterImageSliderProps> = ({
           <div
             className="relative h-full"
             style={{
-              width: containerRef.current ? `${containerRef.current.clientWidth}px` : "100%",
+              width: containerRef.current?.clientWidth
+                ? `${containerRef.current.clientWidth}px`
+                : "100%",
             }}
           >
             <Image

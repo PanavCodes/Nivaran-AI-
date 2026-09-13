@@ -15,7 +15,6 @@ import { CampBotChat } from "@/components/chat/CampBotChat";
 
 const ROLES: { value: Role; label: string; desc: string }[] = [
   { value: "STUDENT", label: "Student", desc: "Report issues, track progress" },
-  { value: "FACULTY", label: "Faculty", desc: "Department reports & escalations" },
   { value: "TECHNICIAN", label: "Technician", desc: "Task Force queue & photo verification" },
   { value: "ADMIN", label: "Administrator", desc: "Mission Control & dispatch" },
 ];

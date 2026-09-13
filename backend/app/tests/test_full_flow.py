@@ -21,13 +21,13 @@ from pathlib import Path
 import httpx
 
 BASE = "http://localhost:8000"
-STEPS = ["✅ Student intake", "✅ Cluster merge", "✅ Priority escalation", "✅ Technician resolve"]
+STEPS = ["[OK] Student intake", "[OK] Cluster merge", "[OK] Priority escalation", "[OK] Technician resolve"]
 
 ok_steps: list[str] = []
 
 
 def fail(msg: str) -> None:
-    print(f"❌ {msg}")
+    print(f"[FAIL] {msg}")
     sys.exit(1)
 
 
@@ -96,7 +96,7 @@ def main() -> None:
         assert first["merged"] is False, "first report must create a fresh cluster"
         cluster_id = first["cluster_id"]
         ok_steps.append(STEPS[0])
-        print(" ".join(ok_steps), f"→ cluster {cluster_id[:8]} P={first['priority_score']} on Floor {first['floor']}")
+        print(" ".join(ok_steps), f"-> cluster {cluster_id[:8]} P={first['priority_score']} on Floor {first['floor']}")
 
         # ── 2. Cluster merge (second student, ±5 canvas units, same story) ─────────
         r = client.post(
@@ -122,16 +122,16 @@ def main() -> None:
         assert second["cluster_id"] == cluster_id
         assert second["complaint_count"] == 2
         ok_steps.append(STEPS[1])
-        print(" ".join(ok_steps), f"→ count=2 P={second['priority_score']}")
+        print(" ".join(ok_steps), f"-> count=2 P={second['priority_score']}")
 
         # ── 3. Priority escalation (merge must raise the score) ──────────
         if not second["priority_score"] > first["priority_score"]:
-            fail(f"priority did not escalate: {first['priority_score']} → {second['priority_score']}")
+            fail(f"priority did not escalate: {first['priority_score']} -> {second['priority_score']}")
         detail = client.get(f"/api/v1/clusters/{cluster_id}", headers=ad).json()
         assert detail["complaint_count"] == 2
         assert len(detail["complaints"]) == 2
         ok_steps.append(STEPS[2])
-        print(" ".join(ok_steps), f"→ tier={detail['sla_tier']} score={detail['priority_score']}")
+        print(" ".join(ok_steps), f"-> tier={detail['sla_tier']} score={detail['priority_score']}")
 
         # ── 4. Technician resolve (dual-proof) ───────────────────────────
         r = client.post(
@@ -177,9 +177,9 @@ def main() -> None:
         ok_steps.append(STEPS[3])
         print(
             " ".join(ok_steps),
-            f"→ similarity={resolved['similarity_score']} audit={sorted(actions)}",
+            f"-> similarity={resolved['similarity_score']} audit={sorted(actions)}",
         )
-        print("\n✅ Student intake → ✅ Cluster merge → ✅ Priority escalation → ✅ Technician resolve")
+        print("\n[SUCCESS] Student intake -> Cluster merge -> Priority escalation -> Technician resolve")
 
 
 if __name__ == "__main__":

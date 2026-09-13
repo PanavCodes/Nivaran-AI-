@@ -80,7 +80,7 @@ def _keyword_fallback(description: str) -> IntakeResponse:
     return IntakeResponse(
         category=cat, severity=3, impact=3,
         nsfw=False, ocr_text=None,
-        ai_title=description[:60],
+        ai_title=(description[:60].rsplit(" ", 1)[0] if len(description) > 60 else description),
         reasoning="MOCK_AI mode — indoor keyword fallback active.",
         floor=detected_floor,
         room_or_zone=detected_room,
@@ -105,10 +105,18 @@ def run_intake(description: str, image_bytes: bytes | None = None) -> IntakeResp
 
     response = model.generate_content(parts)
     raw = re.sub(r"```json|```", "", response.text).strip()
-    data = json.loads(raw)
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError:
+        logger.warning("Gemini returned non-JSON response; falling back to keyword intake.")
+        return _keyword_fallback(description)
     if data.get("nsfw"):
         raise ValueError("NSFW content rejected by intake AI.")
-    return IntakeResponse(**data)
+    try:
+        return IntakeResponse(**data)
+    except Exception as exc:
+        logger.warning(f"IntakeResponse validation failed ({exc}); falling back to keyword intake.")
+        return _keyword_fallback(description)
 
 
 def verify_resolution_proof(before_bytes: bytes, after_bytes: bytes) -> dict:

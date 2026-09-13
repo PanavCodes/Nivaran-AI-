@@ -71,6 +71,11 @@ def blend(existing: list[float], new: list[float], weight: float = 0.3) -> list[
     e = np.array(existing)
     n = np.array(new)
     blended = ((1 - weight) * e + weight * n)
-    blended /= np.linalg.norm(blended)  # re-normalise
+    norm = np.linalg.norm(blended)
+    if norm > 0:
+        blended /= norm  # re-normalise
+    else:
+        # Fallback: uniform unit vector to avoid NaN in pgvector cosine index
+        blended = np.ones(len(blended), dtype=np.float32) / np.sqrt(len(blended))
     return blended.tolist()
 

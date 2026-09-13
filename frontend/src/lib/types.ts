@@ -115,12 +115,15 @@ export interface MyClusterSnapshot {
 
 export interface MyComplaint {
   id: string;
+  user_id?: string | null;
+  cluster_id?: string | null;
   title: string;
   description: string;
   category: string;
   severity: number;
   image_url: string | null;
   resolution_proof_url: string | null;
+  resolution_similarity_score?: number | null;
   floor: string;
   x_coord: number;
   y_coord: number;

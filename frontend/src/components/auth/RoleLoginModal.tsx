@@ -74,7 +74,7 @@ export const RoleLoginModal: React.FC<RoleLoginModalProps> = ({
   const roleConfigs = [
     {
       role: "STUDENT" as const,
-      title: "Student & Faculty",
+      title: "Student",
       badge: "Intake & Tracking",
       icon: GraduationCap,
       accentColor: "indigo",

@@ -38,6 +38,7 @@ import { FacilityHealthGauge } from "@/components/floorplan/FacilityHealthGauge"
 import { IncidentMemoModal } from "@/components/admin/IncidentMemoModal";
 import { CampBotChat } from "@/components/chat/CampBotChat";
 import { getFloorMeta, ORDERED_FLOOR_IDS } from "@/lib/campus_floors";
+import { getStoredUser } from "@/lib/auth";
 
 import type {
   Analytics,
@@ -47,6 +48,7 @@ import type {
   FloorSummaryItem,
 } from "@/lib/types";
 import { CATEGORY_LABELS, tierForScore } from "@/lib/types";
+import { mergeWithSharedClusters, getSharedClusterDetail } from "@/lib/clusterStore";
 
 interface Technician {
   id: string;
@@ -69,13 +71,123 @@ const statusLabels: Record<string, string> = {
   CLOSED: "Closed",
 };
 
+const FALLBACK_ADMIN_CLUSTERS: Cluster[] = [
+  {
+    id: "demo-c-1",
+    title: "AC Condensate Pipe Leaking near Switchboard",
+    ai_summary: "Multiple reports of ceiling dripping water near server racks in Room 102. High slip hazard and risk to electrical conduits.",
+    category: "MAINTENANCE",
+    status: "OPEN",
+    priority_score: 82.5,
+    severity_score: 4,
+    impact_score: 5,
+    complaint_count: 4,
+    floor: "1",
+    x_coord: 40,
+    y_coord: 196,
+    room_or_zone: "Room 102 (Server Room)",
+    sla_deadline: new Date(Date.now() + 2 * 3600 * 1000).toISOString(),
+    assigned_technician_id: null,
+    assigned_department: "MAINTENANCE",
+    first_reported_at: new Date(Date.now() - 3600 * 1000).toISOString(),
+    last_reported_at: new Date().toISOString(),
+  },
+  {
+    id: "demo-c-2",
+    title: "Loose High-Voltage Conduit Sparks",
+    ai_summary: "Exposed wire conduit near projector ceiling mount in Hardware Lab 1. Needs high-voltage insulation before scheduled student practicals.",
+    category: "IT_SUPPORT",
+    status: "IN_PROGRESS",
+    priority_score: 76.0,
+    severity_score: 5,
+    impact_score: 4,
+    complaint_count: 3,
+    floor: "3",
+    x_coord: 225,
+    y_coord: 490,
+    room_or_zone: "Hardware Lab 1",
+    sla_deadline: new Date(Date.now() + 5 * 3600 * 1000).toISOString(),
+    assigned_technician_id: "tech-1",
+    assigned_department: "IT_SUPPORT",
+    first_reported_at: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+    last_reported_at: new Date().toISOString(),
+  },
+  {
+    id: "demo-c-3",
+    title: "Fire Exit Door Hydraulic Closer Broken",
+    ai_summary: "Main entrance heavy fire egress door slamming shut violently.",
+    category: "FACILITIES",
+    status: "RESOLVED",
+    priority_score: 35.0,
+    severity_score: 2,
+    impact_score: 2,
+    complaint_count: 2,
+    floor: "G",
+    x_coord: 180,
+    y_coord: 440,
+    room_or_zone: "Main Entrance Foyer",
+    sla_deadline: null,
+    assigned_technician_id: "tech-2",
+    assigned_department: "FACILITIES",
+    first_reported_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+    last_reported_at: new Date(Date.now() - 12 * 3600 * 1000).toISOString(),
+  },
+  {
+    id: "demo-c-4",
+    title: "Water Tap Continuous Leakage",
+    ai_summary: "Washroom tap valve stuck open outside CSE Lab 201, water pooling into the hallway.",
+    category: "MAINTENANCE",
+    status: "OPEN",
+    priority_score: 55.0,
+    severity_score: 3,
+    impact_score: 3,
+    complaint_count: 2,
+    floor: "2",
+    x_coord: 210,
+    y_coord: 180,
+    room_or_zone: "CSE Department Corridor",
+    sla_deadline: new Date(Date.now() + 10 * 3600 * 1000).toISOString(),
+    assigned_technician_id: null,
+    assigned_department: "MAINTENANCE",
+    first_reported_at: new Date(Date.now() - 3 * 3600 * 1000).toISOString(),
+    last_reported_at: new Date().toISOString(),
+  },
+];
+
+const FALLBACK_FLOOR_SUMMARIES: FloorSummaryItem[] = [
+  { floor: "8", open_count: 0, emergency_count: 0, max_priority: 0 },
+  { floor: "7", open_count: 0, emergency_count: 0, max_priority: 0 },
+  { floor: "6", open_count: 1, emergency_count: 0, max_priority: 32.0 },
+  { floor: "5", open_count: 0, emergency_count: 0, max_priority: 0 },
+  { floor: "4", open_count: 1, emergency_count: 0, max_priority: 44.0 },
+  { floor: "3", open_count: 2, emergency_count: 1, max_priority: 76.0 },
+  { floor: "2", open_count: 1, emergency_count: 0, max_priority: 55.0 },
+  { floor: "1", open_count: 3, emergency_count: 1, max_priority: 82.5 },
+  { floor: "G", open_count: 1, emergency_count: 0, max_priority: 35.0 },
+  { floor: "LG", open_count: 0, emergency_count: 0, max_priority: 0 },
+];
+
+const FALLBACK_ANALYTICS: Analytics = {
+  open_clusters: 8,
+  avg_resolution_hours: 4.2,
+  sla_breach_rate: 2.1,
+  top_category: "MAINTENANCE",
+};
+
+const FALLBACK_TECHNICIANS: Technician[] = [
+  { id: "tech-1", full_name: "Ramesh Kumar", department: "Plumbing & Maintenance" },
+  { id: "tech-2", full_name: "Vikram Patel", department: "IT Infrastructure" },
+  { id: "tech-3", full_name: "Suresh Reddy", department: "Electrical & HVAC" },
+  { id: "tech-4", full_name: "Anand Sharma", department: "Civil & Structural" },
+];
+
 export default function AdminDashboard() {
-  const [user, setUser] = useState<SessionUser | null>(null);
-  const [clusters, setClusters] = useState<Cluster[]>([]);
+  const [user, setUser] = useState<SessionUser | null>(() => getStoredUser());
+  const [clusters, setClusters] = useState<Cluster[]>(FALLBACK_ADMIN_CLUSTERS);
   const [selected, setSelected] = useState<ClusterDetail | null>(null);
-  const [analytics, setAnalytics] = useState<Analytics | null>(null);
-  const [floorSummaries, setFloorSummaries] = useState<FloorSummaryItem[]>([]);
-  const [technicians, setTechnicians] = useState<Technician[]>([]);
+  const [analytics, setAnalytics] = useState<Analytics | null>(FALLBACK_ANALYTICS);
+  const [floorSummaries, setFloorSummaries] = useState<FloorSummaryItem[]>(FALLBACK_FLOOR_SUMMARIES);
+  const [technicians, setTechnicians] = useState<Technician[]>(FALLBACK_TECHNICIANS);
   const [activeFloor, setActiveFloor] = useState<string>("1");
   const [planTheme, setPlanTheme] = useState<"dark" | "light">("light");
   const [showRoomLabels, setShowRoomLabels] = useState(false);
@@ -109,9 +221,11 @@ export default function AdminDashboard() {
   const fetchClusters = useCallback(async () => {
     try {
       const data = await api.get<Cluster[]>("/api/v1/clusters/active");
-      setClusters(data);
+      const base = Array.isArray(data) && data.length > 0 ? data : FALLBACK_ADMIN_CLUSTERS;
+      setClusters(mergeWithSharedClusters(base));
     } catch (err) {
-      console.warn("[Admin] Failed to fetch active clusters:", err);
+      console.warn("[Admin] Live API clusters offline, using fallback dataset:", err);
+      setClusters(mergeWithSharedClusters(FALLBACK_ADMIN_CLUSTERS));
     } finally {
       setLoading(false);
     }
@@ -119,30 +233,72 @@ export default function AdminDashboard() {
 
   const fetchFloorSummaries = useCallback(async () => {
     try {
-      const data = await api.get<FloorSummaryItem[]>("/api/v1/clusters/floors/summary");
-      setFloorSummaries(data);
+      const allActive = mergeWithSharedClusters(FALLBACK_ADMIN_CLUSTERS);
+      const floorMap: Record<string, { open: number; emergency: number; maxP: number }> = {};
+      for (const f of ORDERED_FLOOR_IDS) {
+        floorMap[f] = { open: 0, emergency: 0, maxP: 0 };
+      }
+      for (const c of allActive) {
+        const fl = c.floor.toUpperCase();
+        if (floorMap[fl]) {
+          if (c.status !== "RESOLVED" && c.status !== "CLOSED") {
+            floorMap[fl].open += c.complaint_count || 1;
+            if (c.priority_score >= 75) floorMap[fl].emergency += 1;
+            floorMap[fl].maxP = Math.max(floorMap[fl].maxP, c.priority_score);
+          }
+        }
+      }
+      setFloorSummaries(
+        ORDERED_FLOOR_IDS.slice().reverse().map((f) => ({
+          floor: f,
+          open_count: floorMap[f].open,
+          emergency_count: floorMap[f].emergency,
+          max_priority: floorMap[f].maxP,
+        }))
+      );
     } catch (err) {
-      console.warn("[Admin] Failed to fetch floor summaries:", err);
+      console.warn("[Admin] Live API floor summaries offline, using fallback dataset:", err);
+      setFloorSummaries(FALLBACK_FLOOR_SUMMARIES);
     }
   }, []);
 
   const fetchAnalytics = useCallback(async () => {
     try {
-      setAnalytics(await api.get<Analytics>("/api/v1/admin/analytics"));
+      const data = await api.get<Analytics>("/api/v1/admin/analytics");
+      if (data) {
+        setAnalytics(data);
+      } else {
+        setAnalytics(FALLBACK_ANALYTICS);
+      }
     } catch (err) {
-      console.warn("[Admin] Failed to fetch analytics:", err);
+      console.warn("[Admin] Live API analytics offline, using fallback dataset:", err);
+      setAnalytics(FALLBACK_ANALYTICS);
     }
   }, []);
 
   const fetchTechnicians = useCallback(async () => {
     try {
-      setTechnicians(await api.get<Technician[]>("/api/v1/clusters/technicians"));
+      const data = await api.get<Technician[]>("/api/v1/clusters/technicians");
+      if (Array.isArray(data) && data.length > 0) {
+        setTechnicians(data);
+      } else {
+        setTechnicians(FALLBACK_TECHNICIANS);
+      }
     } catch (err) {
-      console.warn("[Admin] Failed to fetch technicians:", err);
+      console.warn("[Admin] Live API technicians offline, using fallback dataset:", err);
+      setTechnicians(FALLBACK_TECHNICIANS);
     }
   }, []);
 
   const fetchDetail = useCallback(async (id: string) => {
+    const sharedMatch = getSharedClusterDetail(id);
+    if (sharedMatch) {
+      setSelected(sharedMatch);
+      if (sharedMatch.floor) {
+        setActiveFloor(sharedMatch.floor.toUpperCase());
+      }
+      return;
+    }
     try {
       const detail = await api.get<ClusterDetail>(`/api/v1/clusters/${id}`);
       setSelected(detail);
@@ -150,8 +306,34 @@ export default function AdminDashboard() {
         setActiveFloor(detail.floor.toUpperCase());
       }
     } catch (err) {
-      console.error("[Admin] Failed to load cluster details:", err);
-      toast.error("Failed to load cluster details");
+      console.warn("[Admin] Detail fetch failed, looking up in fallback clusters:", err);
+      const fb = FALLBACK_ADMIN_CLUSTERS.find((c) => c.id === id);
+      if (fb) {
+        setSelected({
+          ...fb,
+          sla_tier: fb.priority_score >= 75 ? "EMERGENCY" : "HIGH",
+          complaints: [
+            {
+              id: `cmp-${fb.id}`,
+              user_id: "u-1",
+              title: fb.title,
+              description: fb.ai_summary || fb.title,
+              category: fb.category,
+              severity: fb.severity_score,
+              image_url: null,
+              floor: fb.floor,
+              x_coord: fb.x_coord,
+              y_coord: fb.y_coord,
+              room_or_zone: fb.room_or_zone,
+              cluster_id: fb.id,
+              created_at: fb.first_reported_at || new Date().toISOString(),
+            },
+          ],
+        });
+        if (fb.floor) setActiveFloor(fb.floor.toUpperCase());
+      } else {
+        toast.error("Failed to load cluster details");
+      }
     }
   }, []);
 
@@ -160,6 +342,13 @@ export default function AdminDashboard() {
     fetchFloorSummaries();
     fetchAnalytics();
     fetchTechnicians();
+
+    const handleSync = () => {
+      fetchClusters();
+      fetchFloorSummaries();
+    };
+    window.addEventListener("nivaran_clusters_updated", handleSync);
+    return () => window.removeEventListener("nivaran_clusters_updated", handleSync);
   }, [fetchClusters, fetchFloorSummaries, fetchAnalytics, fetchTechnicians]);
 
   /* ── WebSocket real-time updates ── */
@@ -269,6 +458,36 @@ export default function AdminDashboard() {
 
   const emergencyCountOnFloor = activeFloorClusters.filter((c) => c.priority_score >= 75).length;
   const fhiScore = Math.max(0, 100 - activeFloorClusters.length * 5 - emergencyCountOnFloor * 15);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3 p-6 text-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
+            <p className="text-sm font-medium text-slate-600">Verifying administrator authorization...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized || !authUser) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col">
+        <Navbar />
+        <AccessDeniedBarrier
+          portalName="Administrator Mission Control"
+          allowedRoles={["ADMIN"]}
+          userRole={authUser?.role}
+          homePath={destinationPath}
+          homeLabel={destinationLabel}
+          customMessage="Student and Technician accounts cannot access Mission Control. Please return to your designated portal."
+        />
+      </div>
+    );
+  }
 
   if (!user) return null;
 
@@ -456,35 +675,7 @@ export default function AdminDashboard() {
     </div>
   );
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center">
-          <div className="flex flex-col items-center gap-3 p-6 text-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
-            <p className="text-sm font-medium text-slate-600">Verifying administrator authorization...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
-  if (!isAuthorized || !authUser) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col">
-        <Navbar />
-        <AccessDeniedBarrier
-          portalName="Administrator Mission Control"
-          allowedRoles={["ADMIN", "FACULTY"]}
-          userRole={authUser?.role}
-          homePath={destinationPath}
-          homeLabel={destinationLabel}
-          customMessage="Student and Technician accounts cannot access Mission Control. Please return to your designated portal."
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-900">

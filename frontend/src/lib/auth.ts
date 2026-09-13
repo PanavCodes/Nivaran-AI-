@@ -3,7 +3,7 @@
 import { api, clearToken, getToken, setToken } from "./api";
 export { getToken, setToken, clearToken };
 
-export type Role = "STUDENT" | "FACULTY" | "TECHNICIAN" | "ADMIN";
+export type Role = "STUDENT" | "TECHNICIAN" | "ADMIN";
 
 export interface SessionUser {
   id: string;
@@ -32,7 +32,6 @@ export function storeUser(user: SessionUser) {
 export function homeForRole(role: Role): string {
   switch (role) {
     case "ADMIN":
-    case "FACULTY":
       return "/admin";
     case "TECHNICIAN":
       return "/technician";
@@ -67,10 +66,6 @@ export async function login(email: string, password: string): Promise<SessionUse
       matchedRole = "TECHNICIAN";
       fullName = "Ramesh Kumar (Plumbing & HVAC)";
       department = "MAINTENANCE";
-    } else if (em.includes("faculty")) {
-      matchedRole = "FACULTY";
-      fullName = "Prof. Anitha (ECE Department)";
-      department = "ECE";
     } else {
       matchedRole = "STUDENT";
       fullName = "Pawan Teja (Student)";
@@ -122,7 +117,6 @@ export const DEMO_ACCOUNTS = {
   ADMIN: { email: "admin@nivaran.edu", password: "Admin@123", label: "Admin (Mission Control)" },
   TECHNICIAN: { email: "tech.maintenance@nivaran.edu", password: "Tech@123", label: "Technician (Task Force)" },
   STUDENT: { email: "student1@nivaran.edu", password: "Student@123", label: "Student (Radar Intake)" },
-  FACULTY: { email: "faculty@nivaran.edu", password: "Faculty@123", label: "Faculty (Campus Rep)" },
 } as const;
 
 export async function quickLoginAs(role: keyof typeof DEMO_ACCOUNTS): Promise<SessionUser> {
@@ -132,18 +126,18 @@ export async function quickLoginAs(role: keyof typeof DEMO_ACCOUNTS): Promise<Se
 
 export function logout() {
   clearToken();
-  window.location.href = "/login";
+  if (typeof window !== "undefined") window.location.href = "/login";
 }
 
 export function canAccessRoute(role: Role, pathname: string): boolean {
   if (pathname.startsWith("/admin")) {
-    return role === "ADMIN" || role === "FACULTY";
+    return role === "ADMIN";
   }
   if (pathname.startsWith("/technician")) {
     return role === "TECHNICIAN" || role === "ADMIN";
   }
   if (pathname.startsWith("/report") || pathname.startsWith("/tracker")) {
-    return role === "STUDENT" || role === "FACULTY" || role === "ADMIN";
+    return role === "STUDENT" || role === "ADMIN";
   }
   return true;
 }

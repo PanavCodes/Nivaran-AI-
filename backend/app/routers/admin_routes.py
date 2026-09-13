@@ -40,7 +40,7 @@ ORDER BY count DESC
 
 @router.get("/analytics", response_model=AnalyticsOut)
 def analytics(
-    user: User = Depends(require_role("ADMIN", "FACULTY")),
+    user: User = Depends(require_role("ADMIN")),
     db=Depends(get_db),
 ):
     kpi = db.execute(ANALYTICS_KPI).mappings().one()
@@ -55,7 +55,7 @@ def analytics(
 
 @router.get("/trends", response_model=TrendsOut)
 def trends(
-    user: User = Depends(require_role("ADMIN", "FACULTY")),
+    user: User = Depends(require_role("ADMIN")),
     db=Depends(get_db),
 ):
     """Campus-wide trend feed — issue volume over time (AreaChart) and

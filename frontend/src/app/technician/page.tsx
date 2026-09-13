@@ -17,7 +17,7 @@ import {
 import { api, API_URL } from "@/lib/api";
 import { type SessionUser } from "@/lib/auth";
 import { useRoleGuard } from "@/hooks/useRoleGuard";
-import { playTeluguSpeech, stopTeluguAudio } from "@/lib/teluguAudio";
+import { playSpeech, stopSpeech } from "@/lib/speechAudio";
 
 import { useWebSocket, type WsMessage } from "@/hooks/useWebSocket";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +33,11 @@ import { BeforeAfterImageSlider } from "@/components/technician/BeforeAfterImage
 import { CampBotChat } from "@/components/chat/CampBotChat";
 import type { Cluster, ClusterDetail, Complaint } from "@/lib/types";
 import { CATEGORY_LABELS, tierForScore } from "@/lib/types";
+import {
+  mergeWithSharedClusters,
+  getSharedClusterDetail,
+  updateSharedClusterStatus,
+} from "@/lib/clusterStore";
 
 const tierVariant = { EMERGENCY: "emergency", HIGH: "high", MEDIUM: "medium", LOW: "resolved" } as const;
 
@@ -172,7 +177,7 @@ export default function TechnicianConsole() {
   const [deferReason, setDeferReason] = useState("Waiting for spare parts");
   const [deferOther, setDeferOther] = useState("");
   const [queueTab, setQueueTab] = useState<"ALL" | "EMERGENCY" | "IN_PROGRESS" | "MINE">("ALL");
-  const [playingTeluguId, setPlayingTeluguId] = useState<string | null>(null);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
   const proofRef = useRef<HTMLInputElement>(null);
 
   const DEFER_REASONS = [
@@ -183,31 +188,32 @@ export default function TechnicianConsole() {
     "Re-scheduled — higher priority emergency",
   ];
 
-  const getTeluguText = (cluster: { title: string; floor: string; room_or_zone?: string | null; category: string; priority_score: number }) => {
-    const floorLabel = cluster.floor === "G" ? "గ్రౌండ్ ఫ్లోర్" : cluster.floor === "LG" ? "లోయర్ గ్రౌండ్ ఫ్లోర్" : `${cluster.floor}వ అంతస్తు`;
-    const roomLabel = cluster.room_or_zone ? `గది ${cluster.room_or_zone}` : "కారిడార్ ప్రాంతం";
-    const urgency = cluster.priority_score >= 75 ? "అత్యవసర పని" : "సాధారణ మరమ్మతు పని";
-    return `${urgency}: ${floorLabel}, ${roomLabel} వద్ద సమస్య - ${cluster.title}. దయచేసి వెంటనే పరిశీలించి, పని పూర్తయ్యాక ఫోటోను అప్‌లోడ్ చేయండి.`;
+  const getEnglishDirective = (cluster: { title: string; floor: string; room_or_zone?: string | null; category: string; priority_score: number }) => {
+    const floorLabel = cluster.floor === "G" ? "Ground Floor" : cluster.floor === "LG" ? "Lower Ground Floor" : `Floor ${cluster.floor}`;
+    const roomLabel = cluster.room_or_zone ? `Room ${cluster.room_or_zone}` : "Corridor / Common Area";
+    const urgency = cluster.priority_score >= 75 ? "EMERGENCY DISPATCH" : "Standard Maintenance Order";
+    return `${urgency}: Incident reported at ${floorLabel}, ${roomLabel} — ${cluster.title}. Please inspect the site immediately and upload photographic proof upon resolution.`;
   };
 
-  const handlePlayTelugu = (cluster: { id: string; title: string; floor: string; room_or_zone?: string | null; category: string; priority_score: number }) => {
-    if (playingTeluguId === cluster.id) {
-      stopTeluguAudio();
-      setPlayingTeluguId(null);
+  const handlePlayAudio = (cluster: { id: string; title: string; floor: string; room_or_zone?: string | null; category: string; priority_score: number }) => {
+    if (playingAudioId === cluster.id) {
+      stopSpeech();
+      setPlayingAudioId(null);
       return;
     }
-    stopTeluguAudio();
-    const text = getTeluguText(cluster);
-    setPlayingTeluguId(cluster.id);
-    toast.success("తెలుగు ఆడియో ప్లే అవుతోంది (Playing Telugu Audio)...", { duration: 3000 });
-    playTeluguSpeech(text, {
-      onEnd: () => setPlayingTeluguId(null),
-      onError: () => setPlayingTeluguId(null),
+    stopSpeech();
+    const text = getEnglishDirective(cluster);
+    setPlayingAudioId(cluster.id);
+    toast.success("Playing field audio directive...", { duration: 3000 });
+    playSpeech(text, {
+      onEnd: () => setPlayingAudioId(null),
+      onError: () => setPlayingAudioId(null),
     });
   };
 
   /* ── Field status actions ── */
   async function handleEnRoute(clusterId: string) {
+    updateSharedClusterStatus(clusterId, "IN_PROGRESS");
     try {
       await api.post(`/api/v1/clusters/${clusterId}/status`, { status: "IN_PROGRESS" });
       toast.success("Marked En-Route — status updated to In Progress");
@@ -229,6 +235,7 @@ export default function TechnicianConsole() {
       toast.error("Enter a reason for deferring");
       return;
     }
+    updateSharedClusterStatus(deferTarget.id, "OPEN", { reason });
     try {
       await api.post(`/api/v1/clusters/${deferTarget.id}/status`, { status: "OPEN", reason });
       toast.success(`Deferred — reason logged: ${reason}`);
@@ -246,24 +253,28 @@ export default function TechnicianConsole() {
     }
   }
 
-
-
   /* ── Fetch task queue ── */
   const fetchQueue = useCallback(async () => {
     try {
       const data = await api.get<Cluster[]>(
         "/api/v1/clusters/active?status=OPEN,ASSIGNED,IN_PROGRESS",
       );
-      setQueue(data && data.length > 0 ? data : FALLBACK_CLUSTERS);
+      const base = data && data.length > 0 ? data : FALLBACK_CLUSTERS;
+      setQueue(mergeWithSharedClusters(base));
     } catch (err) {
       console.warn("[Technician] fetchQueue fallback to local dataset:", err);
-      setQueue(FALLBACK_CLUSTERS);
+      setQueue(mergeWithSharedClusters(FALLBACK_CLUSTERS));
     } finally {
       setLoading(false);
     }
   }, []);
 
   const fetchDetail = useCallback(async (id: string) => {
+    const sharedMatch = getSharedClusterDetail(id);
+    if (sharedMatch) {
+      setActive(sharedMatch);
+      return;
+    }
     try {
       setActive(await api.get<ClusterDetail>(`/api/v1/clusters/${id}`));
     } catch (err) {
@@ -275,6 +286,9 @@ export default function TechnicianConsole() {
 
   useEffect(() => {
     fetchQueue();
+    const handleSync = () => fetchQueue();
+    window.addEventListener("nivaran_clusters_updated", handleSync);
+    return () => window.removeEventListener("nivaran_clusters_updated", handleSync);
   }, [fetchQueue]);
 
   /* ── WebSocket updates ── */
@@ -330,6 +344,7 @@ export default function TechnicianConsole() {
       return;
     }
     setResolving(true);
+    updateSharedClusterStatus(clusterId, "RESOLVED");
     try {
       const fd = new FormData();
       fd.append("proof_image", proofFile);
@@ -601,12 +616,12 @@ export default function TechnicianConsole() {
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handlePlayTelugu(cluster);
+                                handlePlayAudio(cluster);
                               }}
                               className="rounded border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-800 hover:bg-indigo-100 transition cursor-pointer"
-                              title="Listen in Telugu"
+                              title="Listen to audio directive"
                             >
-                              {playingTeluguId === cluster.id ? "ఆపండి ⏹" : "తెలుగు వినండి 🔊"}
+                              {playingAudioId === cluster.id ? "Stop ⏹" : "Listen 🔊"}
                             </button>
                           </div>
                           <span className="text-xs font-semibold text-slate-900">
@@ -684,30 +699,30 @@ export default function TechnicianConsole() {
                     );
                   })()}
 
-                  {/* Telugu Field Voice & Directives Card */}
+                  {/* Technician Voice Directives Card */}
                   <div className="rounded-xl border border-indigo-200 bg-indigo-50/60 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-bold text-indigo-950">
-                          క్షేత్ర సూచనలు (Telugu Field Voice)
+                          Technician Audio Directives (Field Dispatch)
                         </span>
                         <span className="rounded bg-indigo-100 px-1.5 py-0.2 text-[9px] font-semibold text-indigo-800 border border-indigo-200">
-                          స్థానిక ఆడియో
+                          AI Voice Dispatch
                         </span>
                       </div>
                       <button
                         type="button"
-                        onClick={() => handlePlayTelugu(active)}
+                        onClick={() => handlePlayAudio(active)}
                         className="rounded-md bg-indigo-600 px-3 py-1 text-xs font-semibold text-white hover:bg-indigo-700 transition cursor-pointer"
                       >
-                        {playingTeluguId === active.id ? "ఆపండి ⏹" : "తెలుగులో వినండి 🔊"}
+                        {playingAudioId === active.id ? "Stop ⏹" : "Listen to Directive 🔊"}
                       </button>
                     </div>
                     <p className="text-xs leading-relaxed text-indigo-900 font-medium">
-                      {getTeluguText(active)}
+                      {getEnglishDirective(active)}
                     </p>
                     <p className="mt-2 text-[11px] text-indigo-700 font-normal">
-                      • పని పూర్తి చేసిన తర్వాత కింద ఉన్న కెమెరా బటన్‌తో పూర్తి చేసిన ఫోటోను అప్‌లోడ్ చేసి నిర్ధారించండి.
+                      • After resolving this work order, use the photo proof upload button below to verify completion with AI comparison.
                     </p>
                   </div>
 

@@ -26,15 +26,13 @@ def compute_priority(
 
     P = (S * 7) + (R * 3.5) + (I * 4) + (D * 0.25)
 
-    SLA_MAP = {
-        "EMERGENCY": (75, 2),
-        "HIGH":      (50, 12),
-        "MEDIUM":    (25, 24),
-        "LOW":       (0,  72),
-    }
-    tier, hours = next(
-        (t, h) for t, (threshold, h) in SLA_MAP.items() if P >= threshold
-    )
+    SLA_TIERS = [
+        ("EMERGENCY", 75, 2),
+        ("HIGH",      50, 12),
+        ("MEDIUM",    25, 24),
+        ("LOW",        0, 72),
+    ]
+    tier, hours = next((t, h) for t, thr, h in SLA_TIERS if P >= thr)
     deadline = now + timedelta(hours=hours)
     return round(P, 2), tier, deadline
 

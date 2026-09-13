@@ -62,7 +62,7 @@ export const VoiceIntakeButton: React.FC<VoiceIntakeButtonProps> = ({
 
     try {
       const recognition = new SR();
-      recognition.lang = "en-IN";
+      recognition.lang = "en-US";
       recognition.continuous = false;
       recognition.interimResults = true;
 
@@ -118,7 +118,7 @@ export const VoiceIntakeButton: React.FC<VoiceIntakeButtonProps> = ({
         type="button"
         onClick={isRecording ? stopRecording : startRecording}
         disabled={disabled}
-        title={isRecording ? "Click to stop recording" : "Dictate incident report"}
+        title={isRecording ? "Click to stop recording" : "Dictate incident report in English"}
         className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition cursor-pointer shadow-2xs ${
           isRecording
             ? "bg-red-50 text-red-700 border border-red-200"
@@ -128,12 +128,12 @@ export const VoiceIntakeButton: React.FC<VoiceIntakeButtonProps> = ({
         {isRecording ? (
           <>
             <MicOff size={14} className="text-red-600" />
-            <span>Listening…</span>
+            <span>Listening (English)…</span>
           </>
         ) : (
           <>
             <Mic size={14} className="text-indigo-600" />
-            <span>Voice Dictation</span>
+            <span>English Voice Dictation</span>
           </>
         )}
       </button>

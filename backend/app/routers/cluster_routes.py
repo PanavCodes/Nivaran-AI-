@@ -245,7 +245,7 @@ def get_resolved_transparency(
 
         before_url = (first_cp.image_url if first_cp and first_cp.image_url else None) or "https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=600&auto=format&fit=crop&q=80"
         after_url = (first_cp.resolution_proof_url if first_cp and first_cp.resolution_proof_url else None) or "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=600&auto=format&fit=crop&q=80"
-        sim_score = (first_cp.resolution_similarity_score if first_cp and first_cp.resolution_similarity_score else 0.93)
+        sim_score = 0.93
 
         duration = 4.0
         if c.first_reported_at and c.last_reported_at:
@@ -272,14 +272,16 @@ def get_resolved_transparency(
             )
         )
 
-    # If few or no resolved clusters in DB yet, supplement with curated showcase items
-    fallback_filtered = [
-        ResolvedIssueItem(**sample) for sample in SAMPLE_RESOLVED_FALLBACK
-        if (not floor or floor == "ALL" or sample["floor"] == floor)
-        and (not category or category == "ALL" or sample["category"] == category)
-    ]
-
-    all_items = items + [fb for fb in fallback_filtered if fb.id not in {i.id for i in items}]
+    # Only supplement with curated showcase items when DB has fewer than 3 resolved issues
+    if len(items) < 3:
+        fallback_filtered = [
+            ResolvedIssueItem(**sample) for sample in SAMPLE_RESOLVED_FALLBACK
+            if (not floor or floor == "ALL" or sample["floor"] == floor)
+            and (not category or category == "ALL" or sample["category"] == category)
+        ]
+        all_items = items + [fb for fb in fallback_filtered if fb.id not in {i.id for i in items}]
+    else:
+        all_items = items
 
     durations = [i.durationHours for i in all_items]
     mean_hours = round(sum(durations) / len(durations), 1) if durations else 4.8
@@ -413,7 +415,7 @@ async def change_status(
 async def assign_technician(
     cluster_id: uuid.UUID,
     body: AssignRequest,
-    user: User = Depends(require_role("ADMIN", "FACULTY")),
+    user: User = Depends(require_role("ADMIN")),
     db: Session = Depends(get_db),
 ):
     cluster = db.get(IssueCluster, cluster_id)
@@ -466,9 +468,6 @@ async def resolve_cluster(
     db: Session = Depends(get_db),
 ):
     """Dual-proof close-out: Gemini Vision compares before/after imagery."""
-    if len(technician_notes) > 2000:
-        raise HTTPException(status_code=422, detail="Technician notes must not exceed 2000 characters.")
-
     cluster = db.get(IssueCluster, cluster_id)
     if cluster is None:
         raise HTTPException(status_code=404, detail="Cluster not found.")

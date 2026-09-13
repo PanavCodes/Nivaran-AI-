@@ -67,14 +67,48 @@ export const CampBotChat: React.FC = () => {
         setChips(res.chips.map((c) => c.query));
       }
     } catch {
+      // Deterministic client-side facility assistant fallback (hackathon offline resilience)
+      const lower = q.toLowerCase();
+      let reply =
+        "CampBot: Our 10-floor facility is actively monitored. You can submit grievances via the Radar Intake, drop exact blueprint pins, or scan door QR plaques.";
+      let newChips = chips;
+
+      if (lower.includes("floor 1") || lower.includes("1st floor")) {
+        reply =
+          "Floor 1 Status: Active emergency alert for an AC condensate line leak near Room 102 (Server Room). Priority: 82.5. Maintenance technicians are en route.";
+        newChips = ["Emergency protocols", "How do door QR codes work?", "Check Floor 3 status"];
+      } else if (lower.includes("floor 3") || lower.includes("3rd floor")) {
+        reply =
+          "Floor 3 Status: Active electrical alert for loose high-voltage conduit sparks in Hardware Lab 1. Priority: 76.0. IT team is assigned.";
+        newChips = ["Check Floor 1 status", "How does indoor clustering work?"];
+      } else if (lower.includes("qr") || lower.includes("door")) {
+        reply =
+          "Door QR Codes: Each room plaque features a spatial QR marker. Scanning it in the intake portal locks your floor, room number, and exact (x, y) blueprint coordinates automatically.";
+        newChips = ["What issues are on Floor 1?", "How does indoor clustering work?"];
+      } else if (lower.includes("cluster") || lower.includes("merge") || lower.includes("duplicate")) {
+        reply =
+          "Indoor Spatio-Semantic Clustering: Multiple reports on the same floor within 35 canvas units and ≥0.52 semantic similarity are automatically merged into a single actionable incident cluster with escalated priority.";
+        newChips = ["Check Floor 1 status", "Any active high-priority repairs?"];
+      } else if (lower.includes("emergency") || lower.includes("hazard") || lower.includes("urgent")) {
+        reply =
+          "Emergency Protocol: High-severity hazards (sparks, pipe bursts, chemical spills) trigger an automatic 2-hour SLA response tier with immediate technician dispatch.";
+        newChips = ["Check Floor 1 status", "How do door QR codes work?"];
+      } else if (lower.includes("leak") || lower.includes("water") || lower.includes("pipe")) {
+        reply =
+          "Water Leaks: Active leak clusters are tracked on Floor 1 (Server Room) and Floor 2 (CSE Corridor). Please exercise caution around wet flooring.";
+        newChips = ["Check Floor 1 status", "Emergency protocols"];
+      }
+
+      const botTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       setMessages((prev) => [
         ...prev,
         {
           sender: "bot",
-          text: "I am unable to reach the campus operations server right now. Please check the floor plans or try again in a moment.",
-          time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          text: reply,
+          time: botTime,
         },
       ]);
+      setChips(newChips);
     } finally {
       setLoading(false);
     }

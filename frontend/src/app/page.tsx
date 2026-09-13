@@ -247,13 +247,13 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Student & Staff Portal */}
+            {/* Student Portal */}
             <div className="rounded-xl border border-slate-200 bg-white p-5 flex flex-col justify-between shadow-2xs hover:border-indigo-300 transition">
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <GraduationCap className="h-4 w-4 text-indigo-600" />
-                    <span className="text-sm font-bold text-slate-900">Student & Faculty</span>
+                    <span className="text-sm font-bold text-slate-900">Student Portal</span>
                   </div>
                   <span className="rounded bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 text-[10px] font-bold text-indigo-700">
                     Reporter
@@ -503,7 +503,7 @@ export default function HomePage() {
                   </div>
                   <h3 className="text-sm font-bold text-slate-900">Multimodal Grievance Ingestion</h3>
                   <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
-                    Students submit issues via photo OCR, door QR codes, or bilingual Telugu/Tanglish WhatsApp voice notes with automated indoor floor and room zone coordinates.
+                    Students submit issues via photo OCR, door QR codes, or English WhatsApp voice notes with automated indoor floor and room zone coordinates.
                   </p>
                 </div>
                 <div className="mt-4 pt-3 border-t border-slate-200 text-[11px] text-slate-500 font-medium">

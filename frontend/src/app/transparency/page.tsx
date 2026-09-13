@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/layout/Navbar";
+import { StudentPortalNav } from "@/components/layout/StudentPortalNav";
 import { BeforeAfterImageSlider } from "@/components/technician/BeforeAfterImageSlider";
 import { ORDERED_FLOOR_IDS } from "@/lib/campus_floors";
 import { CampBotChat } from "@/components/chat/CampBotChat";
@@ -149,6 +150,7 @@ export default function PublicTransparencyPage() {
       <Navbar />
 
       <main className="flex-1 p-4 md:p-8 max-w-6xl mx-auto w-full">
+        <StudentPortalNav />
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 pb-6">
           <div>

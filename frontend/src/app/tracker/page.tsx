@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Navbar } from "@/components/layout/Navbar";
+import { StudentPortalNav } from "@/components/layout/StudentPortalNav";
 import { CampBotChat } from "@/components/chat/CampBotChat";
 import { FloorPlanViewer } from "@/components/floorplan/FloorPlanViewer";
 import type { MyComplaint } from "@/lib/types";
@@ -42,6 +43,99 @@ function stageIndex(status: string | undefined): number {
   return i === -1 ? (status === "CLOSED" ? 3 : 0) : i;
 }
 
+const FALLBACK_MY_COMPLAINTS: MyComplaint[] = [
+  {
+    id: "rep-demo-01",
+    user_id: "demo-u-1",
+    title: "Water leaking near server room door",
+    description: "Ceiling pipe continuous dripping near electrical conduit and switchboard. Water pooling on floor creating slip hazard.",
+    category: "MAINTENANCE",
+    severity: 4,
+    floor: "1",
+    x_coord: 40,
+    y_coord: 196,
+    room_or_zone: "Room 102 (Server Room)",
+    cluster_id: "demo-c-1",
+    image_url: "https://images.unsplash.com/photo-1584992236310-6edddc08acff?w=600&auto=format&fit=crop&q=80",
+    resolution_proof_url: null,
+    resolution_similarity_score: null,
+    created_at: new Date(Date.now() - 3600 * 1000 * 2).toISOString(),
+    cluster: {
+      id: "demo-c-1",
+      title: "AC Condensate Pipe Leaking near Switchboard",
+      category: "MAINTENANCE",
+      status: "IN_PROGRESS",
+      priority_score: 82.5,
+      sla_tier: "EMERGENCY",
+      complaint_count: 4,
+      floor: "1",
+      room_or_zone: "Room 102 (Server Room)",
+      sla_deadline: new Date(Date.now() + 3600 * 1000 * 1.5).toISOString(),
+      assigned_department: "MAINTENANCE",
+    },
+  },
+  {
+    id: "rep-demo-02",
+    user_id: "demo-u-2",
+    title: "Loose High-Voltage Conduit Sparks near Projector Mount",
+    description: "Exposed wire conduit near ceiling mount in Hardware Lab 1. Requires electrical isolation before lab practical.",
+    category: "IT_SUPPORT",
+    severity: 5,
+    floor: "3",
+    x_coord: 225,
+    y_coord: 490,
+    room_or_zone: "Hardware Lab 1",
+    cluster_id: "demo-c-2",
+    image_url: "https://images.unsplash.com/photo-1544724569-5f546fd6f2b5?w=600&auto=format&fit=crop&q=80",
+    resolution_proof_url: null,
+    resolution_similarity_score: null,
+    created_at: new Date(Date.now() - 3600 * 1000 * 4).toISOString(),
+    cluster: {
+      id: "demo-c-2",
+      title: "Loose High-Voltage Conduit Sparks",
+      category: "IT_SUPPORT",
+      status: "ASSIGNED",
+      priority_score: 76.0,
+      sla_tier: "HIGH",
+      complaint_count: 3,
+      floor: "3",
+      room_or_zone: "Hardware Lab 1",
+      sla_deadline: new Date(Date.now() + 3600 * 1000 * 4.5).toISOString(),
+      assigned_department: "IT_SUPPORT",
+    },
+  },
+  {
+    id: "rep-demo-03",
+    user_id: "demo-u-3",
+    title: "Broken Fire Exit Door Hydraulic Closer",
+    description: "Heavy main entrance door slamming shut violently without hydraulic damping.",
+    category: "FACILITIES",
+    severity: 2,
+    floor: "G",
+    x_coord: 180,
+    y_coord: 440,
+    room_or_zone: "Main Entrance Foyer",
+    cluster_id: "demo-c-3",
+    image_url: "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=600&auto=format&fit=crop&q=80",
+    resolution_proof_url: "https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&auto=format&fit=crop&q=80",
+    resolution_similarity_score: 0.94,
+    created_at: new Date(Date.now() - 3600 * 1000 * 24).toISOString(),
+    cluster: {
+      id: "demo-c-3",
+      title: "Fire Exit Door Hydraulic Closer Broken",
+      category: "FACILITIES",
+      status: "RESOLVED",
+      priority_score: 35.0,
+      sla_tier: "MEDIUM",
+      complaint_count: 2,
+      floor: "G",
+      room_or_zone: "Main Entrance Foyer",
+      sla_deadline: null,
+      assigned_department: "FACILITIES",
+    },
+  },
+];
+
 export default function TrackerPage() {
   const [reports, setReports] = useState<MyComplaint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,19 +149,46 @@ export default function TrackerPage() {
     destinationPath,
     destinationLabel,
   } = useRoleGuard({
-    allowedRoles: ["STUDENT", "FACULTY"],
-    portalName: "Student Incident Status Tracker",
-    customMessage: "Maintenance Crew and Admin accounts cannot access the Student Status Tracker. Please return to your designated portal.",
+    allowedRoles: ["STUDENT", "ADMIN"],
+    portalName: "Incident Status Tracker",
+    customMessage: "Maintenance Crew accounts are restricted to the Work Orders console. Please use Student or Admin role to view the status tracker.",
   });
 
   const fetchReports = useCallback(async () => {
+    let apiReports: MyComplaint[] = [];
     try {
-      setReports(await api.get<MyComplaint[]>("/api/v1/complaints/mine"));
+      const data = await api.get<MyComplaint[]>("/api/v1/complaints/mine");
+      if (Array.isArray(data)) {
+        apiReports = data;
+      }
     } catch (err) {
-      console.error("[Tracker] Failed to load complaints:", err);
-    } finally {
-      setLoading(false);
+      console.warn("[Tracker] Failed to load complaints from API:", err);
     }
+
+    // Read any locally submitted reports
+    let localReports: MyComplaint[] = [];
+    try {
+      const stored = localStorage.getItem("nivaran_my_reports");
+      if (stored) {
+        localReports = JSON.parse(stored);
+      }
+    } catch {}
+
+    const combined = [...localReports, ...apiReports];
+    if (combined.length === 0) {
+      setReports(FALLBACK_MY_COMPLAINTS);
+    } else {
+      const seen = new Set<string>();
+      const deduped: MyComplaint[] = [];
+      for (const item of combined) {
+        if (!seen.has(item.id)) {
+          seen.add(item.id);
+          deduped.push(item);
+        }
+      }
+      setReports(deduped);
+    }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -111,11 +232,11 @@ export default function TrackerPage() {
         <Navbar />
         <AccessDeniedBarrier
           portalName="Student Incident Status Tracker"
-          allowedRoles={["STUDENT", "FACULTY"]}
+          allowedRoles={["STUDENT", "ADMIN"]}
           userRole={authUser?.role}
           homePath={destinationPath}
           homeLabel={destinationLabel}
-          customMessage="Maintenance Crew and Administrator accounts are restricted from the Student Status Tracker. Please return to your designated workspace."
+          customMessage="Maintenance Crew accounts are restricted from the Student Status Tracker. Please return to your designated workspace."
         />
       </div>
     );
@@ -126,7 +247,9 @@ export default function TrackerPage() {
       <Navbar />
 
       <main className="flex-1 p-4 md:p-8">
-        <div className="mx-auto max-w-4xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200 pb-5 mb-6">
+        <div className="mx-auto max-w-4xl">
+          <StudentPortalNav />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-slate-200 pb-5 mb-6">
           <div>
             <h1 className="text-xl font-bold text-slate-900">
               Incident Status Tracker
@@ -348,6 +471,7 @@ export default function TrackerPage() {
               </motion.div>
             );
           })}
+        </div>
         </div>
       </main>
 

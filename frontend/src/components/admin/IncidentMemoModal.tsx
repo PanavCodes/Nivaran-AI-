@@ -44,7 +44,7 @@ From: Nivaran Operations & Campus Audit Division
 - Location: 10-Storey Campus Complex, Floor ${cluster.floor} (${cluster.room_or_zone || "Common Facility Zone"})
 - Cluster Reference: #${cluster.id}
 - Priority Urgency Tier: ${cluster.sla_tier} (Score: ${cluster.priority_score.toFixed(1)}/100)
-- Reported Complaints Merged: ${cluster.complaint_count} student/faculty submissions
+- Reported Complaints Merged: ${cluster.complaint_count} student submissions
 
 2. STATUS & ASSIGNMENT:
 - Operational Status: ${cluster.status}

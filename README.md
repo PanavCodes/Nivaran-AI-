@@ -21,7 +21,7 @@ The entire campus is modelled as a **10-storey indoor facility (Floors LG, G, 1�
 | 🏢 **Fully indoor spatial model** | GPS lat/long replaced by `floor / x_coord / y_coord / room_or_zone` on a 10-floor SVG canvas — clustering now uses **floor isolation + 2D Euclidean distance**, no Leaflet dependency |
 | 🗺️ **Interactive SVG blueprints** | 20 hand-drawn floor plans (10 floors × dark/light themes) with click-to-pinpoint intake, heatmap overlays, and room-label toggles in Mission Control |
 | 🤖 **CampBot AI assistant** | Floating conversational assistant on every page — Gemini-grounded on **live cluster data**, with a deterministic offline fallback and quick-action chips |
-| 🎙️ **Voice intake** | Browser Web Speech API dictation (en-IN) with live transcript → auto-fills the complaint |
+| 🎙️ **Voice intake** | Browser Web Speech API dictation (en-US English) with live transcript → auto-fills the complaint |
 | 📷 **Door QR scan** | Simulated door-plaque QR lock-on: instantly sets floor + room + blueprint coordinates |
 | 👍 **Me-Too Reinforce** | One-tap "+1 Reinforce" on nearby clusters boosts priority (+8.5) without a duplicate complaint |
 | 🔧 **CMMS work-order checklists** | Every cluster ships with category-specific tools, spare parts, safety gear, estimated hours, and procedure |
